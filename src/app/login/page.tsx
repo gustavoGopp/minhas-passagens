@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { signInWithGoogle } from "./actions";
+import { HashError } from "./hash-error";
 
 export const metadata = { title: "Entrar" };
 
@@ -18,6 +19,7 @@ export default function LoginPage({
           identificar a conta.
         </p>
       </header>
+      <HashError />
       <Suspense fallback={null}>
         <LoginForm searchParams={searchParams} />
       </Suspense>
