@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getOptionalUser } from "@/lib/auth/current-user";
+import { listOverrides } from "@/lib/holidays/repo";
 import { listIntegrationsPublic } from "@/lib/integrations/repo";
 import { getProfile } from "@/lib/profiles/repo";
 
@@ -8,9 +9,10 @@ export async function GET() {
   const user = await getOptionalUser();
   if (!user) return NextResponse.json({ error: "não autenticado" }, { status: 401 });
 
-  const [profile, integrations] = await Promise.all([
+  const [profile, integrations, holidayOverrides] = await Promise.all([
     getProfile(user.id),
     listIntegrationsPublic(user.id),
+    listOverrides(user.id),
   ]);
 
   const payload = {
@@ -19,7 +21,8 @@ export async function GET() {
     user: { id: user.id, email: user.email, name: user.name },
     profile,
     integrations,
-    // Próximos marcos acrescentam: bookings, flights, refunds_credits, price_monitors, holiday_overrides.
+    holiday_overrides: holidayOverrides,
+    // Próximos marcos acrescentam: bookings, flights, refunds_credits, price_monitors.
   };
 
   const stamp = new Date().toISOString().slice(0, 10);
