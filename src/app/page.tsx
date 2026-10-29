@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 const features = [
   {
     title: "Minhas passagens",
@@ -38,6 +40,15 @@ export default function Home() {
           </article>
         ))}
       </section>
+
+      <p>
+        <Link
+          href="/login"
+          className="inline-block rounded-lg bg-zinc-900 px-4 py-3 text-sm font-medium text-white dark:bg-zinc-100 dark:text-zinc-900"
+        >
+          Entrar com Google
+        </Link>
+      </p>
 
       <footer className="text-sm text-zinc-500 dark:text-zinc-400">
         Acompanhe o andamento no{" "}
