@@ -1,0 +1,700 @@
+{
+  "source": "date-holidays 3.38.0 (CC BY-SA 3.0)",
+  "states": {
+    "AC": {
+      "name": "Acre",
+      "rules": [
+        {
+          "rule": {
+            "type": "fixed",
+            "month": 1,
+            "day": 12
+          },
+          "name": "Dia do evangélico",
+          "kind": "holiday",
+          "from": "2004-01-29"
+        },
+        {
+          "rule": {
+            "type": "fixed",
+            "month": 3,
+            "day": 8
+          },
+          "name": "Alusivo ao Dia Internacional da Mulher",
+          "kind": "holiday",
+          "from": "2001-09-14"
+        },
+        {
+          "rule": {
+            "type": "fixed",
+            "month": 6,
+            "day": 15
+          },
+          "name": "Aniversário do estado",
+          "kind": "holiday",
+          "from": "1964-09-02"
+        },
+        {
+          "rule": {
+            "type": "fixed",
+            "month": 9,
+            "day": 5
+          },
+          "name": "Dia da Amazônia",
+          "kind": "holiday",
+          "from": "2004-01-05"
+        },
+        {
+          "rule": {
+            "type": "fixed",
+            "month": 11,
+            "day": 17
+          },
+          "name": "Assinatura do Tratado de Petrópolis",
+          "kind": "optional",
+          "from": "2012-02-21"
+        }
+      ]
+    },
+    "AL": {
+      "name": "Alagoas",
+      "rules": [
+        {
+          "rule": {
+            "type": "fixed",
+            "month": 6,
+            "day": 24
+          },
+          "name": "São João",
+          "kind": "holiday",
+          "from": "1993-07-07"
+        },
+        {
+          "rule": {
+            "type": "fixed",
+            "month": 6,
+            "day": 29
+          },
+          "name": "São Pedro",
+          "kind": "holiday",
+          "from": "1993-07-07"
+        },
+        {
+          "rule": {
+            "type": "fixed",
+            "month": 9,
+            "day": 16
+          },
+          "name": "Emancipação política",
+          "kind": "holiday"
+        },
+        {
+          "rule": {
+            "type": "fixed",
+            "month": 11,
+            "day": 20
+          },
+          "name": "Morte de Zumbi dos Palmares",
+          "kind": "holiday",
+          "from": "1995-08-01"
+        }
+      ]
+    },
+    "AM": {
+      "name": "Amazonas",
+      "rules": [
+        {
+          "rule": {
+            "type": "fixed",
+            "month": 9,
+            "day": 5
+          },
+          "name": "Elevação do Amazonas à categoria de província",
+          "kind": "holiday",
+          "from": "1977-12-21"
+        }
+      ]
+    },
+    "AP": {
+      "name": "Amapá",
+      "rules": [
+        {
+          "rule": {
+            "type": "fixed",
+            "month": 3,
+            "day": 19
+          },
+          "name": "Dia de São José",
+          "kind": "holiday",
+          "from": "2002-04-16",
+          "note": "Santo padroeiro do Estado do Amapá"
+        },
+        {
+          "rule": {
+            "type": "fixed",
+            "month": 9,
+            "day": 13
+          },
+          "name": "Criação do Território Federal",
+          "kind": "holiday"
+        }
+      ]
+    },
+    "BA": {
+      "name": "Bahia",
+      "rules": [
+        {
+          "rule": {
+            "type": "fixed",
+            "month": 7,
+            "day": 2
+          },
+          "name": "Independência da Bahia",
+          "kind": "holiday"
+        }
+      ]
+    },
+    "CE": {
+      "name": "Ceará",
+      "rules": [
+        {
+          "rule": {
+            "type": "fixed",
+            "month": 3,
+            "day": 25
+          },
+          "name": "Data magna do estado",
+          "kind": "holiday",
+          "from": "2011-12-01"
+        }
+      ]
+    },
+    "DF": {
+      "name": "Distrito Federal",
+      "rules": [
+        {
+          "rule": {
+            "type": "fixed",
+            "month": 4,
+            "day": 21
+          },
+          "name": "Fundação de Brasília",
+          "kind": "holiday"
+        },
+        {
+          "rule": {
+            "type": "fixed",
+            "month": 11,
+            "day": 30
+          },
+          "name": "Dia do Evangélico",
+          "kind": "holiday",
+          "from": "1995-12-04"
+        }
+      ]
+    },
+    "ES": {
+      "name": "Espírito Santo",
+      "rules": [
+        {
+          "rule": {
+            "type": "easter",
+            "offset": 8
+          },
+          "name": "Dia de Nossa Senhora da Penha",
+          "kind": "holiday",
+          "from": "2019-07-04"
+        }
+      ]
+    },
+    "GO": {
+      "name": "Goiás",
+      "rules": [
+        {
+          "rule": {
+            "type": "fixed",
+            "month": 7,
+            "day": 26
+          },
+          "name": "Fundação da Cidade de Goiás",
+          "kind": "holiday"
+        },
+        {
+          "rule": {
+            "type": "fixed",
+            "month": 10,
+            "day": 24
+          },
+          "name": "Lançamento da pedra fundamental de Goiânia",
+          "kind": "holiday"
+        }
+      ]
+    },
+    "MA": {
+      "name": "Maranhão",
+      "rules": [
+        {
+          "rule": {
+            "type": "fixed",
+            "month": 7,
+            "day": 28
+          },
+          "name": "Adesão do Maranhão à independência do Brasil",
+          "kind": "holiday",
+          "from": "1964-10-02"
+        }
+      ]
+    },
+    "MG": {
+      "name": "Minas Gerais",
+      "rules": [
+        {
+          "rule": {
+            "type": "fixed",
+            "month": 4,
+            "day": 21
+          },
+          "name": "Data magna do estado",
+          "kind": "holiday"
+        }
+      ]
+    },
+    "MS": {
+      "name": "Mato Grosso do Sul",
+      "rules": [
+        {
+          "rule": {
+            "type": "fixed",
+            "month": 10,
+            "day": 11
+          },
+          "name": "Criação do estado",
+          "kind": "holiday",
+          "from": "1979-10-29"
+        }
+      ]
+    },
+    "MT": {
+      "name": "Mato Grosso",
+      "rules": []
+    },
+    "PA": {
+      "name": "Pará",
+      "rules": [
+        {
+          "rule": {
+            "type": "fixed",
+            "month": 8,
+            "day": 15
+          },
+          "name": "Adesão do Grão-Pará à independência do Brasil",
+          "kind": "holiday",
+          "from": "1996-09-10"
+        }
+      ]
+    },
+    "PB": {
+      "name": "Paraíba",
+      "rules": [
+        {
+          "rule": {
+            "type": "fixed",
+            "month": 7,
+            "day": 26
+          },
+          "name": "Homenagem à memória do ex-presidente João Pessoa",
+          "kind": "holiday"
+        },
+        {
+          "rule": {
+            "type": "fixed",
+            "month": 8,
+            "day": 5
+          },
+          "name": "Nossa Senhora das Neves",
+          "kind": "holiday",
+          "from": "1967-08-30",
+          "note": "Fundação do Estado em 1585 e dia da sua padroeira"
+        }
+      ]
+    },
+    "PE": {
+      "name": "Pernambuco",
+      "rules": [
+        {
+          "rule": {
+            "type": "nth_weekday",
+            "nth": 1,
+            "weekday": 0,
+            "month": 3
+          },
+          "name": "Revolução Pernambucana de 1817",
+          "kind": "holiday",
+          "from": "2009-07-02"
+        }
+      ]
+    },
+    "PI": {
+      "name": "Piauí",
+      "rules": [
+        {
+          "rule": {
+            "type": "fixed",
+            "month": 10,
+            "day": 19
+          },
+          "name": "Dia do Piauí",
+          "kind": "holiday",
+          "from": "1937-01-01"
+        }
+      ]
+    },
+    "PR": {
+      "name": "Paraná",
+      "rules": [
+        {
+          "rule": {
+            "type": "fixed",
+            "month": 12,
+            "day": 19
+          },
+          "name": "Emancipação política do estado do Paraná",
+          "kind": "holiday",
+          "from": "1962-12-18"
+        }
+      ]
+    },
+    "RJ": {
+      "name": "Rio de Janeiro",
+      "rules": [
+        {
+          "rule": {
+            "type": "easter",
+            "offset": -47
+          },
+          "name": "Carnaval",
+          "kind": "holiday",
+          "from": "2008-05-14"
+        },
+        {
+          "rule": {
+            "type": "fixed",
+            "month": 4,
+            "day": 23
+          },
+          "name": "Dia de São Jorge",
+          "kind": "holiday",
+          "from": "2008-03-05"
+        },
+        {
+          "rule": {
+            "type": "nth_weekday",
+            "nth": 3,
+            "weekday": 2,
+            "month": 10
+          },
+          "name": "Dia do Comércio",
+          "kind": "observance",
+          "note": "feriado para os comerciantes e trabalhadores da construção civil"
+        }
+      ]
+    },
+    "RN": {
+      "name": "Rio Grande do Norte",
+      "rules": [
+        {
+          "rule": {
+            "type": "fixed",
+            "month": 10,
+            "day": 3
+          },
+          "name": "Mártires de Cunhaú e Uruaçu",
+          "kind": "holiday",
+          "from": "2006-12-06"
+        }
+      ]
+    },
+    "RO": {
+      "name": "Rondônia",
+      "rules": [
+        {
+          "rule": {
+            "type": "fixed",
+            "month": 1,
+            "day": 4
+          },
+          "name": "Criação do estado",
+          "kind": "holiday",
+          "from": "2010-04-22"
+        },
+        {
+          "rule": {
+            "type": "fixed",
+            "month": 6,
+            "day": 18
+          },
+          "name": "Dia do evangélico",
+          "kind": "holiday",
+          "from": "2001-12-20"
+        }
+      ]
+    },
+    "RR": {
+      "name": "Roraima",
+      "rules": [
+        {
+          "rule": {
+            "type": "fixed",
+            "month": 10,
+            "day": 5
+          },
+          "name": "Criação do estado",
+          "kind": "holiday"
+        }
+      ]
+    },
+    "RS": {
+      "name": "Rio Grande do Sul",
+      "rules": [
+        {
+          "rule": {
+            "type": "fixed",
+            "month": 9,
+            "day": 20
+          },
+          "name": "Proclamação da República Rio-Grandense",
+          "kind": "holiday"
+        }
+      ]
+    },
+    "SC": {
+      "name": "Santa Catarina",
+      "rules": [
+        {
+          "rule": {
+            "type": "fixed_next_sunday",
+            "month": 8,
+            "day": 11
+          },
+          "name": "Dia de Santa Catarina",
+          "kind": "holiday",
+          "from": "2005-07-15"
+        },
+        {
+          "rule": {
+            "type": "fixed_next_sunday",
+            "month": 11,
+            "day": 25
+          },
+          "name": "Dia de Santa Catarina de Alexandria",
+          "kind": "holiday",
+          "from": "2005-07-15"
+        }
+      ]
+    },
+    "SE": {
+      "name": "Sergipe",
+      "rules": [
+        {
+          "rule": {
+            "type": "fixed",
+            "month": 7,
+            "day": 8
+          },
+          "name": "Emancipação política de Sergipe",
+          "kind": "holiday"
+        }
+      ]
+    },
+    "SP": {
+      "name": "São Paulo",
+      "rules": [
+        {
+          "rule": {
+            "type": "fixed",
+            "month": 7,
+            "day": 9
+          },
+          "name": "Revolução Constitucionalista",
+          "kind": "holiday",
+          "from": "1997-03-05"
+        }
+      ]
+    },
+    "TO": {
+      "name": "Tocantins",
+      "rules": [
+        {
+          "rule": {
+            "type": "fixed",
+            "month": 10,
+            "day": 5
+          },
+          "name": "Criação do estado",
+          "kind": "holiday",
+          "from": "1989-11-17"
+        },
+        {
+          "rule": {
+            "type": "fixed",
+            "month": 3,
+            "day": 18
+          },
+          "name": "Autonomia do Estado",
+          "kind": "holiday",
+          "from": "1998-03-17"
+        },
+        {
+          "rule": {
+            "type": "fixed",
+            "month": 9,
+            "day": 8
+          },
+          "name": "Nossa Senhora da Natividade",
+          "kind": "holiday",
+          "from": "1993-12-28",
+          "note": "Padroeira do Estado"
+        }
+      ]
+    }
+  },
+  "cities": {
+    "GO-GOIANIA": {
+      "uf": "GO",
+      "name": "Goiânia",
+      "rules": [
+        {
+          "rule": {
+            "type": "fixed",
+            "month": 5,
+            "day": 24
+          },
+          "name": "Nossa Senhora Auxiliadora",
+          "kind": "holiday",
+          "from": "1956-08-30"
+        }
+      ]
+    },
+    "MG-BH": {
+      "uf": "MG",
+      "name": "Belo Horizonte",
+      "rules": [
+        {
+          "rule": {
+            "type": "fixed",
+            "month": 8,
+            "day": 15
+          },
+          "name": "Assunção de Nossa Senhora",
+          "kind": "holiday"
+        },
+        {
+          "rule": {
+            "type": "fixed",
+            "month": 12,
+            "day": 8
+          },
+          "name": "Imaculada Conceição",
+          "kind": "holiday"
+        }
+      ]
+    },
+    "PE-RE": {
+      "uf": "PE",
+      "name": "Recife",
+      "rules": [
+        {
+          "rule": {
+            "type": "fixed",
+            "month": 6,
+            "day": 24
+          },
+          "name": "São João",
+          "kind": "holiday"
+        },
+        {
+          "rule": {
+            "type": "fixed",
+            "month": 7,
+            "day": 16
+          },
+          "name": "Nossa Senhora do Carmo",
+          "kind": "holiday"
+        },
+        {
+          "rule": {
+            "type": "fixed",
+            "month": 12,
+            "day": 8
+          },
+          "name": "Nossa Senhora da Conceição",
+          "kind": "holiday"
+        }
+      ]
+    },
+    "PR-CU": {
+      "uf": "PR",
+      "name": "Curitiba",
+      "rules": [
+        {
+          "rule": {
+            "type": "fixed",
+            "month": 9,
+            "day": 8
+          },
+          "name": "Nossa Senhora da Luz dos Pinhais",
+          "kind": "holiday"
+        }
+      ]
+    },
+    "RJ-RJ": {
+      "uf": "RJ",
+      "name": "Rio de Janeiro",
+      "rules": [
+        {
+          "rule": {
+            "type": "fixed",
+            "month": 1,
+            "day": 20
+          },
+          "name": "Dia de São Sebastião",
+          "kind": "holiday",
+          "from": "1988-06-27"
+        }
+      ]
+    },
+    "SP-SP": {
+      "uf": "SP",
+      "name": "São Paulo",
+      "rules": [
+        {
+          "rule": {
+            "type": "easter",
+            "offset": 60
+          },
+          "name": "Corpus Christi",
+          "kind": "holiday"
+        },
+        {
+          "rule": {
+            "type": "fixed",
+            "month": 1,
+            "day": 25
+          },
+          "name": "Aniversário da Cidade",
+          "kind": "holiday"
+        },
+        {
+          "rule": {
+            "type": "fixed",
+            "month": 11,
+            "day": 20
+          },
+          "name": "Dia da Consciência Negra",
+          "kind": "holiday",
+          "from": "2004-01-07"
+        }
+      ]
+    }
+  }
+}
