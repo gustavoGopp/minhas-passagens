@@ -1,0 +1,482 @@
+[
+  {
+    "iata": "SDU",
+    "icao": "SBRJ",
+    "name": "Santos Dumont",
+    "city": "Rio de Janeiro",
+    "uf": "RJ",
+    "tz": "America/Sao_Paulo"
+  },
+  {
+    "iata": "GIG",
+    "icao": "SBGL",
+    "name": "Galeão – Tom Jobim",
+    "city": "Rio de Janeiro",
+    "uf": "RJ",
+    "tz": "America/Sao_Paulo"
+  },
+  {
+    "iata": "CGH",
+    "icao": "SBSP",
+    "name": "Congonhas",
+    "city": "São Paulo",
+    "uf": "SP",
+    "tz": "America/Sao_Paulo"
+  },
+  {
+    "iata": "GRU",
+    "icao": "SBGR",
+    "name": "Guarulhos",
+    "city": "Guarulhos",
+    "uf": "SP",
+    "tz": "America/Sao_Paulo"
+  },
+  {
+    "iata": "VCP",
+    "icao": "SBKP",
+    "name": "Viracopos",
+    "city": "Campinas",
+    "uf": "SP",
+    "tz": "America/Sao_Paulo"
+  },
+  {
+    "iata": "BSB",
+    "icao": "SBBR",
+    "name": "Brasília – JK",
+    "city": "Brasília",
+    "uf": "DF",
+    "tz": "America/Sao_Paulo"
+  },
+  {
+    "iata": "CNF",
+    "icao": "SBCF",
+    "name": "Confins – Tancredo Neves",
+    "city": "Belo Horizonte",
+    "uf": "MG",
+    "tz": "America/Sao_Paulo"
+  },
+  {
+    "iata": "PLU",
+    "icao": "SBBH",
+    "name": "Pampulha",
+    "city": "Belo Horizonte",
+    "uf": "MG",
+    "tz": "America/Sao_Paulo"
+  },
+  {
+    "iata": "SSA",
+    "icao": "SBSV",
+    "name": "Salvador – Dep. Luís Eduardo Magalhães",
+    "city": "Salvador",
+    "uf": "BA",
+    "tz": "America/Bahia"
+  },
+  {
+    "iata": "REC",
+    "icao": "SBRF",
+    "name": "Recife – Guararapes",
+    "city": "Recife",
+    "uf": "PE",
+    "tz": "America/Recife"
+  },
+  {
+    "iata": "FOR",
+    "icao": "SBFZ",
+    "name": "Fortaleza – Pinto Martins",
+    "city": "Fortaleza",
+    "uf": "CE",
+    "tz": "America/Fortaleza"
+  },
+  {
+    "iata": "POA",
+    "icao": "SBPA",
+    "name": "Porto Alegre – Salgado Filho",
+    "city": "Porto Alegre",
+    "uf": "RS",
+    "tz": "America/Sao_Paulo"
+  },
+  {
+    "iata": "CWB",
+    "icao": "SBCT",
+    "name": "Curitiba – Afonso Pena",
+    "city": "Curitiba",
+    "uf": "PR",
+    "tz": "America/Sao_Paulo"
+  },
+  {
+    "iata": "FLN",
+    "icao": "SBFL",
+    "name": "Florianópolis – Hercílio Luz",
+    "city": "Florianópolis",
+    "uf": "SC",
+    "tz": "America/Sao_Paulo"
+  },
+  {
+    "iata": "BEL",
+    "icao": "SBBE",
+    "name": "Belém – Val de Cans",
+    "city": "Belém",
+    "uf": "PA",
+    "tz": "America/Belem"
+  },
+  {
+    "iata": "MAO",
+    "icao": "SBEG",
+    "name": "Manaus – Eduardo Gomes",
+    "city": "Manaus",
+    "uf": "AM",
+    "tz": "America/Manaus"
+  },
+  {
+    "iata": "GYN",
+    "icao": "SBGO",
+    "name": "Goiânia – Santa Genoveva",
+    "city": "Goiânia",
+    "uf": "GO",
+    "tz": "America/Sao_Paulo"
+  },
+  {
+    "iata": "VIX",
+    "icao": "SBVT",
+    "name": "Vitória – Eurico de Aguiar Salles",
+    "city": "Vitória",
+    "uf": "ES",
+    "tz": "America/Sao_Paulo"
+  },
+  {
+    "iata": "NAT",
+    "icao": "SBSG",
+    "name": "Natal – São Gonçalo do Amarante",
+    "city": "Natal",
+    "uf": "RN",
+    "tz": "America/Fortaleza"
+  },
+  {
+    "iata": "MCZ",
+    "icao": "SBMO",
+    "name": "Maceió – Zumbi dos Palmares",
+    "city": "Maceió",
+    "uf": "AL",
+    "tz": "America/Maceio"
+  },
+  {
+    "iata": "JPA",
+    "icao": "SBJP",
+    "name": "João Pessoa – Castro Pinto",
+    "city": "João Pessoa",
+    "uf": "PB",
+    "tz": "America/Fortaleza"
+  },
+  {
+    "iata": "AJU",
+    "icao": "SBAR",
+    "name": "Aracaju – Santa Maria",
+    "city": "Aracaju",
+    "uf": "SE",
+    "tz": "America/Maceio"
+  },
+  {
+    "iata": "SLZ",
+    "icao": "SBSL",
+    "name": "São Luís – Marechal Cunha Machado",
+    "city": "São Luís",
+    "uf": "MA",
+    "tz": "America/Fortaleza"
+  },
+  {
+    "iata": "THE",
+    "icao": "SBTE",
+    "name": "Teresina – Senador Petrônio Portella",
+    "city": "Teresina",
+    "uf": "PI",
+    "tz": "America/Fortaleza"
+  },
+  {
+    "iata": "CGB",
+    "icao": "SBCY",
+    "name": "Cuiabá – Marechal Rondon",
+    "city": "Cuiabá",
+    "uf": "MT",
+    "tz": "America/Cuiaba"
+  },
+  {
+    "iata": "CGR",
+    "icao": "SBCG",
+    "name": "Campo Grande",
+    "city": "Campo Grande",
+    "uf": "MS",
+    "tz": "America/Campo_Grande"
+  },
+  {
+    "iata": "PMW",
+    "icao": "SBPJ",
+    "name": "Palmas",
+    "city": "Palmas",
+    "uf": "TO",
+    "tz": "America/Araguaina"
+  },
+  {
+    "iata": "PVH",
+    "icao": "SBPV",
+    "name": "Porto Velho – Gov. Jorge Teixeira",
+    "city": "Porto Velho",
+    "uf": "RO",
+    "tz": "America/Porto_Velho"
+  },
+  {
+    "iata": "RBR",
+    "icao": "SBRB",
+    "name": "Rio Branco – Plácido de Castro",
+    "city": "Rio Branco",
+    "uf": "AC",
+    "tz": "America/Rio_Branco"
+  },
+  {
+    "iata": "BVB",
+    "icao": "SBBV",
+    "name": "Boa Vista – Atlas Brasil Cantanhede",
+    "city": "Boa Vista",
+    "uf": "RR",
+    "tz": "America/Boa_Vista"
+  },
+  {
+    "iata": "MCP",
+    "icao": "SBMQ",
+    "name": "Macapá – Alberto Alcolumbre",
+    "city": "Macapá",
+    "uf": "AP",
+    "tz": "America/Belem"
+  },
+  {
+    "iata": "NVT",
+    "icao": "SBNF",
+    "name": "Navegantes – Ministro Victor Konder",
+    "city": "Navegantes",
+    "uf": "SC",
+    "tz": "America/Sao_Paulo"
+  },
+  {
+    "iata": "JOI",
+    "icao": "SBJV",
+    "name": "Joinville – Lauro Carneiro de Loyola",
+    "city": "Joinville",
+    "uf": "SC",
+    "tz": "America/Sao_Paulo"
+  },
+  {
+    "iata": "LDB",
+    "icao": "SBLO",
+    "name": "Londrina – Gov. José Richa",
+    "city": "Londrina",
+    "uf": "PR",
+    "tz": "America/Sao_Paulo"
+  },
+  {
+    "iata": "MGF",
+    "icao": "SBMG",
+    "name": "Maringá – Sílvio Name Júnior",
+    "city": "Maringá",
+    "uf": "PR",
+    "tz": "America/Sao_Paulo"
+  },
+  {
+    "iata": "IGU",
+    "icao": "SBFI",
+    "name": "Foz do Iguaçu – Cataratas",
+    "city": "Foz do Iguaçu",
+    "uf": "PR",
+    "tz": "America/Sao_Paulo"
+  },
+  {
+    "iata": "UDI",
+    "icao": "SBUL",
+    "name": "Uberlândia – Ten. Cel. Av. César Bombonato",
+    "city": "Uberlândia",
+    "uf": "MG",
+    "tz": "America/Sao_Paulo"
+  },
+  {
+    "iata": "RAO",
+    "icao": "SBRP",
+    "name": "Ribeirão Preto – Leite Lopes",
+    "city": "Ribeirão Preto",
+    "uf": "SP",
+    "tz": "America/Sao_Paulo"
+  },
+  {
+    "iata": "SJP",
+    "icao": "SBSR",
+    "name": "São José do Rio Preto – Prof. Eribelto Manoel Reino",
+    "city": "São José do Rio Preto",
+    "uf": "SP",
+    "tz": "America/Sao_Paulo"
+  },
+  {
+    "iata": "BPS",
+    "icao": "SBPS",
+    "name": "Porto Seguro",
+    "city": "Porto Seguro",
+    "uf": "BA",
+    "tz": "America/Bahia"
+  },
+  {
+    "iata": "IOS",
+    "icao": "SBIL",
+    "name": "Ilhéus – Jorge Amado",
+    "city": "Ilhéus",
+    "uf": "BA",
+    "tz": "America/Bahia"
+  },
+  {
+    "iata": "JDO",
+    "icao": "SBJU",
+    "name": "Juazeiro do Norte – Orlando Bezerra de Menezes",
+    "city": "Juazeiro do Norte",
+    "uf": "CE",
+    "tz": "America/Fortaleza"
+  },
+  {
+    "iata": "PNZ",
+    "icao": "SBPL",
+    "name": "Petrolina – Senador Nilo Coelho",
+    "city": "Petrolina",
+    "uf": "PE",
+    "tz": "America/Recife"
+  },
+  {
+    "iata": "CPV",
+    "icao": "SBKG",
+    "name": "Campina Grande – Pres. João Suassuna",
+    "city": "Campina Grande",
+    "uf": "PB",
+    "tz": "America/Fortaleza"
+  },
+  {
+    "iata": "IMP",
+    "icao": "SBIZ",
+    "name": "Imperatriz – Prefeito Renato Moreira",
+    "city": "Imperatriz",
+    "uf": "MA",
+    "tz": "America/Fortaleza"
+  },
+  {
+    "iata": "STM",
+    "icao": "SBSN",
+    "name": "Santarém – Maestro Wilson Fonseca",
+    "city": "Santarém",
+    "uf": "PA",
+    "tz": "America/Santarem"
+  },
+  {
+    "iata": "CXJ",
+    "icao": "SBCX",
+    "name": "Caxias do Sul – Hugo Cantergiani",
+    "city": "Caxias do Sul",
+    "uf": "RS",
+    "tz": "America/Sao_Paulo"
+  },
+  {
+    "iata": "XAP",
+    "icao": "SBCH",
+    "name": "Chapecó – Serafin Enoss Bertaso",
+    "city": "Chapecó",
+    "uf": "SC",
+    "tz": "America/Sao_Paulo"
+  },
+  {
+    "iata": "CAC",
+    "icao": "SBCA",
+    "name": "Cascavel – Cel. Adalberto Mendes da Silva",
+    "city": "Cascavel",
+    "uf": "PR",
+    "tz": "America/Sao_Paulo"
+  },
+  {
+    "iata": "PPB",
+    "icao": "SBDN",
+    "name": "Presidente Prudente",
+    "city": "Presidente Prudente",
+    "uf": "SP",
+    "tz": "America/Sao_Paulo"
+  },
+  {
+    "iata": "VDC",
+    "icao": "SBVC",
+    "name": "Vitória da Conquista – Glauber Rocha",
+    "city": "Vitória da Conquista",
+    "uf": "BA",
+    "tz": "America/Bahia"
+  },
+  {
+    "iata": "FEN",
+    "icao": "SBFN",
+    "name": "Fernando de Noronha",
+    "city": "Fernando de Noronha",
+    "uf": "PE",
+    "tz": "America/Noronha"
+  },
+  {
+    "iata": "JTC",
+    "icao": "SBAE",
+    "name": "Bauru–Arealva – Moussa Nakhl Tobias",
+    "city": "Bauru",
+    "uf": "SP",
+    "tz": "America/Sao_Paulo"
+  },
+  {
+    "iata": "MOC",
+    "icao": "SBMK",
+    "name": "Montes Claros – Mário Ribeiro",
+    "city": "Montes Claros",
+    "uf": "MG",
+    "tz": "America/Sao_Paulo"
+  },
+  {
+    "iata": "IPN",
+    "icao": "SBIP",
+    "name": "Ipatinga – Usiminas",
+    "city": "Ipatinga",
+    "uf": "MG",
+    "tz": "America/Sao_Paulo"
+  },
+  {
+    "iata": "JJG",
+    "icao": "SBJA",
+    "name": "Jaguaruna – Humberto Ghizzo Bortoluzzi",
+    "city": "Jaguaruna",
+    "uf": "SC",
+    "tz": "America/Sao_Paulo"
+  },
+  {
+    "iata": "PET",
+    "icao": "SBPK",
+    "name": "Pelotas – João Simões Lopes Neto",
+    "city": "Pelotas",
+    "uf": "RS",
+    "tz": "America/Sao_Paulo"
+  },
+  {
+    "iata": "MAB",
+    "icao": "SBMA",
+    "name": "Marabá – João Correa da Rocha",
+    "city": "Marabá",
+    "uf": "PA",
+    "tz": "America/Belem"
+  },
+  {
+    "iata": "CKS",
+    "icao": "SBCJ",
+    "name": "Carajás",
+    "city": "Parauapebas",
+    "uf": "PA",
+    "tz": "America/Belem"
+  },
+  {
+    "iata": "SJK",
+    "icao": "SBSJ",
+    "name": "São José dos Campos – Prof. Urbano Ernesto Stumpf",
+    "city": "São José dos Campos",
+    "uf": "SP",
+    "tz": "America/Sao_Paulo"
+  }
+]
