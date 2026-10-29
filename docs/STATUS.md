@@ -2,7 +2,7 @@
 
 > Leia este arquivo no início de toda sessão. Ele é a memória do projeto: decisões, o que está pronto, próximos passos e as respostas da entrevista. Atualize-o ao fim de cada marco.
 
-Última atualização: 2026-10-29 (M1 implementado; aguardando contas para validar)
+Última atualização: 2026-10-29 (M2 pronto)
 
 ## Estado atual
 
@@ -21,8 +21,8 @@
 
 ## Próximos passos
 
-1. Terminar M0: commit e push da fundação; conectar o repositório na Vercel (Hobby) para preview.
-2. M1: criar projeto Supabase (free), credencial Google OAuth, variáveis na Vercel. Pedir confirmação ao dono antes (contas gratuitas, mas exigem dados dele).
+1. Dono: aplicar `supabase/migrations/20261029010000_holidays.sql` no SQL Editor do Supabase; escolher UF, cidade e feriados judaicos em Perfil; abrir Calendário.
+2. M3 Passagens: cadastro manual, texto colado e print com extração pela API da Anthropic (chave do usuário), revisão, próximo voo e gastos.
 
 ## Bloqueios conhecidos
 
@@ -74,3 +74,10 @@ Monitor internacional e conversão de moeda; WhatsApp; compra no app; raspagem d
 - Nenhum segredo no repositório; `.env.example` lista os nomes.
 - Lógica (datas, alertas, feriados, preços) em `src/lib/*` pura e testada com Vitest (`TZ=UTC` no runner).
 - Toda função que gera custo verifica a chave do usuário e, sem ela, mostra estado "configurar".
+
+## O que o M2 entregou
+
+- `src/lib/holidays/`: Páscoa (Meeus), nacionais por lei com Carnaval/Cinzas/Corpus Christi como facultativos, 20/11 desde 2024; semente de 27 UFs e 6 cidades (`src/data/feriados-regionais.json`, gerada por `scripts/gerar-feriados-regionais.mjs` a partir do date-holidays, CC BY-SA 3.0); calendário hebraico próprio (diáspora e Israel, início ao pôr do sol, Tishá BeAv adiado do Shabat); cristãos móveis opcionais; `getHolidays`, `holidaysBetween`, `holidaysNear`.
+- Migração `20261029010000_holidays.sql`: preferências no perfil e tabela `holiday_overrides` com RLS.
+- Telas: Perfil (UF, cidade, facultativos, cristãos, judaicos, Israel) e `/app/calendario` (lista anual por mês, próximo feriado, ocultar, adicionar feriado próprio).
+- Testes: 69 no total.

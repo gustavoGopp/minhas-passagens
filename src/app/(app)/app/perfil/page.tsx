@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { getCurrentUser } from "@/lib/auth/current-user";
+import { listCities } from "@/lib/holidays";
 import { getProfile, UF_LIST } from "@/lib/profiles/repo";
 import { ProfileForm } from "./profile-form";
 
@@ -26,5 +27,5 @@ async function ProfileLoader() {
       </p>
     );
   }
-  return <ProfileForm profile={profile} ufs={UF_LIST} />;
+  return <ProfileForm profile={profile} ufs={UF_LIST} cities={listCities()} />;
 }

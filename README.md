@@ -17,7 +17,8 @@ Três funcionalidades, pensadas para quem viaja com frequência (o caso de orige
 1. Abra o app e clique em **Entrar com Google**.
 2. Em **Mais → Perfil**, confira fuso horário, estado (para feriados estaduais) e janela de silêncio dos avisos.
 3. Em **Mais → Integrações**, cole sua chave da Anthropic (necessária para extrair passagens de e-mails, textos e prints).
-4. As telas de passagens, monitor de preços e calendário chegam nos próximos marcos (veja `docs/STATUS.md`).
+4. Em **Calendário**, veja os feriados do ano, oculte os que não importam e adicione os da sua cidade.
+5. As telas de passagens e monitor de preços chegam nos próximos marcos (veja `docs/STATUS.md`).
 
 ## Como rodar localmente
 
@@ -109,6 +110,10 @@ Next.js 16 (App Router, TypeScript, Tailwind) na Vercel; Supabase para login com
 - Dados de cada usuário isolados por Row Level Security.
 - E-mails e prints originais são apagados 30 dias após a extração; ficam só os dados estruturados.
 - Você pode exportar e apagar sua conta a qualquer momento.
+
+## Créditos de dados
+
+Feriados estaduais e municipais derivados do pacote [date-holidays](https://github.com/commenthol/date-holidays), dados sob licença CC BY-SA 3.0. O arquivo `src/data/feriados-regionais.json` é distribuído sob a mesma licença. Feriados nacionais e o calendário hebraico são calculados pelo próprio projeto.
 
 ## Licença
 
