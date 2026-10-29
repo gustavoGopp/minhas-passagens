@@ -77,13 +77,13 @@ O projeto roda inteiro em planos gratuitos. Cada passo abaixo leva poucos minuto
 1. Faça um fork deste repositório e importe-o em https://vercel.com (plano Hobby). O build é detectado automaticamente.
 2. Em **Settings → Environment Variables**, cadastre:
 
-| Variável                        | Valor                                         |
-| ------------------------------- | --------------------------------------------- |
-| `NEXT_PUBLIC_APP_URL`           | URL do deploy, sem barra no final             |
-| `NEXT_PUBLIC_SUPABASE_URL`      | URL do projeto Supabase                       |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | chave pública do Supabase                     |
-| `SUPABASE_SERVICE_ROLE_KEY`     | chave secreta do Supabase (só servidor)       |
-| `BYOK_MASTER_KEY`               | 32 bytes em base64; gere com o comando abaixo |
+| Variável                        | Valor                                           |
+| ------------------------------- | ----------------------------------------------- |
+| `NEXT_PUBLIC_APP_URL`           | Opcional. O login usa a URL real de cada acesso |
+| `NEXT_PUBLIC_SUPABASE_URL`      | URL do projeto Supabase                         |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | chave pública do Supabase                       |
+| `SUPABASE_SERVICE_ROLE_KEY`     | chave secreta do Supabase (só servidor)         |
+| `BYOK_MASTER_KEY`               | 32 bytes em base64; gere com o comando abaixo   |
 
 ```bash
 openssl rand -base64 32
