@@ -5,7 +5,8 @@ import { z } from "zod";
  * pelo Next.js; por isso são lidas por nome literal, não via process.env[chave].
  */
 const publicSchema = z.object({
-  NEXT_PUBLIC_APP_URL: z.url().default("http://localhost:3000"),
+  /** Opcional: a origem real da requisição é usada no OAuth. */
+  NEXT_PUBLIC_APP_URL: z.url().optional(),
   NEXT_PUBLIC_SUPABASE_URL: z.url(),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
 });
