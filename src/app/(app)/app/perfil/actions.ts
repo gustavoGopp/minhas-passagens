@@ -20,6 +20,11 @@ export async function saveProfileAction(
     quiet_hours_start: formData.get("quiet_hours_start"),
     quiet_hours_end: formData.get("quiet_hours_end"),
     original_retention_days: formData.get("original_retention_days"),
+    holiday_city: formData.get("holiday_city") ?? "",
+    show_optional_holidays: formData.get("show_optional_holidays") === "on",
+    show_christian_holidays: formData.get("show_christian_holidays") === "on",
+    show_jewish_holidays: formData.get("show_jewish_holidays") === "on",
+    jewish_israel: formData.get("jewish_israel") === "on",
   });
   if (!parsed.success) {
     return {
@@ -28,5 +33,6 @@ export async function saveProfileAction(
   }
   await updateProfile(user.id, parsed.data);
   revalidatePath("/app/perfil");
+  revalidatePath("/app/calendario");
   return { ok: true };
 }
