@@ -14,7 +14,10 @@ Três funcionalidades, pensadas para quem viaja com frequência (o caso de orige
 
 ## Como usar
 
-O app ainda está em construção. Quando a primeira versão estiver no ar, este trecho terá o passo a passo: entrar com Google, colar as chaves nas Integrações, cadastrar a primeira passagem e o primeiro monitor.
+1. Abra o app e clique em **Entrar com Google**.
+2. Em **Mais → Perfil**, confira fuso horário, estado (para feriados estaduais) e janela de silêncio dos avisos.
+3. Em **Mais → Integrações**, cole sua chave da Anthropic (necessária para extrair passagens de e-mails, textos e prints).
+4. As telas de passagens, monitor de preços e calendário chegam nos próximos marcos (veja `docs/STATUS.md`).
 
 ## Como rodar localmente
 
@@ -52,13 +55,47 @@ Outros comandos:
 
 ## Como fazer deploy (sua própria cópia)
 
-O projeto foi desenhado para rodar inteiro em planos gratuitos. Para ter a sua cópia:
+O projeto roda inteiro em planos gratuitos. Cada passo abaixo leva poucos minutos.
 
-1. Faça um fork deste repositório.
-2. **Vercel (Hobby):** importe o fork. O build é detectado automaticamente.
-3. **Supabase (Free):** crie um projeto, aplique as migrações de `supabase/migrations` e ative o provedor Google em Authentication. Guia detalhado chega com o marco M1.
-4. **Variáveis de ambiente:** copie os nomes de `.env.example` para as configurações do projeto na Vercel.
-5. **Chaves de API:** cada usuário cola as próprias chaves (Anthropic, API de preços) na tela de Integrações do app. Elas ficam cifradas no banco e nunca vão ao navegador.
+### 1. Supabase (banco e login)
+
+1. Crie um projeto em https://supabase.com (plano Free; região `South America (São Paulo)`).
+2. Em **Project Settings → API**, copie a URL do projeto, a chave pública (`anon` / `publishable`) e a chave secreta (`service_role` / `secret`).
+3. Aplique as migrações: **SQL Editor → New query**, cole o conteúdo de cada arquivo de `supabase/migrations/` em ordem e execute. Detalhes em [`supabase/README.md`](supabase/README.md).
+
+### 2. Google (botão "Entrar com Google")
+
+1. Em https://console.cloud.google.com crie um projeto e abra **APIs e serviços → Tela de permissão OAuth** (ou "Google Auth Platform"). Tipo externo; adicione seu e-mail como usuário de teste ou publique.
+2. Em **Credenciais → Criar credenciais → ID do cliente OAuth**, tipo **Aplicativo da Web**:
+   - Origens JavaScript autorizadas: `http://localhost:3000` e a URL do seu deploy (ex.: `https://minhas-passagens.vercel.app`).
+   - URIs de redirecionamento autorizados: `https://<ref-do-projeto>.supabase.co/auth/v1/callback` (o valor exato aparece no Supabase, em **Authentication → Providers → Google**).
+3. No Supabase, em **Authentication → Providers → Google**, ative e cole o Client ID e o Client Secret.
+4. Em **Authentication → URL Configuration**: Site URL = URL do deploy; Redirect URLs = `https://<seu-app>.vercel.app/**` e `http://localhost:3000/**`.
+
+### 3. Vercel (hospedagem)
+
+1. Faça um fork deste repositório e importe-o em https://vercel.com (plano Hobby). O build é detectado automaticamente.
+2. Em **Settings → Environment Variables**, cadastre:
+
+| Variável                        | Valor                                         |
+| ------------------------------- | --------------------------------------------- |
+| `NEXT_PUBLIC_APP_URL`           | URL do deploy, sem barra no final             |
+| `NEXT_PUBLIC_SUPABASE_URL`      | URL do projeto Supabase                       |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | chave pública do Supabase                     |
+| `SUPABASE_SERVICE_ROLE_KEY`     | chave secreta do Supabase (só servidor)       |
+| `BYOK_MASTER_KEY`               | 32 bytes em base64; gere com o comando abaixo |
+
+```bash
+openssl rand -base64 32
+```
+
+3. Faça um redeploy. Abra a URL, clique em **Entrar com Google** e, em **Mais → Integrações**, cole sua chave da Anthropic.
+
+Guarde a `BYOK_MASTER_KEY` com cuidado: ela cifra as chaves de API de todos os usuários. Se mudar, as chaves salvas deixam de ser legíveis e cada pessoa precisa colar a sua de novo.
+
+### 4. Chaves de API de cada usuário
+
+Cada pessoa cola as próprias chaves (Anthropic, API de preços) na tela de Integrações. Elas ficam cifradas no banco com AES-256-GCM e nunca vão ao navegador. O uso é cobrado na conta de quem forneceu a chave.
 
 Os marcos seguintes (notificações, monitor de preços e e-mail de entrada) terão seus próprios passos documentados aqui conforme forem entregues.
 

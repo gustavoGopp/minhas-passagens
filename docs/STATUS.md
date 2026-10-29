@@ -2,7 +2,7 @@
 
 > Leia este arquivo no início de toda sessão. Ele é a memória do projeto: decisões, o que está pronto, próximos passos e as respostas da entrevista. Atualize-o ao fim de cada marco.
 
-Última atualização: 2026-10-29 (M0 em andamento)
+Última atualização: 2026-10-29 (M1 implementado; aguardando contas para validar)
 
 ## Estado atual
 
