@@ -2,7 +2,7 @@
 
 > Leia este arquivo no início de toda sessão. Ele é a memória do projeto: decisões, o que está pronto, próximos passos e as respostas da entrevista. Atualize-o ao fim de cada marco.
 
-Última atualização: 2026-10-29 (M2 pronto)
+Última atualização: 2026-10-30 (M2 pronto; login em diagnóstico)
 
 ## Estado atual
 
@@ -21,8 +21,21 @@
 
 ## Próximos passos
 
-1. Dono: aplicar `supabase/migrations/20261029010000_holidays.sql` no SQL Editor do Supabase; escolher UF, cidade e feriados judaicos em Perfil; abrir Calendário.
-2. M3 Passagens: cadastro manual, texto colado e print com extração pela API da Anthropic (chave do usuário), revisão, próximo voo e gastos.
+1. **Login com "código ausente" (em aberto).** O app agora mostra o erro real do Supabase na tela de login. Diagnosticar com os logs de auth e corrigir.
+2. Aplicar `supabase/migrations/20261029010000_holidays.sql` (e conferir se `20261029000000_init.sql` foi aplicada inteira).
+3. M3 Passagens: cadastro manual, texto colado e print com extração pela API da Anthropic (chave do usuário), revisão, próximo voo e gastos.
+
+## Como o Claude acessa o Supabase
+
+Não há conector de Supabase no claude.ai, e a rede padrão da sessão bloqueia `*.supabase.co`. O caminho é a Management API (`https://api.supabase.com/v1`):
+
+- **Dono, uma vez:** criar token pessoal em https://supabase.com/dashboard/account/tokens; no ambiente da sessão (título da sessão → Edit) liberar `api.supabase.com` em Network access → Allowed domains e salvar o token como variável/secret `SUPABASE_ACCESS_TOKEN`; abrir sessão nova.
+- **Claude, ao iniciar sessão:** se `SUPABASE_ACCESS_TOKEN` existir, usar:
+  - `GET/PATCH /v1/projects/gbvwzwpuzlaftinfcxkc/config/auth` para `site_url`, `uri_allow_list` e conferir `external_google_enabled`;
+  - `POST /v1/projects/gbvwzwpuzlaftinfcxkc/database/query` para checar o esquema e aplicar migrações pendentes;
+  - logs de auth (`/v1/projects/gbvwzwpuzlaftinfcxkc/analytics/endpoints/logs.all`) para diagnosticar falhas de login.
+- Valores esperados: Site URL = URL de produção da Vercel; allow list = `https://<produção>.vercel.app/**`, `https://*-gustavogopps-projects.vercel.app/**`, `http://localhost:3000/**`.
+- Google Cloud (redirect URIs do cliente OAuth) continua manual; já está configurado com `https://gbvwzwpuzlaftinfcxkc.supabase.co/auth/v1/callback`.
 
 ## Bloqueios conhecidos
 
