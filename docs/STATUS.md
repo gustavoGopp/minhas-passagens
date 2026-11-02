@@ -21,9 +21,13 @@
 
 ## Próximos passos
 
-1. Dono: criar o segredo `SUPABASE_ACCESS_TOKEN` no GitHub (uma vez). Depois disso o Claude roda migrações e diagnósticos sozinho.
-2. Claude: rodar o workflow de migrações, diagnosticar o login ("código ausente") e corrigir.
-3. M4: alertas de check-in, conflito, trecho faltando, duplicata, reembolsos/créditos e relatórios, sobre `bookings`/`flights`.
+1. Dono: cadastrar a chave da Anthropic em Integrações e registrar as passagens já compradas; desativar no Google Cloud o secret antigo `****dmcf`.
+2. M4: alertas de check-in (abertura por companhia + 24h), conflito, trecho faltando, duplicata, reembolsos/créditos e relatórios, sobre `bookings`/`flights`.
+3. M5: notificações (Telegram, push, e-mail) e agendador (pg_cron → `/api/jobs/tick`).
+
+## Histórico de incidentes
+
+- **2026-11-02, login com Google falhando.** Causas: (a) nenhuma migração aplicada no banco; (b) Site URL do Supabase em `http://localhost:3000`; (c) Client Secret do Google no Supabase de outro secret ("Unable to exchange external code"). Correções: ponte via GitHub Actions aplicou as migrações e ajustou a Site URL; dono gerou secret novo no Google e colou no Supabase. Estado confirmado: 1 usuário, 1 perfil.
 
 ## Como o Claude opera o Supabase
 
