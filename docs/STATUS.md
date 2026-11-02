@@ -21,7 +21,7 @@
 
 ## Próximos passos
 
-1. Dono: criar conta gratuita no Travelpayouts e colar o token em Mais → Integrações. Os dois monitores da ponte aérea já existem (migração `20261103010000_seed_ponte_aerea.sql`, alvo R$ 400 ± R$ 50, editável) e checam em até 5 min depois de salvar o token.
+1. Dono: criar conta gratuita no Travelpayouts e colar o token em Mais → Integrações. Os dois monitores da ponte aérea já existem (migração `20261103010000_seed_ponte_aerea.sql`, alvo R$ 250 ± R$ 50 a pedido do dono, editável) e checam em até 5 min depois de salvar o token.
 2. Claude: acompanhar o piloto por 7 dias com o diagnóstico `piloto-precos.sql`; se a cobertura ficar abaixo de ~80%, avisar o dono antes de manter o Travelpayouts como fonte principal (alternativa: SerpApi com a cota grátis do dono, ou Duffel).
 3. Dono: cadastrar a chave da Anthropic em Integrações e registrar as passagens já compradas; desativar no Google Cloud o secret antigo `****dmcf`.
 4. Dono: criar o bot no BotFather e salvar o token como segredo `TELEGRAM_BOT_TOKEN` no GitHub; Claude roda o workflow de setup.
