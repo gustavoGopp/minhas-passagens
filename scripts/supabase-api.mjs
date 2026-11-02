@@ -53,7 +53,7 @@ export async function authErrors(hours = 24) {
     iso_timestamp_start: start.toISOString(),
     iso_timestamp_end: end.toISOString(),
   });
-  const data = await call("GET", `/projects/${ref}/analytics/endpoints/logs.all?${params}`);
+  const data = await call("GET", `/projects/${ref}/analytics/endpoints/logs?${params}`);
   const rows = data?.result ?? [];
   const SAFE = [
     "level",
