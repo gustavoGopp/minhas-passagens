@@ -8,6 +8,9 @@ import { getTrip } from "@/lib/trips/repo";
 import { formatBRL } from "@/lib/trips/summary";
 import { deleteBookingAction, setStatusAction } from "../actions";
 import { BookingForm } from "../booking-form";
+import { CreditForm } from "../../creditos/credit-form";
+import { CreditList } from "../../creditos/credit-list";
+import { listCredits } from "@/lib/trips/credits-repo";
 
 export const metadata = { title: "Passagem" };
 
@@ -28,8 +31,9 @@ async function Detail({ params }: { params: Promise<{ id: string }> }) {
   const user = await getCurrentUser();
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
-  const trip = await getTrip(user.id, id);
+  const [trip, allCredits] = await Promise.all([getTrip(user.id, id), listCredits(user.id)]);
   if (!trip) notFound();
+  const credits = allCredits.filter((c) => c.booking_id === id);
   const { booking: b } = trip;
   const price =
     b.channel === "miles"
@@ -57,6 +61,23 @@ async function Detail({ params }: { params: Promise<{ id: string }> }) {
       </header>
 
       <BookingForm initial={draftFromRows(b, trip.flights)} />
+
+      <section className="flex flex-col gap-3 border-t border-zinc-200 pt-4 dark:border-zinc-800">
+        <h2 className="font-semibold">Reembolsos e créditos desta passagem</h2>
+        <CreditList
+          credits={credits}
+          today={new Date().toISOString().slice(0, 10)}
+          showBookingLink={false}
+        />
+        <details className="rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
+          <summary className="cursor-pointer text-sm font-medium">
+            Registrar reembolso ou crédito
+          </summary>
+          <div className="pt-3">
+            <CreditForm bookingId={b.id} defaultProvider={b.seller ?? airlineName(b.airline)} />
+          </div>
+        </details>
+      </section>
 
       <section className="flex flex-wrap gap-3 border-t border-zinc-200 pt-4 dark:border-zinc-800">
         <form action={setStatusAction}>

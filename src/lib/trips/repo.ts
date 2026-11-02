@@ -7,7 +7,7 @@ type Rows = ReturnType<typeof rowsFromDraft>;
 const BOOKING_COLS =
   "id, locator, airline, seller, channel, amount_cents, currency, miles, taxes_cents, purchased_on, tag, status, source, notes";
 const FLIGHT_COLS =
-  "id, booking_id, airline, flight_number, origin, destination, departs_at, arrives_at, passenger, checkin_done";
+  "id, booking_id, airline, flight_number, origin, destination, departs_at, arrives_at, passenger, checkin_done, ignore_missing_leg";
 
 export async function listTrips(
   userId: string,
@@ -99,4 +99,15 @@ export async function setCheckin(userId: string, flightId: string, done: boolean
     .eq("id", flightId)
     .eq("user_id", userId);
   if (error) throw new Error(`Falha ao marcar check-in: ${error.message}`);
+}
+
+/** "Cheguei por outro meio": silencia o alerta de trecho faltando antes deste voo. */
+export async function setIgnoreMissingLeg(userId: string, flightId: string, value: boolean) {
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase
+    .from("flights")
+    .update({ ignore_missing_leg: value })
+    .eq("id", flightId)
+    .eq("user_id", userId);
+  if (error) throw new Error(`Falha ao atualizar o trecho: ${error.message}`);
 }

@@ -11,7 +11,14 @@ import {
   rowsFromDraft,
   type BookingDraft,
 } from "@/lib/trips/draft";
-import { createTrip, deleteTrip, setCheckin, setTripStatus, updateTrip } from "@/lib/trips/repo";
+import {
+  createTrip,
+  deleteTrip,
+  setCheckin,
+  setIgnoreMissingLeg,
+  setTripStatus,
+  updateTrip,
+} from "@/lib/trips/repo";
 
 export interface ExtractState {
   drafts?: BookingDraft[];
@@ -120,5 +127,12 @@ export async function toggleCheckinAction(formData: FormData) {
   const user = await getCurrentUser();
   const flightId = idSchema.parse(formData.get("flight_id"));
   await setCheckin(user.id, flightId, formData.get("done") === "true");
+  revalidatePath("/app");
+}
+
+export async function ignoreMissingLegAction(formData: FormData) {
+  const user = await getCurrentUser();
+  const flightId = idSchema.parse(formData.get("flight_id"));
+  await setIgnoreMissingLeg(user.id, flightId, formData.get("value") !== "false");
   revalidatePath("/app");
 }
