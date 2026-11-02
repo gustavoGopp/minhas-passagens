@@ -24,7 +24,7 @@
 1. Dono: criar conta gratuita no Travelpayouts e colar o token em Mais → Integrações. Os dois monitores da ponte aérea já existem (migração `20261103010000_seed_ponte_aerea.sql`, alvo R$ 250 ± R$ 50 a pedido do dono, editável) e checam em até 5 min depois de salvar o token.
 2. Claude: acompanhar o piloto por 7 dias com o diagnóstico `piloto-precos.sql`; se a cobertura ficar abaixo de ~80%, avisar o dono antes de manter o Travelpayouts como fonte principal (alternativa: SerpApi com a cota grátis do dono, ou Duffel).
 3. Dono: cadastrar a chave da Anthropic em Integrações e registrar as passagens já compradas; desativar no Google Cloud o secret antigo `****dmcf`.
-4. Dono: criar o bot no BotFather e salvar o token como segredo `TELEGRAM_BOT_TOKEN` no GitHub; Claude roda o workflow de setup.
+4. Dono: avisos por e-mail (preferência do dono, no lugar do Telegram): entrar em https://resend.com/api-keys com o Google (mesmo Gmail do app), criar a chave com "Sending access" e colar em Mais → Integrações → E-mail. Telegram fica opcional.
 5. M7: e-mail de entrada (precisa de domínio).
 
 ## Histórico de incidentes
@@ -144,3 +144,10 @@ Monitor internacional e conversão de moeda; WhatsApp; compra no app; raspagem d
 - Monitores da ponte aérea do dono criados por migração idempotente; salvar uma chave de preço antecipa a checagem dos monitores daquele provedor.
 - Testes: 135 no total.
 - Pendências conhecidas: a documentação do Travelpayouts não abriu nesta sessão (domínio fora da rede permitida). O formato foi implementado de forma tolerante (aeroporto ou cidade, horário com fuso ou UTC) e o piloto confirma com dados reais. Ainda não há limpeza automática de observações antigas.
+
+## Avisos por e-mail com chave própria (2026-11-02)
+
+- Provedor `resend` em Integrações (migração `20261103030000_resend_provider.sql`). A chave é do usuário, cifrada como as demais. Ao salvar, o app envia um e-mail de teste para o e-mail da conta e liga `notify_email`.
+- Sem domínio próprio, o Resend só entrega no e-mail da conta que criou a chave, por isso a conta do Resend precisa ser do mesmo Gmail do app. Remetente: `onboarding@resend.dev`; com o domínio do M7, passa a ser o do app.
+- O agendador e o botão de teste usam a chave do usuário; `RESEND_API_KEY` da instalação continua como fallback.
+- Testes: 138 no total.
