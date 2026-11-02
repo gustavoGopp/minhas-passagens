@@ -2,32 +2,36 @@
 
 > Leia este arquivo no início de toda sessão. Ele é a memória do projeto: decisões, o que está pronto, próximos passos e as respostas da entrevista. Atualize-o ao fim de cada marco.
 
-Última atualização: 2026-10-30 (M2 pronto; login em diagnóstico)
+Última atualização: 2026-11-02 (M6 pronto; piloto do Travelpayouts aguardando o token)
 
 ## Estado atual
 
-| Marco                             | Situação                                                       |
-| --------------------------------- | -------------------------------------------------------------- |
-| M0 Fundação                       | **Em andamento** nesta sessão                                  |
-| M1 Login + banco                  | Pendente (precisa de conta Supabase e credencial Google OAuth) |
-| M2 Feriados                       | Pendente                                                       |
-| M3 Passagens: entrada e extração  | Pendente                                                       |
-| M4 Regras de passagens            | Pendente                                                       |
-| M5 Notificações + agendador       | Pendente                                                       |
-| M6 Monitor de preços              | Pendente (piloto Travelpayouts primeiro)                       |
-| M7 E-mail de entrada              | Pendente (precisa de domínio `.com.br`, R$ 40/ano)             |
-| M8 Feriados × viagens e monitores | Pendente                                                       |
-| M9 Acabamento v1 + post LinkedIn  | Pendente                                                       |
+| Marco                             | Situação                                           |
+| --------------------------------- | -------------------------------------------------- |
+| M0 Fundação                       | Pronto                                             |
+| M1 Login + banco                  | Pronto                                             |
+| M2 Feriados                       | Pronto                                             |
+| M3 Passagens: entrada e extração  | Pronto (MVP de passagens)                          |
+| M4 Regras de passagens            | Pronto                                             |
+| M5 Notificações + agendador       | Pronto (bot do Telegram depende do token do dono)  |
+| M6 Monitor de preços              | Pronto; piloto do Travelpayouts em andamento       |
+| M7 E-mail de entrada              | Pendente (precisa de domínio `.com.br`, R$ 40/ano) |
+| M8 Feriados × viagens e monitores | Pendente                                           |
+| M9 Acabamento v1 + post LinkedIn  | Pendente                                           |
 
 ## Próximos passos
 
-1. Dono: cadastrar a chave da Anthropic em Integrações e registrar as passagens já compradas; desativar no Google Cloud o secret antigo `****dmcf`.
-2. Dono: criar o bot no BotFather e salvar o token como segredo `TELEGRAM_BOT_TOKEN` no GitHub; Claude roda o workflow de setup.
-3. M6: monitor de preços (piloto Travelpayouts).
+1. Dono: criar conta gratuita no Travelpayouts e colar o token em Mais → Integrações; em Preços, tocar em "Criar ponte aérea semanal" e rodar o piloto em Preços → Piloto.
+2. Claude: acompanhar o piloto por 7 dias com o diagnóstico `piloto-precos.sql`; se a cobertura ficar abaixo de ~80%, avisar o dono antes de manter o Travelpayouts como fonte principal (alternativa: SerpApi com a cota grátis do dono, ou Duffel).
+3. Dono: cadastrar a chave da Anthropic em Integrações e registrar as passagens já compradas; desativar no Google Cloud o secret antigo `****dmcf`.
+4. Dono: criar o bot no BotFather e salvar o token como segredo `TELEGRAM_BOT_TOKEN` no GitHub; Claude roda o workflow de setup.
+5. M7: e-mail de entrada (precisa de domínio).
 
 ## Histórico de incidentes
 
 - **2026-11-02, login com Google falhando.** Causas: (a) nenhuma migração aplicada no banco; (b) Site URL do Supabase em `http://localhost:3000`; (c) Client Secret do Google no Supabase de outro secret ("Unable to exchange external code"). Correções: ponte via GitHub Actions aplicou as migrações e ajustou a Site URL; dono gerou secret novo no Google e colou no Supabase. Estado confirmado: 1 usuário, 1 perfil.
+
+- **2026-11-02, deploy do M5 com "rate limited" na Vercel.** Limite diário de deploys do plano Hobby. O merge do M6 republica a produção; regra mantida: um push por PR.
 
 ## Como o Claude opera o Supabase
 
@@ -119,3 +123,23 @@ Monitor internacional e conversão de moeda; WhatsApp; compra no app; raspagem d
 - Rotas: `/api/jobs/tick` (Bearer do `jobs_secret`), `/api/telegram/webhook` (`/start <token>` vincula; `/parar` desvincula), `/api/push/key`.
 - PWA: `manifest.webmanifest`, ícones, `public/sw.js`. Tela `/app/notificacoes` com conectar Telegram, ativar push no aparelho, canais, teste e últimos avisos.
 - Testes: 109 no total.
+
+## O que o M6 entregou (2026-11-02)
+
+- Migração `20261103000000_price_monitors.sql` (RLS por usuário): `price_monitors` (tipo semanal/datas/feriado prolongado, regra em JSON, horizonte, alvo + margem em R$ ou %, companhias, conexão, duração máxima, frequência, provedor, `next_check_at`), `price_checks` (cobertura e menor preço por checagem, base da tendência e do piloto), `price_observations` (até 5 voos mais baratos por data, com `near_holiday`) e `price_alerts` (fila de avisos, um por data e queda relevante).
+- `src/lib/prices` (puro e testado):
+  - `rule.ts` expande a regra em datas e janelas no horário local da origem; `PONTE_AEREA` traz as janelas da entrevista; feriado prolongado = folga ≥ 3 dias com emenda de terça/quinta.
+  - `providers/` é o adaptador plugável: Travelpayouts `prices_for_dates` (uma requisição por data, token no cabeçalho `X-Access-Token`, mercado `br`), Duffel e SerpApi opcionais. Todos validam a chave de graça.
+  - `filter.ts` aplica no cliente aeroporto exato (SDU ≠ GIG), janela, companhia (JJ = LA), conexão e duração.
+  - `alerts.ts` define os sinais: no alvo, perto do alvo, menor já visto (≥ 5 observações) e ≤ 90% da média de 30 dias (≥ 10 observações, sem as datas a ±2 dias de feriado via `holidaysNear`). Repete o aviso da mesma data só com nova queda de R$ 10 ou 3%.
+  - `schedule.ts` agenda as checagens às 7h (diário), 7h e 19h (2× ao dia) ou segunda 7h (semanal), no fuso do usuário, com desvio de 0–24 min por monitor. Também estima a cota (1 requisição por data-alvo).
+- Agendador: `/api/jobs/tick` roda até 5 monitores vencidos por tick e envia os avisos pendentes (um por monitor, até 5 datas) pelos canais do M5. A janela silenciosa adia o envio, avisos de datas passadas são descartados e cada envio entra em `notification_log`. Falhas do monitor não derrubam os demais avisos.
+- Telas:
+  - `/app/monitor`: lista com último preço e tendência, datas e req/mês; estado "configurar Travelpayouts" sem token; atalho da ponte aérea.
+  - `/app/monitor/novo` e `/app/monitor/[id]/editar`: formulário com cota estimada e aviso de cota grátis estourada.
+  - `/app/monitor/[id]`: gráfico SVG do menor preço por checagem com linha do alvo, preços da última checagem com selo "feriado perto", avisos, "Verificar agora" (no máximo a cada 10 min), pausar e apagar.
+  - `/app/monitor/piloto`: cobertura SDU↔CGH, mercados `br` e padrão, limite de 80%.
+- Integrações: validação real e gratuita dos tokens de Travelpayouts, Duffel e SerpApi.
+- Diagnóstico `supabase/diagnostics/piloto-precos.sql`: cobertura agregada dos últimos 7 dias por provedor e rota, sem dados pessoais.
+- Testes: 135 no total.
+- Pendências conhecidas: a documentação do Travelpayouts não abriu nesta sessão (domínio fora da rede permitida). O formato foi implementado de forma tolerante (aeroporto ou cidade, horário com fuso ou UTC) e o piloto confirma com dados reais. Ainda não há limpeza automática de observações antigas.
