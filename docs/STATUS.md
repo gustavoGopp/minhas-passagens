@@ -31,7 +31,7 @@
 
 - **2026-11-02, login com Google falhando.** Causas: (a) nenhuma migração aplicada no banco; (b) Site URL do Supabase em `http://localhost:3000`; (c) Client Secret do Google no Supabase de outro secret ("Unable to exchange external code"). Correções: ponte via GitHub Actions aplicou as migrações e ajustou a Site URL; dono gerou secret novo no Google e colou no Supabase. Estado confirmado: 1 usuário, 1 perfil.
 
-- **2026-11-02, deploy do M5 com "rate limited" na Vercel.** Limite diário de deploys do plano Hobby. O merge do M6 republica a produção; regra mantida: um push por PR.
+- **2026-11-02, produção parada no #10 (login) por "rate limited" na Vercel.** M4, M5 e M6 não foram publicados: cada push de branch gerava também um deploy de preview, que consumia o limite diário do plano Hobby. Correção: `vercel.json` com `git.deploymentEnabled` só para `main` (branches não geram mais preview); a produção é republicada quando o limite liberar.
 
 ## Como o Claude opera o Supabase
 
