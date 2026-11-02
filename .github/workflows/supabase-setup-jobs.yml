@@ -1,0 +1,27 @@
+name: Supabase — notificações e agendador
+
+on:
+  workflow_dispatch:
+    inputs:
+      app_url:
+        description: "URL de produção do app"
+        required: true
+        default: https://minhas-passagens.vercel.app
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || 'gbvwzwpuzlaftinfcxkc' }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      APP_URL: ${{ inputs.app_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: node scripts/supabase-migrate.mjs
+      - run: node scripts/supabase-setup-jobs.mjs
