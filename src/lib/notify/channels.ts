@@ -41,18 +41,4 @@ export async function sendPush(
 }
 
 /** E-mail via Resend (opcional: só se RESEND_API_KEY existir). */
-export async function sendEmail(to: string, subject: string, text: string): Promise<boolean> {
-  const key = process.env.RESEND_API_KEY;
-  if (!key) return false;
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { authorization: `Bearer ${key}`, "content-type": "application/json" },
-    body: JSON.stringify({
-      from: process.env.EMAIL_FROM ?? "Minhas Passagens <onboarding@resend.dev>",
-      to: [to],
-      subject,
-      text,
-    }),
-  });
-  return res.ok;
-}
+export { sendEmail, sendEmailDetailed, type EmailResult } from "./email";

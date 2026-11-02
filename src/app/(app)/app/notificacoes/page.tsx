@@ -44,7 +44,13 @@ async function Settings() {
       .limit(10),
     getConfig(["telegram_bot_username"]),
   ]);
-  const emailReady = Boolean(process.env.RESEND_API_KEY);
+  const { data: resend } = await supabase
+    .from("user_integrations")
+    .select("provider")
+    .eq("user_id", user.id)
+    .eq("provider", "resend")
+    .maybeSingle();
+  const emailReady = Boolean(process.env.RESEND_API_KEY) || Boolean(resend);
 
   return (
     <>
@@ -100,7 +106,11 @@ async function Settings() {
           E-mail
           {!emailReady ? (
             <span className="text-xs text-zinc-500">
-              (disponível quando o envio de e-mail for configurado)
+              (configure em{" "}
+              <a href="/app/integracoes" className="underline underline-offset-2">
+                Integrações → E-mail
+              </a>
+              )
             </span>
           ) : null}
         </label>

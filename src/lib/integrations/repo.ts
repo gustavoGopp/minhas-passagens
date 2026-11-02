@@ -4,7 +4,7 @@ import { serverEnv } from "@/lib/env";
 import { decryptSecret, encryptSecret, keyHint } from "@/lib/crypto/byok";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-export const PROVIDERS = ["anthropic", "travelpayouts", "duffel", "serpapi"] as const;
+export const PROVIDERS = ["anthropic", "travelpayouts", "resend", "duffel", "serpapi"] as const;
 export type Provider = (typeof PROVIDERS)[number];
 
 /** Forma segura para a UI: nunca inclui a chave cifrada. */
@@ -64,6 +64,30 @@ export async function removeIntegration(userId: string, provider: Provider): Pro
  */
 export async function getDecryptedKey(userId: string, provider: Provider): Promise<string | null> {
   return getDecryptedKeyWith(await createSupabaseServerClient(), userId, provider);
+}
+
+/** Chaves de um provedor para todos os usuários (agendador, service role). */
+export async function listDecryptedKeys(
+  client: SupabaseClient,
+  provider: Provider,
+): Promise<Map<string, string>> {
+  const { data, error } = await client
+    .from("user_integrations")
+    .select("user_id, encrypted_key")
+    .eq("provider", provider);
+  if (error) throw new Error(`Falha ao ler chaves: ${error.message}`);
+  const out = new Map<string, string>();
+  for (const r of data ?? []) {
+    try {
+      out.set(
+        r.user_id as string,
+        decryptSecret(r.encrypted_key as string, serverEnv().BYOK_MASTER_KEY),
+      );
+    } catch {
+      // chave corrompida: ignora este usuário
+    }
+  }
+  return out;
 }
 
 /** Igual a getDecryptedKey, com um cliente dado (ex.: service role no agendador). */

@@ -3,6 +3,7 @@ import { randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth/current-user";
+import { getDecryptedKey } from "@/lib/integrations/repo";
 import { getConfig } from "@/lib/notify/config";
 import { deliver, loadChannelConfig } from "@/lib/notify/dispatch";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -114,6 +115,7 @@ export async function sendTestAction(): Promise<TestState> {
       notifyEmail: Boolean(profile.data?.notify_email),
       telegramChatId: link.data?.chat_id ? Number(link.data.chat_id) : null,
       pushSubs: subs.data ?? [],
+      resendKey: await getDecryptedKey(user.id, "resend"),
     },
     {
       key: "test",
