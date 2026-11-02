@@ -1,0 +1,39 @@
+# Diagnóstico do Supabase sem dados pessoais (os logs deste repositório são públicos).
+name: Supabase — diagnóstico
+
+on:
+  workflow_dispatch:
+    inputs:
+      alvo:
+        description: "Arquivo de supabase/diagnostics, auth-logs ou auth-config"
+        required: true
+        default: estado-schema.sql
+      site_url:
+        description: "Opcional: nova Site URL do Auth (ajusta URLs em vez de diagnosticar)"
+        required: false
+      redirects:
+        description: "Opcional: Redirect URLs separadas por vírgula, somadas às existentes"
+        required: false
+
+jobs:
+  diagnostico:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || 'gbvwzwpuzlaftinfcxkc' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Ajustar URLs do Auth
+        if: ${{ inputs.site_url != '' }}
+        env:
+          SITE_URL: ${{ inputs.site_url }}
+          REDIRECTS: ${{ inputs.redirects }}
+        run: node scripts/supabase-auth-urls.mjs
+      - name: Diagnóstico
+        if: ${{ inputs.site_url == '' }}
+        env:
+          ALVO: ${{ inputs.alvo }}
+        run: node scripts/supabase-diagnostico.mjs "$ALVO"
