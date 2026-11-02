@@ -1,4 +1,5 @@
 import "server-only";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { serverEnv } from "@/lib/env";
 import { decryptSecret, encryptSecret, keyHint } from "@/lib/crypto/byok";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -62,8 +63,16 @@ export async function removeIntegration(userId: string, provider: Provider): Pro
  * Devolve null se o usuário não configurou o provedor.
  */
 export async function getDecryptedKey(userId: string, provider: Provider): Promise<string | null> {
-  const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
+  return getDecryptedKeyWith(await createSupabaseServerClient(), userId, provider);
+}
+
+/** Igual a getDecryptedKey, com um cliente dado (ex.: service role no agendador). */
+export async function getDecryptedKeyWith(
+  client: SupabaseClient,
+  userId: string,
+  provider: Provider,
+): Promise<string | null> {
+  const { data, error } = await client
     .from("user_integrations")
     .select("encrypted_key")
     .eq("user_id", userId)

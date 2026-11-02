@@ -14,7 +14,7 @@ export const PROVIDER_INFO: Record<
   travelpayouts: {
     name: "Travelpayouts (Aviasales)",
     purpose: "Fonte gratuita de preços para o monitor.",
-    help: "Cadastre-se como parceiro e copie o token da API em Perfil.",
+    help: "Crie uma conta gratuita de parceiro, abra Perfil (ou Ferramentas → API) e copie o token da API. Sem custo.",
     url: "https://www.travelpayouts.com/",
   },
   duffel: {
