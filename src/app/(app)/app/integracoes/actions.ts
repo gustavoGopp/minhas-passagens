@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { validateAnthropicKey } from "@/lib/integrations/anthropic";
+import { getProvider } from "@/lib/prices/providers";
 import {
   PROVIDERS,
   removeIntegration,
@@ -49,10 +50,15 @@ export async function saveApiKeyAction(
       : { provider, error: `${result.message} A chave foi guardada; valide de novo mais tarde.` };
   }
 
-  // Provedores de preço: validação chega no M6. Por ora só guarda cifrado.
-  await saveIntegration(user.id, provider, api_key, false);
+  // Provedores de preço: validação gratuita (não consome busca paga).
+  const check = await getProvider(provider).validateKey(api_key);
+  if (!check.ok && check.invalid) return { provider, error: check.message };
+  await saveIntegration(user.id, provider, api_key, check.ok);
   revalidatePath("/app/integracoes");
-  return { ok: true, provider };
+  revalidatePath("/app/monitor");
+  return check.ok
+    ? { ok: true, provider }
+    : { provider, error: `${check.message} A chave foi guardada; valide de novo mais tarde.` };
 }
 
 export async function removeApiKeyAction(formData: FormData) {

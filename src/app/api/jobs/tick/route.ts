@@ -5,12 +5,14 @@ import { dueEvents, isQuietHours } from "@/lib/notify/events";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { BookingRow, FlightRow } from "@/lib/trips/draft";
 import type { CreditRow } from "@/lib/trips/rules";
+import { markPriceAlertsSent, pendingPriceEvents, runDueMonitors } from "@/lib/prices/jobs";
 
 export const maxDuration = 60;
 
 /**
  * Chamado pelo pg_cron do Supabase a cada 5 minutos (Authorization: Bearer <jobs_secret>).
- * Calcula os avisos devidos de cada usuário e envia os que ainda não foram enviados.
+ * Calcula os avisos devidos de cada usuário e envia os que ainda não foram enviados;
+ * roda as checagens de preço vencidas (em lote) e envia os avisos de preço pendentes.
  */
 export async function POST(request: NextRequest) {
   const { jobs_secret } = await getConfig(["jobs_secret"]);
@@ -79,6 +81,28 @@ export async function POST(request: NextRequest) {
   let sent = 0;
   let deferred = 0;
 
+  type ProfileRow = NonNullable<typeof profiles.data>[number];
+  const profileBy = new Map((profiles.data ?? []).map((p) => [p.id as string, p]));
+  const quietFor = (p: ProfileRow) =>
+    isQuietHours(
+      now,
+      p.timezone as string,
+      p.quiet_hours_start as string,
+      p.quiet_hours_end as string,
+    );
+  const recipientFor = (p: ProfileRow): Recipient => {
+    const userId = p.id as string;
+    return {
+      userId,
+      email: (p.email as string | null) ?? null,
+      notifyTelegram: Boolean(p.notify_telegram),
+      notifyPush: Boolean(p.notify_push),
+      notifyEmail: Boolean(p.notify_email),
+      telegramChatId: chatBy.get(userId) ?? null,
+      pushSubs: subsBy.get(userId) ?? [],
+    };
+  };
+
   for (const p of profiles.data ?? []) {
     const userId = p.id as string;
     const events = dueEvents({
@@ -98,22 +122,8 @@ export async function POST(request: NextRequest) {
         events.map((e) => e.key),
       );
     const done = new Set((logged ?? []).map((l) => l.event_key as string));
-    const quiet = isQuietHours(
-      now,
-      p.timezone as string,
-      p.quiet_hours_start as string,
-      p.quiet_hours_end as string,
-    );
-
-    const recipient: Recipient = {
-      userId,
-      email: (p.email as string | null) ?? null,
-      notifyTelegram: Boolean(p.notify_telegram),
-      notifyPush: Boolean(p.notify_push),
-      notifyEmail: Boolean(p.notify_email),
-      telegramChatId: chatBy.get(userId) ?? null,
-      pushSubs: subsBy.get(userId) ?? [],
-    };
+    const quiet = quietFor(p);
+    const recipient = recipientFor(p);
 
     for (const e of events) {
       if (done.has(e.key)) continue;
@@ -133,5 +143,43 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  return NextResponse.json({ ok: true, sent, deferred, at: now });
+  // Monitor de preços: checagens vencidas e avisos pendentes. Falhas aqui não
+  // derrubam os avisos acima.
+  let prices:
+    { checked: number; failed: number; sent: number; deferred: number } | { error: string };
+  try {
+    const run = await runDueMonitors(admin, now);
+    let priceSent = 0;
+    let priceDeferred = 0;
+    const pending = await pendingPriceEvents(
+      admin,
+      now,
+      (id) => (profileBy.get(id)?.timezone as string | undefined) ?? "America/Sao_Paulo",
+    );
+    for (const pe of pending) {
+      const p = profileBy.get(pe.userId);
+      if (pe.expired || !p) {
+        await markPriceAlertsSent(admin, pe.alertIds, [], now);
+        continue;
+      }
+      if (quietFor(p)) {
+        priceDeferred++;
+        continue;
+      }
+      const channels = await deliver(recipientFor(p), pe.event, cfg);
+      await markPriceAlertsSent(admin, pe.alertIds, channels, now);
+      await admin
+        .from("notification_log")
+        .upsert(
+          { user_id: pe.userId, event_key: pe.event.key, title: pe.event.title, channels },
+          { onConflict: "user_id,event_key", ignoreDuplicates: true },
+        );
+      priceSent++;
+    }
+    prices = { ...run, sent: priceSent, deferred: priceDeferred };
+  } catch (e) {
+    prices = { error: (e as Error).message };
+  }
+
+  return NextResponse.json({ ok: true, sent, deferred, prices, at: now });
 }
