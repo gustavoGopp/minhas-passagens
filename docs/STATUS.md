@@ -22,8 +22,7 @@
 ## Próximos passos
 
 1. Dono: cadastrar a chave da Anthropic em Integrações e registrar as passagens já compradas; desativar no Google Cloud o secret antigo `****dmcf`.
-2. M4: alertas de check-in (abertura por companhia + 24h), conflito, trecho faltando, duplicata, reembolsos/créditos e relatórios, sobre `bookings`/`flights`.
-3. M5: notificações (Telegram, push, e-mail) e agendador (pg_cron → `/api/jobs/tick`).
+2. M5: notificações (Telegram, push, e-mail) e agendador (pg_cron → `/api/jobs/tick`).
 
 ## Histórico de incidentes
 
@@ -101,3 +100,12 @@ Monitor internacional e conversão de moeda; WhatsApp; compra no app; raspagem d
 - `src/lib/extract`: extração com a chave do usuário (Haiku 5.5, reforço com Sonnet 5.5 se a validação falhar), saída estruturada; texto, imagem ou PDF.
 - Telas: `/app` (próximo voo com contagem, feriado perto, check-in manual; próximos; gasto do mês; anteriores), `/app/passagens/nova` (Colar texto, Print/PDF, Manual), `/app/passagens/[id]` (editar, cancelar, apagar).
 - Testes: 90 no total.
+
+## O que o M4 entregou (2026-11-02)
+
+- `src/lib/trips/checkin.ts`: janelas de check-in por companhia (Azul 72h, Gol e LATAM 48h, outras 24h; fecha 1h antes) e horários dos dois avisos para o M5. Valores públicos de 2026, numa tabela única para ajuste.
+- `src/lib/trips/rules.ts`: alertas calculados na hora (sem tabela): check-in aberto, sobreposição, conexão < 60 min, trecho faltando (janela de 30 dias, silenciável por "Cheguei por outro meio" em `flights.ignore_missing_leg`), compra duplicada (mesma rota e dia local, reservas diferentes), crédito vencendo em até 30 dias.
+- `src/lib/trips/reports.ts`: gasto por mês (canceladas incluídas, reembolsos no mês do recebimento), por companhia, canal, pessoal/trabalho, preço médio por trecho e saldo de créditos.
+- Migração `20261102010000_refunds_credits.sql` com RLS.
+- Telas: alertas no topo de Passagens com ações rápidas, estado do check-in no cartão do próximo voo, `/app/creditos`, `/app/gastos`, reembolsos/créditos na página da passagem.
+- Testes: 104 no total.
