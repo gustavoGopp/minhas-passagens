@@ -120,6 +120,7 @@ export interface FlightRow {
   arrives_at: string | null;
   passenger: string | null;
   checkin_done: boolean;
+  ignore_missing_leg?: boolean;
 }
 
 export function draftFromRows(b: BookingRow, flights: FlightRow[]): BookingDraft {
