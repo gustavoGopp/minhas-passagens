@@ -18,7 +18,8 @@ Três funcionalidades, pensadas para quem viaja com frequência (o caso de orige
 2. Em **Mais → Perfil**, confira fuso horário, estado (para feriados estaduais) e janela de silêncio dos avisos.
 3. Em **Mais → Integrações**, cole sua chave da Anthropic (necessária para extrair passagens de e-mails, textos e prints).
 4. Em **Calendário**, veja os feriados do ano, oculte os que não importam e adicione os da sua cidade.
-5. As telas de passagens e monitor de preços chegam nos próximos marcos (veja `docs/STATUS.md`).
+5. Em **Passagens → + Nova**, cole o e-mail de confirmação, envie um print/PDF ou preencha à mão; confira e salve. O próximo voo aparece em destaque.
+6. O monitor de preços chega nos próximos marcos (veja `docs/STATUS.md`).
 
 ## Como rodar localmente
 
