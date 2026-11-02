@@ -19,7 +19,8 @@ Três funcionalidades, pensadas para quem viaja com frequência (o caso de orige
 3. Em **Mais → Integrações**, cole sua chave da Anthropic (necessária para extrair passagens de e-mails, textos e prints).
 4. Em **Calendário**, veja os feriados do ano, oculte os que não importam e adicione os da sua cidade.
 5. Em **Passagens → + Nova**, cole o e-mail de confirmação, envie um print/PDF ou preencha à mão; confira e salve. O próximo voo aparece em destaque.
-6. O monitor de preços chega nos próximos marcos (veja `docs/STATUS.md`).
+6. Em **Mais → Notificações**, conecte o Telegram e/ou ative o push no celular (no iPhone, primeiro adicione o app à Tela de Início).
+7. O monitor de preços chega nos próximos marcos (veja `docs/STATUS.md`).
 
 ## Como rodar localmente
 
