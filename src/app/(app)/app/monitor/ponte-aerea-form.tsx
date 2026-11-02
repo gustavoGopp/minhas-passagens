@@ -15,7 +15,7 @@ export function PonteAereaForm() {
       <div className="grid grid-cols-2 gap-3">
         <label className="flex flex-col gap-1 text-sm font-medium">
           Alvo por trecho (R$)
-          <input className={input} name="target" inputMode="decimal" defaultValue="400" required />
+          <input className={input} name="target" inputMode="decimal" defaultValue="250" required />
         </label>
         <label className="flex flex-col gap-1 text-sm font-medium">
           Margem (R$)
