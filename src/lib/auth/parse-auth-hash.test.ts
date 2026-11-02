@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseAuthHash } from "./parse-auth-hash";
+import { friendlyAuthError, parseAuthHash } from "./parse-auth-hash";
 
 describe("parseAuthHash", () => {
   it("extrai a descrição do erro", () => {
@@ -28,5 +28,19 @@ describe("parseAuthHash", () => {
   it("devolve none para fragmento vazio", () => {
     expect(parseAuthHash("")).toEqual({ type: "none" });
     expect(parseAuthHash("#")).toEqual({ type: "none" });
+  });
+
+  it("decodifica mensagens duplamente codificadas", () => {
+    expect(
+      parseAuthHash("#error_description=Unable+to+exchange+external+code%253A+4%252F0A"),
+    ).toEqual({
+      type: "error",
+      message: "Unable to exchange external code: 4/0A",
+    });
+  });
+
+  it("traduz erros conhecidos", () => {
+    expect(friendlyAuthError("Unable to exchange external code: 4/0A")).toMatch(/Client Secret/);
+    expect(friendlyAuthError("outra coisa")).toBe("outra coisa");
   });
 });

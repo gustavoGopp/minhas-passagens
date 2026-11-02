@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { signInWithGoogle } from "./actions";
 import { HashError } from "./hash-error";
+import { friendlyAuthError } from "@/lib/auth/parse-auth-hash";
 
 export const metadata = { title: "Entrar" };
 
@@ -19,7 +20,6 @@ export default function LoginPage({
           identificar a conta.
         </p>
       </header>
-      <HashError />
       <Suspense fallback={null}>
         <LoginForm searchParams={searchParams} />
       </Suspense>
@@ -46,9 +46,11 @@ async function LoginForm({
           role="alert"
           className="rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200"
         >
-          Não foi possível entrar: {params.erro}
+          Não foi possível entrar: {friendlyAuthError(params.erro)}
         </p>
-      ) : null}
+      ) : (
+        <HashError />
+      )}
       <button
         type="submit"
         className="rounded-lg bg-zinc-900 px-4 py-3 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
