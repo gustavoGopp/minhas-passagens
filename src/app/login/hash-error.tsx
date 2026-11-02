@@ -1,7 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { parseAuthHash } from "@/lib/auth/parse-auth-hash";
+import { friendlyAuthError, parseAuthHash } from "@/lib/auth/parse-auth-hash";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 /** Mostra o erro real do Supabase (que chega no #fragmento) ou conclui o fluxo implícito. */
@@ -15,7 +15,7 @@ export function HashError() {
     history.replaceState(null, "", window.location.pathname + window.location.search);
     if (parsed.type === "error") {
       // Atualiza fora do corpo do efeito (o hash é um sistema externo).
-      void Promise.resolve().then(() => setMessage(parsed.message));
+      void Promise.resolve().then(() => setMessage(friendlyAuthError(parsed.message)));
       return;
     }
     const supabase = createSupabaseBrowserClient();
