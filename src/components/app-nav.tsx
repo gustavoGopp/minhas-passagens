@@ -10,7 +10,11 @@ const items = [
 ];
 
 export function AppNav() {
-  const pathname = usePathname();
+  return <NavList pathname={usePathname()} />;
+}
+
+/** Versão sem destaque, usada no shell estático enquanto a rota resolve. */
+export function NavList({ pathname }: { pathname: string | null }) {
   return (
     <nav
       aria-label="Principal"
@@ -19,7 +23,8 @@ export function AppNav() {
       <ul className="mx-auto flex w-full max-w-2xl justify-around sm:justify-start sm:gap-6 sm:px-4">
         {items.map((item) => {
           const active =
-            item.href === "/app" ? pathname === "/app" : pathname.startsWith(item.href);
+            pathname != null &&
+            (item.href === "/app" ? pathname === "/app" : pathname.startsWith(item.href));
           return (
             <li key={item.href}>
               <Link

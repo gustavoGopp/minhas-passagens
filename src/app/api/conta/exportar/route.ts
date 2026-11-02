@@ -3,16 +3,18 @@ import { getOptionalUser } from "@/lib/auth/current-user";
 import { listOverrides } from "@/lib/holidays/repo";
 import { listIntegrationsPublic } from "@/lib/integrations/repo";
 import { getProfile } from "@/lib/profiles/repo";
+import { listTrips } from "@/lib/trips/repo";
 
 /** Exporta os dados do usuário em JSON (sem chaves de API). */
 export async function GET() {
   const user = await getOptionalUser();
   if (!user) return NextResponse.json({ error: "não autenticado" }, { status: 401 });
 
-  const [profile, integrations, holidayOverrides] = await Promise.all([
+  const [profile, integrations, holidayOverrides, trips] = await Promise.all([
     getProfile(user.id),
     listIntegrationsPublic(user.id),
     listOverrides(user.id),
+    listTrips(user.id),
   ]);
 
   const payload = {
@@ -22,7 +24,9 @@ export async function GET() {
     profile,
     integrations,
     holiday_overrides: holidayOverrides,
-    // Próximos marcos acrescentam: bookings, flights, refunds_credits, price_monitors.
+    bookings: trips.bookings,
+    flights: trips.flights,
+    // Próximos marcos acrescentam: refunds_credits, price_monitors.
   };
 
   const stamp = new Date().toISOString().slice(0, 10);
