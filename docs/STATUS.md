@@ -21,21 +21,16 @@
 
 ## Próximos passos
 
-1. **Login com "código ausente" (em aberto).** O app agora mostra o erro real do Supabase na tela de login. Diagnosticar com os logs de auth e corrigir.
-2. Aplicar `supabase/migrations/20261029010000_holidays.sql` (e conferir se `20261029000000_init.sql` foi aplicada inteira).
-3. M3 Passagens: cadastro manual, texto colado e print com extração pela API da Anthropic (chave do usuário), revisão, próximo voo e gastos.
+1. Dono: criar o segredo `SUPABASE_ACCESS_TOKEN` no GitHub (uma vez). Depois disso o Claude roda migrações e diagnósticos sozinho.
+2. Claude: rodar o workflow de migrações, diagnosticar o login ("código ausente") e corrigir.
+3. M4: alertas de check-in, conflito, trecho faltando, duplicata, reembolsos/créditos e relatórios, sobre `bookings`/`flights`.
 
-## Como o Claude acessa o Supabase
+## Como o Claude opera o Supabase
 
-Não há conector de Supabase no claude.ai, e a rede padrão da sessão bloqueia `*.supabase.co`. O caminho é a Management API (`https://api.supabase.com/v1`):
-
-- **Dono, uma vez:** criar token pessoal em https://supabase.com/dashboard/account/tokens; no ambiente da sessão (título da sessão → Edit) liberar `api.supabase.com` em Network access → Allowed domains e salvar o token como variável/secret `SUPABASE_ACCESS_TOKEN`; abrir sessão nova.
-- **Claude, ao iniciar sessão:** se `SUPABASE_ACCESS_TOKEN` existir, usar:
-  - `GET/PATCH /v1/projects/gbvwzwpuzlaftinfcxkc/config/auth` para `site_url`, `uri_allow_list` e conferir `external_google_enabled`;
-  - `POST /v1/projects/gbvwzwpuzlaftinfcxkc/database/query` para checar o esquema e aplicar migrações pendentes;
-  - logs de auth (`/v1/projects/gbvwzwpuzlaftinfcxkc/analytics/endpoints/logs.all`) para diagnosticar falhas de login.
-- Valores esperados: Site URL = URL de produção da Vercel; allow list = `https://<produção>.vercel.app/**`, `https://*-gustavogopps-projects.vercel.app/**`, `http://localhost:3000/**`.
-- Google Cloud (redirect URIs do cliente OAuth) continua manual; já está configurado com `https://gbvwzwpuzlaftinfcxkc.supabase.co/auth/v1/callback`.
+- Workflows `supabase-migrate.yml` (automático no merge que muda `supabase/migrations/**`, ou manual) e `supabase-diagnostico.yml` (manual: `estado-schema.sql`, `auth-logs`, `auth-config`, ou ajuste de Site URL/Redirect URLs).
+- Disparo: `gh api -X POST repos/gustavoGopp/minhas-passagens/actions/workflows/<arquivo>/dispatches -f ref=main -f 'inputs[alvo]=...'`; leitura: `gh run view <id> --log`.
+- **Regra:** os logs do Actions são públicos. Diagnósticos só retornam nomes de objetos, contagens e erros técnicos, nunca dados pessoais. Toda consulta nova vira arquivo em `supabase/diagnostics/` revisável no PR.
+- Migrações são idempotentes e registradas em `public.app_migrations`.
 
 ## Bloqueios conhecidos
 
@@ -94,3 +89,11 @@ Monitor internacional e conversão de moeda; WhatsApp; compra no app; raspagem d
 - Migração `20261029010000_holidays.sql`: preferências no perfil e tabela `holiday_overrides` com RLS.
 - Telas: Perfil (UF, cidade, facultativos, cristãos, judaicos, Israel) e `/app/calendario` (lista anual por mês, próximo feriado, ocultar, adicionar feriado próprio).
 - Testes: 69 no total.
+
+## O que o MVP de passagens entregou (2026-11-02)
+
+- Migração `20261102000000_bookings.sql`: `bookings` (compra) e `flights` (trechos) com RLS, no modelo definitivo do plano.
+- `src/lib/trips`: horário local ↔ UTC pelo fuso do aeroporto, próximos/passados, gasto por mês (milhas separadas), rascunho de formulário ↔ linhas do banco.
+- `src/lib/extract`: extração com a chave do usuário (Haiku 5.5, reforço com Sonnet 5.5 se a validação falhar), saída estruturada; texto, imagem ou PDF.
+- Telas: `/app` (próximo voo com contagem, feriado perto, check-in manual; próximos; gasto do mês; anteriores), `/app/passagens/nova` (Colar texto, Print/PDF, Manual), `/app/passagens/[id]` (editar, cancelar, apagar).
+- Testes: 90 no total.
