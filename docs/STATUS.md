@@ -21,7 +21,7 @@
 
 ## Próximos passos
 
-1. Dono: criar conta gratuita no Travelpayouts e colar o token em Mais → Integrações; em Preços, tocar em "Criar ponte aérea semanal" e rodar o piloto em Preços → Piloto.
+1. Dono: criar conta gratuita no Travelpayouts e colar o token em Mais → Integrações. Os dois monitores da ponte aérea já existem (migração `20261103010000_seed_ponte_aerea.sql`, alvo R$ 400 ± R$ 50, editável) e checam em até 5 min depois de salvar o token.
 2. Claude: acompanhar o piloto por 7 dias com o diagnóstico `piloto-precos.sql`; se a cobertura ficar abaixo de ~80%, avisar o dono antes de manter o Travelpayouts como fonte principal (alternativa: SerpApi com a cota grátis do dono, ou Duffel).
 3. Dono: cadastrar a chave da Anthropic em Integrações e registrar as passagens já compradas; desativar no Google Cloud o secret antigo `****dmcf`.
 4. Dono: criar o bot no BotFather e salvar o token como segredo `TELEGRAM_BOT_TOKEN` no GitHub; Claude roda o workflow de setup.
@@ -141,5 +141,6 @@ Monitor internacional e conversão de moeda; WhatsApp; compra no app; raspagem d
   - `/app/monitor/piloto`: cobertura SDU↔CGH, mercados `br` e padrão, limite de 80%.
 - Integrações: validação real e gratuita dos tokens de Travelpayouts, Duffel e SerpApi.
 - Diagnóstico `supabase/diagnostics/piloto-precos.sql`: cobertura agregada dos últimos 7 dias por provedor e rota, sem dados pessoais.
+- Monitores da ponte aérea do dono criados por migração idempotente; salvar uma chave de preço antecipa a checagem dos monitores daquele provedor.
 - Testes: 135 no total.
 - Pendências conhecidas: a documentação do Travelpayouts não abriu nesta sessão (domínio fora da rede permitida). O formato foi implementado de forma tolerante (aeroporto ou cidade, horário com fuso ou UTC) e o piloto confirma com dados reais. Ainda não há limpeza automática de observações antigas.
