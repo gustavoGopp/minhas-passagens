@@ -210,6 +210,17 @@ export async function setMonitorActive(userId: string, id: string, active: boole
   if (error) throw new Error(`Falha ao atualizar o monitor: ${error.message}`);
 }
 
+/** Antecipa a checagem dos monitores ativos de um provedor (ex.: logo após salvar a chave). */
+export async function checkMonitorsSoon(userId: string, provider: string) {
+  const supabase = await createSupabaseServerClient();
+  await supabase
+    .from("price_monitors")
+    .update({ next_check_at: new Date().toISOString(), last_error: null })
+    .eq("user_id", userId)
+    .eq("provider", provider)
+    .eq("active", true);
+}
+
 /** Feriados do ano corrente e do seguinte conforme as preferências do usuário. */
 export async function holidaysFor(
   client: SupabaseClient,

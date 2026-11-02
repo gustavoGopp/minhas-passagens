@@ -4,6 +4,7 @@ import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { validateAnthropicKey } from "@/lib/integrations/anthropic";
 import { getProvider } from "@/lib/prices/providers";
+import { checkMonitorsSoon } from "@/lib/prices/repo";
 import {
   PROVIDERS,
   removeIntegration,
@@ -54,6 +55,8 @@ export async function saveApiKeyAction(
   const check = await getProvider(provider).validateKey(api_key);
   if (!check.ok && check.invalid) return { provider, error: check.message };
   await saveIntegration(user.id, provider, api_key, check.ok);
+  // Chave nova: os monitores deste provedor checam já no próximo ciclo (≤ 5 min).
+  if (check.ok) await checkMonitorsSoon(user.id, provider);
   revalidatePath("/app/integracoes");
   revalidatePath("/app/monitor");
   return check.ok
