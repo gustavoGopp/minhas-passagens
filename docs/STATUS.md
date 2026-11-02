@@ -22,7 +22,8 @@
 ## Próximos passos
 
 1. Dono: cadastrar a chave da Anthropic em Integrações e registrar as passagens já compradas; desativar no Google Cloud o secret antigo `****dmcf`.
-2. M5: notificações (Telegram, push, e-mail) e agendador (pg_cron → `/api/jobs/tick`).
+2. Dono: criar o bot no BotFather e salvar o token como segredo `TELEGRAM_BOT_TOKEN` no GitHub; Claude roda o workflow de setup.
+3. M6: monitor de preços (piloto Travelpayouts).
 
 ## Histórico de incidentes
 
@@ -109,3 +110,12 @@ Monitor internacional e conversão de moeda; WhatsApp; compra no app; raspagem d
 - Migração `20261102010000_refunds_credits.sql` com RLS.
 - Telas: alertas no topo de Passagens com ações rápidas, estado do check-in no cartão do próximo voo, `/app/creditos`, `/app/gastos`, reembolsos/créditos na página da passagem.
 - Testes: 104 no total.
+
+## O que o M5 entregou (2026-11-02)
+
+- Migração `20261102020000_notifications.sql`: `app_config` (sem policies, só service role), preferências de canal no perfil, `telegram_links`, `push_subscriptions`, `notification_log` (um aviso por evento).
+- Workflow **Supabase — notificações e agendador** (`scripts/supabase-setup-jobs.mjs`, idempotente): gera chaves VAPID e segredo do agendador em `app_config`, grava a URL do app, agenda `pg_cron` a cada 5 min chamando `POST /api/jobs/tick` via `pg_net`, e, se houver `TELEGRAM_BOT_TOKEN` no GitHub, registra o webhook do bot. Nada sensível é impresso.
+- `src/lib/notify`: eventos devidos (check-in na abertura e 24h antes; demais alertas do M4), janela silenciosa (só o de 24h fura), canais Telegram/push/e-mail (Resend opcional).
+- Rotas: `/api/jobs/tick` (Bearer do `jobs_secret`), `/api/telegram/webhook` (`/start <token>` vincula; `/parar` desvincula), `/api/push/key`.
+- PWA: `manifest.webmanifest`, ícones, `public/sw.js`. Tela `/app/notificacoes` com conectar Telegram, ativar push no aparelho, canais, teste e últimos avisos.
+- Testes: 109 no total.
