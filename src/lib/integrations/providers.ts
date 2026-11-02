@@ -17,6 +17,12 @@ export const PROVIDER_INFO: Record<
     help: "Crie uma conta gratuita de parceiro, abra Perfil (ou Ferramentas → API) e copie o token da API. Sem custo.",
     url: "https://www.travelpayouts.com/",
   },
+  resend: {
+    name: "E-mail (Resend)",
+    purpose: "Envia os avisos para o seu Gmail. Grátis até 3.000 e-mails por mês.",
+    help: "Entre com o Google usando o mesmo Gmail do app, clique em Create API Key (permissão Sending access), copie e cole aqui. Ao salvar, mandamos um e-mail de teste e ligamos o canal de e-mail.",
+    url: "https://resend.com/api-keys",
+  },
   duffel: {
     name: "Duffel",
     purpose: "Preços reais por voo (opcional; cobra por busca).",

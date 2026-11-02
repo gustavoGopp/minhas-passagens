@@ -27,7 +27,7 @@ async function IntegrationsList() {
   const user = await getCurrentUser();
   const current = await listIntegrationsPublic(user.id);
   const byProvider = new Map(current.map((c) => [c.provider, c]));
-  const order: Provider[] = ["anthropic", "travelpayouts", "duffel", "serpapi"];
+  const order: Provider[] = ["travelpayouts", "resend", "anthropic", "duffel", "serpapi"];
   return (
     <div className="flex flex-col gap-4">
       {order.map((p) => (

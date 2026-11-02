@@ -68,7 +68,11 @@ export function IntegrationCard({
         </p>
       ) : null}
       {state.provider === provider && state.ok ? (
-        <p className="text-sm text-green-700 dark:text-green-300">Chave salva.</p>
+        <p className="text-sm text-green-700 dark:text-green-300">
+          {provider === "resend"
+            ? "Chave salva. Mandamos um e-mail de teste e ligamos os avisos por e-mail."
+            : "Chave salva."}
+        </p>
       ) : null}
       {current ? (
         <form action={removeApiKeyAction}>

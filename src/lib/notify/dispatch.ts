@@ -12,6 +12,8 @@ export interface Recipient {
   notifyEmail: boolean;
   telegramChatId: number | null;
   pushSubs: PushSub[];
+  /** Chave Resend do próprio usuário (Integrações), se houver. */
+  resendKey?: string | null;
 }
 
 export async function loadChannelConfig() {
@@ -59,7 +61,7 @@ export async function deliver(r: Recipient, e: NotifyEvent, cfg: ChannelConfig):
     if (any) ok.push("push");
   }
   if (r.notifyEmail && r.email) {
-    if (await sendEmail(r.email, e.title, `${e.body}\n\n${link}`)) ok.push("email");
+    if (await sendEmail(r.email, e.title, `${e.body}\n\n${link}`, r.resendKey)) ok.push("email");
   }
   return ok;
 }

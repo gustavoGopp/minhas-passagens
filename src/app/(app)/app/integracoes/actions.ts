@@ -5,6 +5,8 @@ import { getCurrentUser } from "@/lib/auth/current-user";
 import { validateAnthropicKey } from "@/lib/integrations/anthropic";
 import { getProvider } from "@/lib/prices/providers";
 import { checkMonitorsSoon } from "@/lib/prices/repo";
+import { sendEmailDetailed } from "@/lib/notify/channels";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   PROVIDERS,
   removeIntegration,
@@ -49,6 +51,29 @@ export async function saveApiKeyAction(
     return result.ok
       ? { ok: true, provider }
       : { provider, error: `${result.message} A chave foi guardada; valide de novo mais tarde.` };
+  }
+
+  if (provider === "resend") {
+    // Valida mandando um e-mail de teste para o próprio usuário e liga o canal.
+    const to = user.email;
+    if (!to) return { provider, error: "Sua conta não tem e-mail." };
+    const sent = await sendEmailDetailed(
+      to,
+      "Avisos do Minhas Passagens ativados",
+      "Pronto: os avisos de preço e de check-in vão chegar neste e-mail.",
+      api_key,
+    );
+    if (!sent.ok && sent.reason !== "unavailable") return { provider, error: sent.message };
+    await saveIntegration(user.id, provider, api_key, sent.ok);
+    if (sent.ok) {
+      const supabase = await createSupabaseServerClient();
+      await supabase.from("profiles").update({ notify_email: true }).eq("id", user.id);
+    }
+    revalidatePath("/app/integracoes");
+    revalidatePath("/app/notificacoes");
+    return sent.ok
+      ? { ok: true, provider }
+      : { provider, error: `${sent.message} A chave foi guardada; tente de novo mais tarde.` };
   }
 
   // Provedores de preço: validação gratuita (não consome busca paga).

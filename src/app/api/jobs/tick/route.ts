@@ -5,6 +5,7 @@ import { dueEvents, isQuietHours } from "@/lib/notify/events";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { BookingRow, FlightRow } from "@/lib/trips/draft";
 import type { CreditRow } from "@/lib/trips/rules";
+import { listDecryptedKeys } from "@/lib/integrations/repo";
 import { markPriceAlertsSent, pendingPriceEvents, runDueMonitors } from "@/lib/prices/jobs";
 
 export const maxDuration = 60;
@@ -78,6 +79,9 @@ export async function POST(request: NextRequest) {
   const chatBy = new Map((links.data ?? []).map((l) => [l.user_id as string, Number(l.chat_id)]));
 
   const cfg = await loadChannelConfig();
+  const resendKeys = await listDecryptedKeys(admin, "resend").catch(
+    () => new Map<string, string>(),
+  );
   let sent = 0;
   let deferred = 0;
 
@@ -100,6 +104,7 @@ export async function POST(request: NextRequest) {
       notifyEmail: Boolean(p.notify_email),
       telegramChatId: chatBy.get(userId) ?? null,
       pushSubs: subsBy.get(userId) ?? [],
+      resendKey: resendKeys.get(userId) ?? null,
     };
   };
 
