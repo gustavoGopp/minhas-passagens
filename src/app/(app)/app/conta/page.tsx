@@ -13,6 +13,12 @@ export default function ContaPage() {
         <AccountSummary />
       </Suspense>
       <nav className="flex flex-col divide-y divide-zinc-200 rounded-xl border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
+        <Link className="px-4 py-3 text-sm" href="/app/gastos">
+          Gastos
+        </Link>
+        <Link className="px-4 py-3 text-sm" href="/app/creditos">
+          Créditos e reembolsos
+        </Link>
         <Link className="px-4 py-3 text-sm" href="/app/perfil">
           Perfil e preferências
         </Link>
