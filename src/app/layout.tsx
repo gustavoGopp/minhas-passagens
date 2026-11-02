@@ -10,6 +10,8 @@ export const metadata: Metadata = {
   description:
     "Organize as passagens que comprou, monitore preços de rotas e veja feriados no calendário.",
   applicationName: "Minhas Passagens",
+  icons: { apple: "/icons/apple-touch-icon.png" },
+  appleWebApp: { capable: true, title: "Passagens", statusBarStyle: "black-translucent" },
 };
 
 export const viewport: Viewport = {
