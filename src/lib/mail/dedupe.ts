@@ -58,6 +58,42 @@ const sameTimes = (d: BookingDraft, flights: FlightRow[]) => {
   return a.join("|") === b.join("|");
 };
 
+/** Trechos com horário (rota + data e hora local): igual = mesmo voo, mesmo com outro código. */
+const timedDraft = (d: BookingDraft) =>
+  d.legs
+    .map(
+      (l) =>
+        `${legKey(l.origin, l.destination, l.departure_local)}T${l.departure_local.slice(11, 16)}`,
+    )
+    .sort()
+    .join("|");
+const timedRows = (flights: FlightRow[]) =>
+  flights
+    .map((f) => {
+      const local = utcToLocal(f.departs_at, airportTimeZone(f.origin) ?? DEFAULT_TZ);
+      return `${legKey(f.origin, f.destination, local)}T${local.slice(11, 16)}`;
+    })
+    .sort()
+    .join("|");
+
+/**
+ * Ano suspeito: voo antes do e-mail (mais de 1 dia) ou mais de 330 dias depois.
+ * A extração pode errar o ano quando o e-mail não o traz; a tela pede para conferir.
+ */
+export function yearWarning(d: BookingDraft, receivedAt: string): string | null {
+  const received = receivedAt.slice(0, 10);
+  if (!received || d.status === "cancelled") return null;
+  for (const l of d.legs) {
+    const day = l.departure_local.slice(0, 10);
+    const diff = (Date.parse(day) - Date.parse(received)) / 86_400_000;
+    if (diff < -1)
+      return `O voo (${day.split("-").reverse().join("/")}) é anterior ao e-mail: confira o ano.`;
+    if (diff > 330)
+      return `O voo (${day.split("-").reverse().join("/")}) está a quase um ano do e-mail: confira o ano.`;
+  }
+  return null;
+}
+
 export function decideCandidates(input: {
   candidates: Candidate[];
   bookings: BookingRow[];
@@ -68,15 +104,19 @@ export function decideCandidates(input: {
     flightsBy.set(f.booking_id, [...(flightsBy.get(f.booking_id) ?? []), f]);
   const byLocator = new Map<string, BookingRow>();
   for (const b of input.bookings) if (b.locator) byLocator.set(b.locator.trim().toUpperCase(), b);
-  const existingLegSets = input.bookings.map((b) => ({
-    id: b.id,
-    legs: rowLegs(flightsBy.get(b.id) ?? []).join("|"),
-  }));
+  const existingLegSets = input.bookings
+    .filter((b) => b.status !== "cancelled")
+    .map((b) => ({
+      id: b.id,
+      legs: rowLegs(flightsBy.get(b.id) ?? []).join("|"),
+      timed: timedRows(flightsBy.get(b.id) ?? []),
+    }));
 
   // O e-mail mais recente de cada localizador vale (remarcação depois da compra).
   const sorted = [...input.candidates].sort((a, b) => b.receivedAt.localeCompare(a.receivedAt));
   const seenLocator = new Map<string, string>();
   const seenLegs = new Map<string, string>();
+  const seenTimed = new Map<string, string>();
   const out = new Map<string, CandidateDecision>();
 
   for (const c of sorted) {
@@ -85,8 +125,14 @@ export function decideCandidates(input: {
     const decide = (kind: CandidateKind, bookingId: string | null, coveredBy: string | null) =>
       out.set(c.id, { id: c.id, kind, bookingId, coveredBy });
 
+    const timed = timedDraft(c.draft);
     if (loc && seenLocator.has(loc)) {
       decide("duplicate", null, seenLocator.get(loc)!);
+      continue;
+    }
+    // Mesmo voo e horário com outro código (pedido da agência × localizador da companhia).
+    if (c.draft.status !== "cancelled" && seenTimed.has(timed)) {
+      decide("duplicate", null, seenTimed.get(timed)!);
       continue;
     }
     if (!loc && seenLegs.has(legs)) {
@@ -95,6 +141,7 @@ export function decideCandidates(input: {
     }
     if (loc) seenLocator.set(loc, c.id);
     seenLegs.set(legs, c.id);
+    if (c.draft.status !== "cancelled") seenTimed.set(timed, c.id);
 
     const existing = loc ? byLocator.get(loc) : undefined;
     if (existing) {
@@ -105,6 +152,12 @@ export function decideCandidates(input: {
       } else {
         decide("update", existing.id, null);
       }
+      continue;
+    }
+    const sameTimed =
+      c.draft.status !== "cancelled" && existingLegSets.find((e) => e.timed === timed);
+    if (sameTimed) {
+      decide("duplicate", null, sameTimed.id);
       continue;
     }
     const sameLegs = !loc && existingLegSets.find((e) => e.legs === legs);

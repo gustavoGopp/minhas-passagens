@@ -17,7 +17,7 @@ import { computeAlerts, type TripAlert } from "@/lib/trips/rules";
 import { formatInZone } from "@/lib/trips/time";
 import { airportTimeZone } from "@/lib/airports";
 import { listTrips } from "@/lib/trips/repo";
-import { formatBRL, pastFlights, upcomingFlights } from "@/lib/trips/summary";
+import { formatBRL, groupByLocalYear, pastFlights, upcomingFlights } from "@/lib/trips/summary";
 
 export const metadata = { title: "Passagens" };
 
@@ -67,6 +67,7 @@ async function Trips() {
   const past = pastFlights(flights, now).slice(0, 10);
   const thisMonth = spendByMonth(bookings, credits).find((m) => m.month === now.slice(0, 7));
   const next = upcoming[0];
+  const currentYear = Number(ctx.today.slice(0, 4));
 
   const nearNames = (f: (typeof flights)[number]) => [
     ...new Set(holidaysNearFlight(ctx.holidays, f).map((h) => h.name)),
@@ -146,22 +147,26 @@ async function Trips() {
           <h2 className="text-sm font-semibold tracking-wide text-zinc-600 uppercase dark:text-zinc-400">
             Próximos
           </h2>
-          <ul className="flex flex-col divide-y divide-zinc-200 rounded-xl border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
-            {upcoming.slice(1).map((f) => (
-              <li key={f.id}>
-                <Link
-                  href={`/app/passagens/${f.booking_id}`}
-                  className="flex items-center justify-between gap-3 px-4 py-3"
-                >
-                  <FlightLine f={f} />
-                  <span className="flex shrink-0 flex-col items-end gap-1 text-xs text-zinc-600 dark:text-zinc-400">
-                    {relativeTime(f.departs_at, now)}
-                    <NearHolidayBadge names={nearNames(f)} />
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
+          {groupByLocalYear(upcoming.slice(1)).map((g, gi, all) => (
+            <YearGroup key={g.year} year={g.year} show={all.length > 1 || g.year !== currentYear}>
+              <ul className="flex flex-col divide-y divide-zinc-200 rounded-xl border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
+                {g.items.map((f) => (
+                  <li key={f.id}>
+                    <Link
+                      href={`/app/passagens/${f.booking_id}`}
+                      className="flex items-center justify-between gap-3 px-4 py-3"
+                    >
+                      <FlightLine f={f} />
+                      <span className="flex shrink-0 flex-col items-end gap-1 text-xs text-zinc-600 dark:text-zinc-400">
+                        {relativeTime(f.departs_at, now)}
+                        <NearHolidayBadge names={nearNames(f)} />
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </YearGroup>
+          ))}
         </section>
       ) : null}
 
@@ -188,18 +193,22 @@ async function Trips() {
           <h2 className="text-sm font-semibold tracking-wide text-zinc-600 uppercase dark:text-zinc-400">
             Anteriores
           </h2>
-          <ul className="flex flex-col divide-y divide-zinc-200 rounded-xl border border-zinc-200 opacity-80 dark:divide-zinc-800 dark:border-zinc-800">
-            {past.map((f) => (
-              <li key={f.id}>
-                <Link href={`/app/passagens/${f.booking_id}`} className="block px-4 py-3">
-                  <FlightLine f={f} />
-                  {byId.get(f.booking_id)?.status === "cancelled" ? (
-                    <span className="text-xs text-red-700 dark:text-red-300">Cancelada</span>
-                  ) : null}
-                </Link>
-              </li>
-            ))}
-          </ul>
+          {groupByLocalYear(past).map((g, gi, all) => (
+            <YearGroup key={g.year} year={g.year} show={all.length > 1 || g.year !== currentYear}>
+              <ul className="flex flex-col divide-y divide-zinc-200 rounded-xl border border-zinc-200 opacity-80 dark:divide-zinc-800 dark:border-zinc-800">
+                {g.items.map((f) => (
+                  <li key={f.id}>
+                    <Link href={`/app/passagens/${f.booking_id}`} className="block px-4 py-3">
+                      <FlightLine f={f} />
+                      {byId.get(f.booking_id)?.status === "cancelled" ? (
+                        <span className="text-xs text-red-700 dark:text-red-300">Cancelada</span>
+                      ) : null}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </YearGroup>
+          ))}
         </section>
       ) : null}
     </>
@@ -261,7 +270,7 @@ function Alerts({ alerts }: { alerts: TripAlert[] }) {
                     : `/app/passagens/${a.bookingIds[0]}`
                 }
               >
-                Ver
+                {a.type === "duplicate" ? "Ver a 1ª" : "Ver"}
               </Link>
             ) : a.type === "credit_expiring" ? (
               <Link className="underline underline-offset-2" href="/app/creditos">
@@ -275,6 +284,14 @@ function Alerts({ alerts }: { alerts: TripAlert[] }) {
                   Cheguei por outro meio
                 </button>
               </form>
+            ) : null}
+            {a.type === "duplicate" && a.bookingIds[1] ? (
+              <Link
+                className="underline underline-offset-2"
+                href={`/app/passagens/${a.bookingIds[1]}`}
+              >
+                Ver a 2ª (apagar se for repetida)
+              </Link>
             ) : null}
             {a.type === "missing_return" ? (
               <form action={ignoreMissingReturnAction}>
@@ -297,5 +314,24 @@ function Alerts({ alerts }: { alerts: TripAlert[] }) {
         </div>
       ))}
     </section>
+  );
+}
+
+/** Bloco de um ano numa lista de voos: o ano vira título para nunca misturar anos. */
+function YearGroup({
+  year,
+  show,
+  children,
+}: {
+  year: number;
+  show: boolean;
+  children: React.ReactNode;
+}) {
+  if (!show) return <>{children}</>;
+  return (
+    <div className="flex flex-col gap-1.5">
+      <h3 className="text-base font-semibold tabular-nums">{year}</h3>
+      {children}
+    </div>
   );
 }

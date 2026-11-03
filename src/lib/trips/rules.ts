@@ -161,16 +161,22 @@ export function computeAlerts(input: {
     });
   }
 
-  // Compra duplicada: mesma rota, mesmo dia local, reservas diferentes.
+  // Compra duplicada: mesma rota, mesmo dia local, reservas diferentes. Voos que já
+  // passaram só contam se vieram da importação de e-mail (repetida dobra os gastos).
   const groups = new Map<string, FlightRow[]>();
   for (const f of flights) {
-    if (arrival(f) < now) continue;
+    if (arrival(f) < now && bookings.get(f.booking_id)?.source !== "email") continue;
     const k = `${route(f)}|${localDay(f)}`;
     groups.set(k, [...(groups.get(k) ?? []), f]);
   }
   for (const [k, list] of groups) {
     const bookingIds = [...new Set(list.map((f) => f.booking_id))];
     if (bookingIds.length < 2) continue;
+    if (
+      list.every((f) => arrival(f) < now) &&
+      !bookingIds.every((id) => bookings.get(id)?.source === "email")
+    )
+      continue;
     const [r, day] = k.split("|");
     alerts.push({
       key: `dup:${k}`,

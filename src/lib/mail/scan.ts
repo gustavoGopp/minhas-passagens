@@ -302,7 +302,7 @@ async function processMessage(
         user_id: scan.user_id,
         message_id: m.id,
         received_at: meta.receivedAt || m.received_at,
-        draft: draftFromExtraction(b, "email"),
+        draft: draftFromExtraction(b, "email", receivedOn),
       })),
     );
     if (error) throw new Error(`import_candidates: ${error.message}`);

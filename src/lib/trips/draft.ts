@@ -71,6 +71,8 @@ const money = (n: number | null) => (n == null ? "" : n.toFixed(2).replace(".", 
 export function draftFromExtraction(
   b: ExtractedBooking,
   source: "text" | "image" | "email",
+  /** Sem data de compra no texto: usa esta (a data do e-mail), nunca "hoje" para histórico. */
+  fallbackPurchasedOn?: string,
 ): BookingDraft {
   return {
     locator: b.locator ?? "",
@@ -80,7 +82,7 @@ export function draftFromExtraction(
     amount: money(b.total_amount),
     miles: b.miles == null ? "" : String(Math.round(b.miles)),
     taxes: money(b.taxes_amount),
-    purchased_on: b.purchased_on ?? new Date().toISOString().slice(0, 10),
+    purchased_on: b.purchased_on ?? fallbackPurchasedOn ?? new Date().toISOString().slice(0, 10),
     tag: "personal",
     status: b.status === "cancelled" ? "cancelled" : "active",
     source,

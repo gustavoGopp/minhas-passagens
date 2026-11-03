@@ -311,3 +311,29 @@ describe("volta não comprada", () => {
     expect(alertsOf(f, [ida, volta])).toHaveLength(1);
   });
 });
+
+describe("duplicada vinda da importação", () => {
+  const now = "2026-11-03T12:00:00.000Z";
+  it("avisa também quando o voo já passou, se as duas vieram do e-mail", () => {
+    const a = booking({ source: "email" });
+    const b = booking({ source: "email" });
+    const f = [
+      flight(a, "SDU", "CGH", "2026-10-05T10:00:00.000Z", null),
+      flight(b, "SDU", "CGH", "2026-10-05T10:00:00.000Z", null),
+    ];
+    expect(
+      computeAlerts({ bookings: [a, b], flights: f, now }).some((x) => x.type === "duplicate"),
+    ).toBe(true);
+  });
+  it("voo passado cadastrado à mão não gera aviso de duplicada", () => {
+    const a = booking();
+    const b = booking();
+    const f = [
+      flight(a, "SDU", "CGH", "2026-10-05T10:00:00.000Z", null),
+      flight(b, "SDU", "CGH", "2026-10-05T10:00:00.000Z", null),
+    ];
+    expect(
+      computeAlerts({ bookings: [a, b], flights: f, now }).some((x) => x.type === "duplicate"),
+    ).toBe(false);
+  });
+});
