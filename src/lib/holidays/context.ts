@@ -31,10 +31,10 @@ export async function loadHolidayContext(
     listOverrides(userId),
     listMonitors(userId),
   ]);
-  const today = utcToLocal(new Date().toISOString(), profile?.timezone ?? "America/Sao_Paulo").slice(
-    0,
-    10,
-  );
+  const today = utcToLocal(
+    new Date().toISOString(),
+    profile?.timezone ?? "America/Sao_Paulo",
+  ).slice(0, 10);
   const holidays = holidaysAround(today, holidayPreferences(profile), overrides);
   const longWeekends = upcomingLongWeekends(holidays, today, weeks).map((lw) => ({
     lw,
