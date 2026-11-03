@@ -17,6 +17,9 @@ export interface MailAccount {
   connected_at: string;
   last_refresh_ok_at: string | null;
   last_error: string | null;
+  /** Leitura automática dos e-mails novos (sincronização a cada 30 min). */
+  auto_sync: boolean;
+  last_sync_at: string | null;
 }
 
 /** Credenciais do cliente OAuth do Google (variáveis da Vercel). Null se faltarem. */
@@ -37,7 +40,7 @@ export async function getMailAccount(userId: string): Promise<MailAccount | null
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("mail_accounts")
-    .select("email, status, connected_at, last_refresh_ok_at, last_error")
+    .select("email, status, connected_at, last_refresh_ok_at, last_error, auto_sync, last_sync_at")
     .eq("user_id", userId)
     .maybeSingle();
   if (error) throw new Error(`Falha ao ler a conexão do Gmail: ${error.message}`);

@@ -48,9 +48,14 @@ export async function advanceScanAction(): Promise<ProgressState> {
 }
 
 /** O dono confirmou o custo: começa a leitura com IA (chave dele). */
-export async function confirmScanAction() {
+export async function confirmScanAction(formData: FormData) {
   const user = await getCurrentUser();
   const admin = createSupabaseAdminClient();
+  // Na mesma confirmação, o dono decide se os e-mails novos serão lidos sozinhos.
+  await admin
+    .from("mail_accounts")
+    .update({ auto_sync: formData.get("auto_sync") === "on" })
+    .eq("user_id", user.id);
   await admin
     .from("mail_scans")
     .update({ status: "processing", confirmed_at: new Date().toISOString() })

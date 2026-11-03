@@ -4,7 +4,15 @@ import { extractBookings } from "@/lib/extract/extract";
 import { getDecryptedKeyWith } from "@/lib/integrations/repo";
 import { draftFromExtraction } from "@/lib/trips/draft";
 import { googleClient } from "./accounts";
-import { getBody, getMeta, listMessageIds, scanQueries } from "./gmail";
+import {
+  getBody,
+  getMeta,
+  GmailError,
+  listHistory,
+  listMessageIds,
+  recentQueries,
+  scanQueries,
+} from "./gmail";
 import { OAuthError, refreshAccessToken } from "./google-oauth";
 import { bodyDecision, classify, headerDecision, senderDomain } from "./prefilter";
 
@@ -36,6 +44,8 @@ export const RUNNING_STATUSES: ScanStatus[] = ["listing", "filtering", "processi
 export interface ScanRow {
   id: string;
   user_id: string;
+  /** full: varredura histórica (pede confirmação); sync: e-mails novos (leitura automática ligada). */
+  kind?: "full" | "sync";
   status: ScanStatus;
   query_index: number;
   page_token: string | null;
@@ -46,7 +56,7 @@ export interface ScanRow {
 }
 
 const SCAN_COLS =
-  "id, user_id, status, query_index, page_token, last_error, created_at, confirmed_at, finished_at";
+  "id, user_id, kind, status, query_index, page_token, last_error, created_at, confirmed_at, finished_at";
 /** Mensagens "processing" paradas há mais que isto voltam para a fila (queda no meio). */
 const STALE_PROCESSING_MS = 10 * 60_000;
 /** Texto máximo enviado à IA por e-mail (~5 mil tokens). */
@@ -170,12 +180,19 @@ export async function advanceScan(
       if (error) throw new Error(`mail_messages: ${error.message}`);
       if (!data?.length) {
         const counts = await scanCounts(admin, scan.id);
-        status = (counts.candidate ?? 0) > 0 ? "awaiting_confirmation" : "review";
+        // Sincronização: o dono já autorizou a leitura automática; varredura cheia pede confirmação.
+        status =
+          (counts.candidate ?? 0) === 0
+            ? "review"
+            : scan.kind === "sync"
+              ? "processing"
+              : "awaiting_confirmation";
         await setScan(admin, scan.id, {
           status,
           ...(status === "review" ? { finished_at: new Date().toISOString() } : {}),
         });
-        return status;
+        if (status !== "processing") return status;
+        continue;
       }
       for (const m of data) {
         if (clock() >= deadline) break;
@@ -321,4 +338,124 @@ export async function advanceRunningScans(
     }
   }
   return { advanced };
+}
+
+/** Intervalo da sincronização contínua. */
+export const SYNC_EVERY_MINUTES = 30;
+
+/**
+ * Sincronização contínua (agendador): para cada conta com a leitura automática
+ * ligada, lê o histórico desde o último `history_id` e põe os e-mails novos numa
+ * varredura do tipo "sync" (mesmo pré-filtro e extração, sem pedir confirmação).
+ * Histórico expirado (404): refaz a busca dos últimos 30 dias.
+ */
+export async function syncAccounts(
+  admin: SupabaseClient,
+  now: string,
+  deadline: number,
+  f: typeof fetch = fetch,
+  clock: () => number = Date.now,
+): Promise<{ synced: number; found: number }> {
+  if (!googleClient()) return { synced: 0, found: 0 };
+  const cutoff = new Date(Date.parse(now) - SYNC_EVERY_MINUTES * 60_000).toISOString();
+  const { data, error } = await admin
+    .from("mail_accounts")
+    .select("user_id, history_id, last_sync_at")
+    .eq("status", "active")
+    .eq("auto_sync", true)
+    .order("last_sync_at", { ascending: true })
+    .limit(5);
+  if (error) throw new Error(`mail_accounts: ${error.message}`);
+  let synced = 0;
+  let found = 0;
+  for (const acc of data ?? []) {
+    if (clock() >= deadline) break;
+    if (acc.last_sync_at && (acc.last_sync_at as string) > cutoff) continue;
+    const userId = acc.user_id as string;
+    const current = await latestScan(admin, userId);
+    if (current && ACTIVE_STATUSES.includes(current.status)) continue; // varredura em andamento
+    try {
+      const token = await accessToken(admin, userId, f);
+      const ids = new Set<string>();
+      let historyId = (acc.history_id as string | null) ?? null;
+      try {
+        if (!historyId) throw new GmailError(404, "sem history_id");
+        let page: string | null = null;
+        let pages = 0;
+        do {
+          const r = await listHistory(token, historyId, page, f);
+          r.ids.forEach((id) => ids.add(id));
+          page = r.nextPageToken;
+          if (r.historyId) historyId = r.historyId;
+        } while (page && ++pages < 5);
+      } catch (e) {
+        if (!(e instanceof GmailError) || e.status !== 404) throw e;
+        for (const q of recentQueries()) {
+          (await listMessageIds(token, q, null, f)).ids.forEach((id) => ids.add(id));
+        }
+      }
+      // Só o que ainda não foi visto (varreduras anteriores) entra na fila.
+      const fresh = await unseen(admin, userId, [...ids]);
+      if (fresh.length) {
+        const { data: scan, error: e1 } = await admin
+          .from("mail_scans")
+          .insert({ user_id: userId, kind: "sync", status: "filtering" })
+          .select("id")
+          .single();
+        if (e1 || !scan) throw new Error(`mail_scans: ${e1?.message}`);
+        const { error: e2 } = await admin.from("mail_messages").upsert(
+          fresh.map((id) => ({
+            user_id: userId,
+            scan_id: scan.id,
+            provider_message_id: id,
+            status: "listed",
+          })),
+          { onConflict: "user_id,provider_message_id", ignoreDuplicates: true },
+        );
+        if (e2) throw new Error(`mail_messages: ${e2.message}`);
+        found += fresh.length;
+      }
+      await admin
+        .from("mail_accounts")
+        .update({
+          last_sync_at: now,
+          ...(historyId ? { history_id: historyId } : {}),
+          last_error: null,
+        })
+        .eq("user_id", userId);
+      synced++;
+    } catch (e) {
+      await admin
+        .from("mail_accounts")
+        .update({ last_sync_at: now, last_error: (e as Error).message.slice(0, 300) })
+        .eq("user_id", userId);
+    }
+  }
+  return { synced, found };
+}
+
+async function unseen(admin: SupabaseClient, userId: string, ids: string[]): Promise<string[]> {
+  if (!ids.length) return [];
+  const seen = new Set<string>();
+  for (let i = 0; i < ids.length; i += 200) {
+    const { data, error } = await admin
+      .from("mail_messages")
+      .select("provider_message_id")
+      .eq("user_id", userId)
+      .in("provider_message_id", ids.slice(i, i + 200));
+    if (error) throw new Error(`mail_messages: ${error.message}`);
+    for (const r of data ?? []) seen.add(r.provider_message_id as string);
+  }
+  return ids.filter((id) => !seen.has(id));
+}
+
+/** Aviso "Passagens novas no Gmail" (um por sincronização que achou algo). */
+export function syncFoundEvent(scanId: string, count: number) {
+  return {
+    key: `mail-sync:${scanId}`,
+    title: "Passagens novas no Gmail",
+    body: `Encontramos ${count} passagem(ns) nova(s) no seu e-mail. Confira e importe.`,
+    path: "/app/passagens/importar",
+    urgent: false,
+  };
 }

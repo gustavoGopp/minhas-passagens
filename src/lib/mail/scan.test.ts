@@ -9,7 +9,7 @@ vi.mock("@/lib/integrations/repo", () => ({
     p === "gmail" ? "rt" : "sk-ant",
 }));
 
-const { advanceScan } = await import("./scan");
+const { advanceScan, syncAccounts } = await import("./scan");
 
 const b64 = (s: string) => Buffer.from(s, "utf8").toString("base64url");
 const META: Record<string, { from: string; subject: string; unsub?: boolean }> = {
@@ -17,10 +17,14 @@ const META: Record<string, { from: string; subject: string; unsub?: boolean }> =
   m2: { from: "Gol <promo@voegol.com.br>", subject: "Black Friday: 30% off", unsub: true },
   m3: { from: "Agência <a@agencia.com>", subject: "Seu e-ticket" },
   m4: { from: "amigo@gmail.com", subject: "Almoço?" },
+  m5: { from: "Azul <noreply@voeazul.com.br>", subject: "Sua reserva está confirmada" },
+  m6: { from: "Gol <noreply@voegol.com.br>", subject: "Confirmação da compra" },
 };
 const BODY: Record<string, string> = {
   m1: "<p>Localizador: XKQ7PZ</p><p>Voo LA3901 SDU → CGH</p><p>Total R$ 612,90</p>",
   m3: "<p>Obrigado por viajar conosco. Acesse o app.</p>",
+  m5: "<p>Localizador: AZ9M2L</p><p>Voo AD4410 SDU → CGH</p><p>R$ 328,50</p>",
+  m6: "<p>Localizador: GL4R8T</p><p>Voo G31012 SDU → CGH</p>",
 };
 
 const fakeFetch = vi.fn(async (input: RequestInfo | URL) => {
@@ -28,6 +32,19 @@ const fakeFetch = vi.fn(async (input: RequestInfo | URL) => {
   if (url.startsWith("https://oauth2.googleapis.com/token"))
     return Response.json({ access_token: "at", expires_in: 3599 });
   const u = new URL(url);
+  if (u.pathname.endsWith("/history")) {
+    if (u.searchParams.get("startHistoryId") === "old") return new Response("", { status: 404 });
+    return Response.json({
+      history: [{ messagesAdded: [{ message: { id: "m1" } }, { message: { id: "m5" } }] }],
+      historyId: "200",
+    });
+  }
+  if (
+    u.pathname.endsWith("/messages") &&
+    (u.searchParams.get("q") ?? "").includes("newer_than:30d")
+  ) {
+    return Response.json({ messages: [{ id: "m6" }] });
+  }
   if (u.pathname.endsWith("/messages")) {
     const q = u.searchParams.get("q") ?? "";
     return Response.json({
@@ -210,5 +227,66 @@ describe("varredura do Gmail", () => {
     expect(st).toBe("cancelled");
     expect(extract).not.toHaveBeenCalled();
     expect(db.rows("mail_scans")[0].status).toBe("cancelled");
+  });
+});
+
+describe("sincronização contínua", () => {
+  const account = (o: Record<string, unknown> = {}) =>
+    db.rows("mail_accounts").push({
+      user_id: "u1",
+      status: "active",
+      auto_sync: true,
+      history_id: "100",
+      last_sync_at: null,
+      ...o,
+    });
+  const now = "2026-11-10T12:00:00.000Z";
+
+  beforeEach(() => {
+    db.set("mail_scans", []); // sem varredura cheia em andamento
+    db.rows("mail_messages").push({
+      id: "x1",
+      user_id: "u1",
+      provider_message_id: "m1",
+      status: "extracted",
+    });
+  });
+
+  it("só os e-mails novos entram, sem pedir confirmação de novo, e o history_id avança", async () => {
+    account();
+    const r = await syncAccounts(db.client(), now, Date.now() + 5_000, fakeFetch as never);
+    expect(r).toEqual({ synced: 1, found: 1 });
+    const [sc] = db.rows("mail_scans");
+    expect(sc).toMatchObject({ kind: "sync", status: "filtering" });
+    expect(db.rows("mail_accounts")[0]).toMatchObject({ history_id: "200", last_sync_at: now });
+    const st = await advanceScan(
+      db.client(),
+      { ...scan("filtering"), id: sc.id as string, kind: "sync" } as never,
+      Date.now() + 5_000,
+      fakeFetch as never,
+    );
+    expect(st).toBe("review");
+    expect(extract).toHaveBeenCalledTimes(1);
+  });
+
+  it("histórico expirado (404): refaz a busca dos últimos 30 dias", async () => {
+    account({ history_id: "old" });
+    const r = await syncAccounts(db.client(), now, Date.now() + 5_000, fakeFetch as never);
+    expect(r.found).toBe(1);
+    expect(db.rows("mail_messages").some((m) => m.provider_message_id === "m6")).toBe(true);
+  });
+
+  it("leitura automática desligada ou sincronizada há pouco: não faz nada", async () => {
+    account({ auto_sync: false });
+    expect(await syncAccounts(db.client(), now, Date.now() + 5_000, fakeFetch as never)).toEqual({
+      synced: 0,
+      found: 0,
+    });
+    db.set("mail_accounts", []);
+    account({ last_sync_at: "2026-11-10T11:50:00.000Z" });
+    expect(await syncAccounts(db.client(), now, Date.now() + 5_000, fakeFetch as never)).toEqual({
+      synced: 0,
+      found: 0,
+    });
   });
 });
