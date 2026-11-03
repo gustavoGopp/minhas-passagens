@@ -202,3 +202,11 @@ Monitor internacional e conversão de moeda; WhatsApp; compra no app; raspagem d
 - Textos corrigidos: retenção dos originais (o campo de dias saiu do perfil), "e-mail encaminhado" na página inicial, README.
 - Migração `20261105000000_avisos_entrega.sql` (idempotente). Apaga os avisos antigos registrados sem nenhum canal, para serem reavaliados.
 - Testes: 182 no total.
+
+## Bloco 2a: conectar o Gmail (2026-11-03)
+
+- Integrações → **Gmail**: OAuth separado do login, escopo só de leitura (`gmail.readonly`), PKCE e cookie de estado assinado (`/api/gmail/start`, `/api/gmail/callback`). O refresh token fica em `user_integrations` (provider `gmail`) cifrado com **BYOK v2** (AES-256-GCM com AAD `user_id:provider`; chaves v1 antigas continuam legíveis e as novas já saem em v2).
+- `mail_accounts` (RLS: dono só lê): e-mail, `history_id`, status (`active`/`expired`), datas e último erro técnico. Sem corpo nem assunto de e-mail.
+- **Teste dos 8 dias:** o tick renova o acesso no máximo a cada 20 h. `invalid_grant` marca `expired` e gera o aviso "Reconecte o Gmail". O diagnóstico `gmail.sql` mostra status, dias desde a conexão e horas desde a última renovação OK.
+- "Desconectar" e "Apagar conta" revogam o acesso no Google. A exportação inclui `mail_accounts`.
+- Variáveis na Vercel: `GOOGLE_OAUTH_CLIENT_ID` e `GOOGLE_OAUTH_CLIENT_SECRET` (passo a passo no README, seção 5). Migração `20261106000000_gmail.sql`.

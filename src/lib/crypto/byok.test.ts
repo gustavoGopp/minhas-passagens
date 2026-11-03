@@ -36,4 +36,23 @@ describe("byok", () => {
     expect(keyHint("sk-ant-api03-wxyz")).toBe("••••wxyz");
     expect(keyHint("ab")).toBe("••••");
   });
+
+  it("v2 prende o segredo ao contexto (AAD): outra linha ou sem contexto não decifra", () => {
+    const payload = encryptSecret("refresh-token", master, "u1:gmail");
+    expect(payload.startsWith("v2.")).toBe(true);
+    expect(decryptSecret(payload, master, "u1:gmail")).toBe("refresh-token");
+    expect(() => decryptSecret(payload, master, "u2:gmail")).toThrow();
+    expect(() => decryptSecret(payload, master)).toThrow(/AAD/);
+  });
+
+  it("chaves v1 antigas continuam legíveis mesmo quando o contexto é passado", () => {
+    const old = encryptSecret("sk-ant-velha", master);
+    expect(decryptSecret(old, master, "u1:anthropic")).toBe("sk-ant-velha");
+  });
+
+  it("recusa tag truncada", () => {
+    const parts = encryptSecret("x", master, "u1:a").split(".");
+    parts[2] = Buffer.from(parts[2], "base64").subarray(0, 8).toString("base64");
+    expect(() => decryptSecret(parts.join("."), master, "u1:a")).toThrow();
+  });
 });
