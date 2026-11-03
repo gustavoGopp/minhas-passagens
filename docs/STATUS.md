@@ -35,13 +35,15 @@
 
 - **2026-11-02, produção parada no #10 (login) por "rate limited" na Vercel.** M4, M5 e M6 não foram publicados: cada push de branch gerava também um deploy de preview, que consumia o limite diário do plano Hobby. Correção: `vercel.json` com `git.deploymentEnabled` só para `main` (branches não geram mais preview); a produção é republicada quando o limite liberar.
 
+- **2026-11-04, primeiros avisos de feriado sem e-mail.** O deploy do M8 registrou 8 avisos antes de a chave do Resend existir; o agendador registra o aviso mesmo sem canal, então eles não seriam reenviados. Correção a pedido do dono: migração `20261104010000_reenviar_avisos_feriado.sql` apaga só os avisos de feriado sem canal e o próximo ciclo reenvia. Diagnóstico `avisos.sql` mostra tipos, canais e contagens.
+
 ## Como o Claude opera o Supabase
 
 - Workflows `supabase-migrate.yml` (automático no merge que muda `supabase/migrations/**`, ou manual) e `supabase-diagnostico.yml` (manual: `estado-schema.sql`, `auth-logs`, `auth-config`, ou ajuste de Site URL/Redirect URLs).
 - Disparo: `gh api -X POST repos/gustavoGopp/minhas-passagens/actions/workflows/<arquivo>/dispatches -f ref=main -f 'inputs[alvo]=...'`; leitura: `gh run view <id> --log`.
 - **Regra:** os logs do Actions são públicos. Diagnósticos só retornam nomes de objetos, contagens e erros técnicos, nunca dados pessoais. Toda consulta nova vira arquivo em `supabase/diagnostics/` revisável no PR.
 - Migrações são idempotentes e registradas em `public.app_migrations`.
-- Diagnósticos úteis: `piloto-precos.sql` (cobertura do provedor), `uso-banco.sql` (tamanho do banco e das tabelas, % dos 500 MB, minutos desde o último tick, última retenção).
+- Diagnósticos úteis: `piloto-precos.sql` (cobertura do provedor), `avisos.sql` (avisos por tipo e canal), `uso-banco.sql` (tamanho do banco e das tabelas, % dos 500 MB, minutos desde o último tick, última retenção).
 
 ## Segurança dos dados
 
