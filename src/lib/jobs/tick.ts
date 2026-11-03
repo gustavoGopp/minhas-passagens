@@ -13,6 +13,7 @@ import {
   markPriceAlertsFailed,
   markPriceAlertsSent,
   pendingPriceEvents,
+  MONITORS_PER_TICK,
   runDueMonitors,
 } from "@/lib/prices/jobs";
 import type { MonitorRule } from "@/lib/prices/types";
@@ -31,7 +32,9 @@ export interface TickResult {
   failed: number;
   /** Usuários pulados por erro neste tick (os demais seguem). */
   userErrors: number;
-  prices: { checked: number; failed: number; sent: number; deferred: number } | { error: string };
+  prices:
+    | { checked: number; failed: number; skipped: number; sent: number; deferred: number }
+    | { error: string };
   retention: { observations: number; checks: number } | { error: string } | null;
   /** Renovação diária do acesso ao Gmail (null se não há cliente OAuth configurado). */
   gmail: { checked: number; expired: number; failed: number } | { error: string } | null;
@@ -43,9 +46,13 @@ export interface TickResult {
  * vencidas, avisos de preço e a limpeza diária. `recordTick` grava o horário em
  * app_config (o vigia diário roda sem gravar, para não esconder o pg_cron parado).
  */
+/** Tempo do tick para começar checagens de preço (a função da Vercel tem 60 s). */
+export const TICK_BUDGET_MS = 35_000;
+
 export async function runTick(
   opts: { now?: string; recordTick?: boolean } = {},
 ): Promise<TickResult> {
+  const startedAt = Date.now();
   const admin = createSupabaseAdminClient();
   const now = opts.now ?? new Date().toISOString();
   if (opts.recordTick !== false) await setConfig({ last_tick_at: now });
@@ -215,11 +222,12 @@ export async function runTick(
     }
   }
 
-  // Monitor de preços: checagens vencidas e avisos pendentes. Falhas aqui não
+  // Monitor de preços: primeiro os avisos pendentes e a limpeza diária (rápidos),
+  // depois as checagens vencidas, dentro do orçamento de tempo. Falhas aqui não
   // derrubam os avisos acima.
   let prices: TickResult["prices"];
+  const retention: TickResult["retention"] = await dailyRetention(admin, now);
   try {
-    const run = await runDueMonitors(admin, now);
     let priceSent = 0;
     let priceDeferred = 0;
     const pending = await pendingPriceEvents(
@@ -262,6 +270,7 @@ export async function runTick(
         userErrors++;
       }
     }
+    const run = await runDueMonitors(admin, now, MONITORS_PER_TICK, startedAt + TICK_BUDGET_MS);
     prices = { ...run, sent: priceSent, deferred: priceDeferred };
   } catch (e) {
     prices = { error: (e as Error).message };
@@ -274,7 +283,7 @@ export async function runTick(
     failed,
     userErrors,
     prices,
-    retention: await dailyRetention(admin, now),
+    retention,
     gmail,
     at: now,
   };
