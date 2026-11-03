@@ -125,14 +125,22 @@ async function Calendar({
       <header className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-3">
           <h1 className="text-2xl font-semibold tracking-tight">Calendário</h1>
-          {ym !== today.slice(0, 7) ? (
+          <div className="flex items-center gap-4">
+            {ym !== today.slice(0, 7) ? (
+              <Link
+                className="text-sm underline underline-offset-4"
+                href={href(currentYear, Number(today.slice(5, 7)))}
+              >
+                Ir para hoje
+              </Link>
+            ) : null}
             <Link
-              className="text-sm underline underline-offset-4"
-              href={href(currentYear, Number(today.slice(5, 7)))}
+              className="text-brand dark:text-brand-dark text-sm font-medium underline underline-offset-4"
+              href="/app/calendario/assinar"
             >
-              Ir para hoje
+              Ver no celular
             </Link>
-          ) : null}
+          </div>
         </div>
         <nav aria-label="Ano" className="flex items-center gap-2">
           <Link

@@ -21,6 +21,7 @@ Três funcionalidades, pensadas para quem viaja com frequência (o caso de orige
 5. Em **Passagens → + Nova**, cole o e-mail de confirmação, envie um print/PDF ou preencha à mão; confira e salve. O próximo voo aparece em destaque.
 6. Em **Mais → Notificações**, conecte o Telegram e/ou ative o push no celular (no iPhone, primeiro adicione o app à Tela de Início).
 7. Em **Preços**, crie os monitores (há um atalho para a ponte aérea semanal) e cole em **Mais → Integrações** a chave da fonte de preços. Os avisos chegam pelos canais de Notificações.
+8. Em **Calendário → Ver no celular**, gere o link do calendário assinado e adicione no Google Agenda ou no iPhone: os voos aparecem lá e se atualizam sozinhos. Quem tiver o link vê seus voos; se vazar, gere um novo.
 
 ## Como rodar localmente
 

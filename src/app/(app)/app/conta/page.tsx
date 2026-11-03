@@ -17,6 +17,9 @@ export default function ContaPage() {
         <Link className="px-4 py-3 text-sm" href="/app/notificacoes">
           Notificações
         </Link>
+        <Link className="px-4 py-3 text-sm" href="/app/calendario/assinar">
+          Calendário no celular (Google Agenda, iPhone)
+        </Link>
         <Link className="px-4 py-3 text-sm" href="/app/gastos">
           Gastos
         </Link>

@@ -30,4 +30,8 @@ describe("exportação de dados", () => {
     expect(EXTRA_EXPORT_COLUMNS.push_subscriptions).not.toMatch(/endpoint|p256dh|auth/);
     expect(EXTRA_EXPORT_COLUMNS.telegram_links).not.toMatch(/link_token/);
   });
+
+  it("não exporta o hash do link do calendário", () => {
+    expect(EXTRA_EXPORT_COLUMNS.calendar_feeds).not.toMatch(/token|hash|\*/);
+  });
 });
