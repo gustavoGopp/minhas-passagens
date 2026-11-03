@@ -144,11 +144,14 @@ async function Detail({ params }: { params: Promise<{ id: string }> }) {
             </thead>
             <tbody>
               {[...bestByDate.values()].map((o) => (
-                <tr key={o.flight_date} className="border-t border-zinc-100 dark:border-zinc-900">
+                <tr
+                  key={o.flight_date}
+                  className={`border-t border-zinc-100 dark:border-zinc-900 ${o.near_holiday ? "bg-amber-50 dark:bg-amber-950/40" : ""}`}
+                >
                   <td className="py-2">
                     {formatFlightDate(o.flight_date, o.departs_local.slice(11, 16))}
                     {o.near_holiday ? (
-                      <span className="ml-2 rounded bg-zinc-100 px-1.5 py-0.5 text-xs text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+                      <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-900 dark:bg-amber-950 dark:text-amber-200">
                         feriado perto
                       </span>
                     ) : null}
@@ -169,8 +172,8 @@ async function Detail({ params }: { params: Promise<{ id: string }> }) {
           </table>
         ) : null}
         <p className="text-xs text-zinc-500">
-          Preços com “feriado perto” ficam fora da média de 30 dias. ≈ {q.perMonth} requisições por
-          mês · {PROVIDER_QUOTA[m.provider].note}.
+          Preços com “feriado perto” (destacados) tendem a subir e ficam fora da média de 30 dias. ≈{" "}
+          {q.perMonth} requisições por mês · {PROVIDER_QUOTA[m.provider].note}.
         </p>
       </section>
 

@@ -254,7 +254,10 @@ async function deliverNew(
   return { sent, deferred };
 }
 
-/** Uma vez por dia (UTC): apaga observações > 180 dias e checagens > 365 dias. */
+/**
+ * Uma vez por dia (UTC): apaga observações > 180 dias e checagens > 365 dias,
+ * e pausa monitores de feriadão que já passou.
+ */
 async function dailyRetention(
   admin: SupabaseClient,
   now: string,
@@ -274,6 +277,12 @@ async function dailyRetention(
       .delete({ count: "exact" })
       .lt("checked_at", cut.price_checks);
     if (checks.error) throw new Error(checks.error.message);
+    // Monitores de feriadão já passado ficam pausados (sem datas a checar).
+    await admin
+      .from("price_monitors")
+      .update({ active: false, next_check_at: null })
+      .eq("active", true)
+      .lt("long_weekend", new Date(Date.parse(now) - 10 * 86_400_000).toISOString().slice(0, 10));
     return { observations: obs.count ?? 0, checks: checks.count ?? 0 };
   } catch (e) {
     return { error: (e as Error).message };

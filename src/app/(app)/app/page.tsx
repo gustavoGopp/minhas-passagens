@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { FlightLine, relativeTime } from "@/components/flight-line";
+import { LongWeekends, NearHolidayBadge } from "@/components/long-weekends";
 import { getCurrentUser } from "@/lib/auth/current-user";
-import { getHolidays, holidaysNear } from "@/lib/holidays";
-import { getProfile, holidayPreferences } from "@/lib/profiles/repo";
+import { loadHolidayContext } from "@/lib/holidays/context";
+import { holidaysNearFlight } from "@/lib/notify/holiday-events";
 import { ignoreMissingLegAction, toggleCheckinAction } from "./passagens/actions";
 import { checkinRule, checkinState } from "@/lib/trips/checkin";
 import { listCredits } from "@/lib/trips/credits-repo";
@@ -38,9 +39,9 @@ export default function AppHome() {
 async function Trips() {
   const user = await getCurrentUser();
   const now = new Date().toISOString();
-  const [{ bookings, flights }, profile, credits] = await Promise.all([
+  const [{ bookings, flights }, ctx, credits] = await Promise.all([
     listTrips(user.id),
-    getProfile(user.id),
+    loadHolidayContext(user.id),
     listCredits(user.id),
   ]);
   const alerts = computeAlerts({ bookings, flights, credits, now });
@@ -50,22 +51,23 @@ async function Trips() {
   const thisMonth = spendByMonth(bookings, credits).find((m) => m.month === now.slice(0, 7));
   const next = upcoming[0];
 
-  const year = Number(now.slice(0, 4));
-  const holidays = [
-    ...getHolidays(year, holidayPreferences(profile)),
-    ...getHolidays(year + 1, holidayPreferences(profile)),
+  const nearNames = (f: (typeof flights)[number]) => [
+    ...new Set(holidaysNearFlight(ctx.holidays, f).map((h) => h.name)),
   ];
-  const nearNext = next ? holidaysNear(holidays, next.departs_at.slice(0, 10), 2) : [];
+  const nearNext = next ? holidaysNearFlight(ctx.holidays, next) : [];
 
   if (flights.length === 0) {
     return (
-      <section className="flex flex-col gap-3 rounded-xl border border-dashed border-zinc-300 p-5 text-sm text-zinc-600 dark:border-zinc-700 dark:text-zinc-400">
-        <p>Nenhuma passagem ainda.</p>
-        <p>
-          Toque em <strong>+ Nova</strong> e cole o e-mail de confirmação, envie um print ou
-          preencha à mão.
-        </p>
-      </section>
+      <>
+        <section className="flex flex-col gap-3 rounded-xl border border-dashed border-zinc-300 p-5 text-sm text-zinc-600 dark:border-zinc-700 dark:text-zinc-400">
+          <p>Nenhuma passagem ainda.</p>
+          <p>
+            Toque em <strong>+ Nova</strong> e cole o e-mail de confirmação, envie um print ou
+            preencha à mão.
+          </p>
+        </section>
+        <LongWeekends items={ctx.longWeekends} />
+      </>
     );
   }
 
@@ -129,8 +131,9 @@ async function Trips() {
                   className="flex items-center justify-between gap-3 px-4 py-3"
                 >
                   <FlightLine f={f} />
-                  <span className="shrink-0 text-xs text-zinc-500">
+                  <span className="flex shrink-0 flex-col items-end gap-1 text-xs text-zinc-500">
                     {relativeTime(f.departs_at, now)}
+                    <NearHolidayBadge names={nearNames(f)} />
                   </span>
                 </Link>
               </li>
@@ -138,6 +141,8 @@ async function Trips() {
           </ul>
         </section>
       ) : null}
+
+      <LongWeekends items={ctx.longWeekends} />
 
       <section className="grid grid-cols-2 gap-3">
         <div className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">

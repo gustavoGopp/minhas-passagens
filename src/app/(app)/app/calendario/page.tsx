@@ -1,9 +1,15 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import { FlightLine } from "@/components/flight-line";
+import { LongWeekends, NearHolidayBadge } from "@/components/long-weekends";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { getHolidays, REGIONAL_SOURCE, type HolidayEvent } from "@/lib/holidays";
+import { loadHolidayContext } from "@/lib/holidays/context";
 import { listOverrides } from "@/lib/holidays/repo";
-import { getProfile, holidayPreferences } from "@/lib/profiles/repo";
+import { flightLocalDate, holidaysNearFlight } from "@/lib/notify/holiday-events";
+import { holidayPreferences } from "@/lib/profiles/repo";
+import { activeFlights } from "@/lib/trips/rules";
+import { listTrips } from "@/lib/trips/repo";
 import { hideHolidayAction, removeOverrideAction } from "./actions";
 import { AddHolidayForm } from "./add-holiday-form";
 
@@ -58,8 +64,27 @@ async function Calendar({ searchParams }: { searchParams: Promise<{ ano?: string
   const year =
     Number.isInteger(requested) && requested >= 1900 && requested <= 2200 ? requested : currentYear;
 
-  const [profile, overrides] = await Promise.all([getProfile(user.id), listOverrides(user.id)]);
-  const events = getHolidays(year, holidayPreferences(profile), overrides);
+  const [ctx, overrides, trips] = await Promise.all([
+    loadHolidayContext(user.id),
+    listOverrides(user.id),
+    listTrips(user.id),
+  ]);
+  const profile = ctx.profile;
+  const prefs = holidayPreferences(profile);
+  const events = getHolidays(year, prefs, overrides);
+  // Feriados dos anos vizinhos contam para voos perto da virada do ano.
+  const aroundYear = [
+    ...getHolidays(year - 1, prefs, overrides),
+    ...events,
+    ...getHolidays(year + 1, prefs, overrides),
+  ];
+  const flightsByMonth = new Map<number, typeof trips.flights>();
+  for (const f of activeFlights(trips.flights, new Map(trips.bookings.map((b) => [b.id, b])))) {
+    const day = flightLocalDate(f);
+    if (!day.startsWith(`${year}-`)) continue;
+    const m = Number(day.slice(5, 7));
+    flightsByMonth.set(m, [...(flightsByMonth.get(m) ?? []), f]);
+  }
   const customIds = new Map(
     overrides.filter((o) => o.action === "add").map((o) => [`${o.date}|${o.name}`, o.id]),
   );
@@ -71,6 +96,7 @@ async function Calendar({ searchParams }: { searchParams: Promise<{ ano?: string
     const m = e.date.startsWith(`${year}-`) ? Number(e.date.slice(5, 7)) : 1;
     byMonth.set(m, [...(byMonth.get(m) ?? []), e]);
   }
+  const months = [...new Set([...byMonth.keys(), ...flightsByMonth.keys()])].sort((a, b) => a - b);
 
   return (
     <>
@@ -102,21 +128,47 @@ async function Calendar({ searchParams }: { searchParams: Promise<{ ano?: string
         </Link>
       </p>
 
-      {[...byMonth.entries()].map(([month, list]) => (
+      {year === currentYear ? <LongWeekends items={ctx.longWeekends} /> : null}
+
+      {months.map((month) => (
         <section key={month} className="flex flex-col gap-2">
           <h2 className="text-sm font-semibold tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
             {MONTHS[month - 1]}
           </h2>
-          <ul className="flex flex-col divide-y divide-zinc-200 rounded-xl border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
-            {list.map((e) => (
-              <HolidayRow
-                key={`${e.key}-${e.date}`}
-                event={e}
-                isNext={nextKey === e}
-                customId={e.source === "custom" ? customIds.get(`${e.date}|${e.name}`) : undefined}
-              />
-            ))}
-          </ul>
+          {flightsByMonth.get(month)?.length ? (
+            <ul
+              aria-label={`Seus voos em ${MONTHS[month - 1]}`}
+              className="flex flex-col divide-y divide-zinc-200 rounded-xl border border-sky-200 bg-sky-50/50 dark:divide-zinc-800 dark:border-sky-900 dark:bg-sky-950/30"
+            >
+              {flightsByMonth.get(month)!.map((f) => (
+                <li key={f.id}>
+                  <Link
+                    href={`/app/passagens/${f.booking_id}`}
+                    className="flex items-center justify-between gap-3 px-4 py-3"
+                  >
+                    <FlightLine f={f} />
+                    <NearHolidayBadge
+                      names={[...new Set(holidaysNearFlight(aroundYear, f).map((h) => h.name))]}
+                    />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          {byMonth.get(month)?.length ? (
+            <ul className="flex flex-col divide-y divide-zinc-200 rounded-xl border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
+              {byMonth.get(month)!.map((e) => (
+                <HolidayRow
+                  key={`${e.key}-${e.date}`}
+                  event={e}
+                  isNext={nextKey === e}
+                  customId={
+                    e.source === "custom" ? customIds.get(`${e.date}|${e.name}`) : undefined
+                  }
+                />
+              ))}
+            </ul>
+          ) : null}
         </section>
       ))}
 
