@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { getMailAccount, googleClient } from "@/lib/mail/accounts";
 import { disconnectGmailAction } from "./actions";
@@ -104,6 +105,14 @@ export async function GmailCard({ searchParams }: { searchParams: Promise<{ gmai
             Para ligar, o dono da instalação configura o cliente OAuth do Google (veja o README).
           </p>
         )}
+        {account?.status === "active" ? (
+          <Link
+            href="/app/passagens/importar"
+            className="text-sm font-medium underline underline-offset-4"
+          >
+            Procurar passagens no Gmail
+          </Link>
+        ) : null}
         {account ? (
           <form action={disconnectGmailAction}>
             <button type="submit" className="text-sm underline underline-offset-4">

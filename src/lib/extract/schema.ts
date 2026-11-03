@@ -31,6 +31,9 @@ export const extractedBookingSchema = z.object({
   miles: z.number().nullable().describe("Milhas/pontos usados, se houver"),
   taxes_amount: z.number().nullable().describe("Taxas pagas em dinheiro numa emissão com milhas"),
   purchased_on: z.string().nullable().describe("Data da compra YYYY-MM-DD, se aparecer"),
+  status: z
+    .enum(["active", "cancelled"])
+    .describe("cancelled se o texto informa que a reserva foi cancelada; senão active"),
   flights: z.array(extractedFlightSchema),
 });
 
