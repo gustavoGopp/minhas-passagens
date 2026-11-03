@@ -30,6 +30,8 @@ export interface CheckSummary {
   requests: number;
   failed: number;
   min_price_cents: number | null;
+  /** O menor preço caiu numa data perto de feriado (fica fora da média de 30 dias). */
+  min_near_holiday: boolean;
 }
 
 export interface CheckResult {
@@ -114,7 +116,7 @@ export async function runCheck(input: {
       )
       .map((o) => o.date),
   );
-  const prices = [...best.values()].map((o) => o.priceCents);
+  const cheapest = [...best.values()].sort((a, b) => a.priceCents - b.priceCents)[0];
 
   return {
     targets,
@@ -128,7 +130,8 @@ export async function runCheck(input: {
       dates_matched: best.size,
       requests: result.requests,
       failed: result.failedDates.length,
-      min_price_cents: prices.length ? Math.min(...prices) : null,
+      min_price_cents: cheapest?.priceCents ?? null,
+      min_near_holiday: cheapest ? nearHoliday.has(cheapest.date) : false,
     },
   };
 }

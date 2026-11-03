@@ -12,7 +12,9 @@ import {
   saveMonitor,
   setMonitorActive,
 } from "@/lib/prices/repo";
-import { PONTE_AEREA } from "@/lib/prices/rule";
+import { loadHolidayContext } from "@/lib/holidays/context";
+import { listMonitors } from "@/lib/prices/repo";
+import { horizonFor, longWeekendPlan, PONTE_AEREA } from "@/lib/prices/rule";
 import { monitorInputSchema, type MonitorInput } from "@/lib/prices/schema";
 import { getProfile } from "@/lib/profiles/repo";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -161,4 +163,52 @@ export async function runPilotAction(_prev: PilotState, fd: FormData): Promise<P
   } catch (e) {
     return { error: (e as Error).message };
   }
+}
+
+/**
+ * "Monitorar este feriadão": cria os monitores de ida e volta do feriadão com as
+ * janelas da ponte aérea. Copia alvo, companhias e provedor do monitor semanal
+ * da mesma rota, se houver; senão usa R$ 250 ± R$ 50. Não duplica.
+ */
+export async function monitorLongWeekendAction(fd: FormData) {
+  const user = await getCurrentUser();
+  const start = z.iso.date().parse(fd.get("start"));
+  const ctx = await loadHolidayContext(user.id, 52);
+  const item = ctx.longWeekends.find((x) => x.lw.start === start);
+  if (!item || item.monitors.length) {
+    refreshHolidayViews();
+    return;
+  }
+  const existing = await listMonitors(user.id);
+  const tz = ctx.profile?.timezone ?? "America/Sao_Paulo";
+  for (const leg of longWeekendPlan(item.lw)) {
+    const model = existing.find(
+      (m) => m.kind === "weekly" && m.origin === leg.origin && m.destination === leg.destination,
+    );
+    const input = monitorInputSchema.parse({
+      name: leg.name,
+      kind: "dates",
+      origin: leg.origin,
+      destination: leg.destination,
+      rule: leg.rule,
+      horizon_weeks: horizonFor(item.lw, ctx.today),
+      target_cents: model?.target_cents ?? 25000,
+      margin_cents: model ? model.margin_cents : 5000,
+      margin_pct: model?.margin_pct ?? null,
+      airlines: model?.airlines ?? ["AD", "G3", "LA"],
+      allow_connections: model?.allow_connections ?? false,
+      max_duration_min: model?.max_duration_min ?? null,
+      frequency: "daily",
+      provider: model?.provider ?? "travelpayouts",
+      active: true,
+    });
+    await saveMonitor(user.id, input, tz, undefined, { long_weekend: start });
+  }
+  refreshHolidayViews();
+}
+
+function refreshHolidayViews() {
+  revalidatePath("/app");
+  revalidatePath("/app/calendario");
+  revalidatePath("/app/monitor");
 }

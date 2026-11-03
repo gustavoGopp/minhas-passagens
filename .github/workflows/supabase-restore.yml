@@ -1,0 +1,74 @@
+# Restaura um backup cifrado gerado por "Supabase — backup".
+# Em conflito de chave primária, a versão do backup sobrescreve a do banco;
+# nada é apagado. Rode primeiro com "simular" ligado.
+name: Supabase — restaurar backup
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "ID da execução do backup (número na URL da execução em Actions)"
+        required: true
+      confirmar:
+        description: "Digite RESTAURAR para gravar (com simular ligado, nada é gravado)"
+        required: false
+      simular:
+        description: "Simular (begin/rollback, não grava)"
+        type: boolean
+        default: true
+      tabelas:
+        description: "Opcional: só estas tabelas, separadas por vírgula (ex.: bookings,flights)"
+        required: false
+
+concurrency: supabase-migrate
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || 'gbvwzwpuzlaftinfcxkc' }}
+      SIMULAR: ${{ inputs.simular }}
+      CONFIRMAR: ${{ inputs.confirmar }}
+      TABELAS: ${{ inputs.tabelas }}
+    steps:
+      - name: Conferir confirmação
+        run: |
+          if [ "$SIMULAR" != "true" ] && [ "$CONFIRMAR" != "RESTAURAR" ]; then
+            echo "::error::Para gravar, desligue simular e digite RESTAURAR."
+            exit 1
+          fi
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/download-artifact@v4
+        with:
+          name: supabase-backup
+          run-id: ${{ inputs.run_id }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/in
+      - name: Decifrar
+        env:
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          f=$(ls "$RUNNER_TEMP"/in/*.gpg | head -1)
+          gpg --batch --yes --pinentry-mode loopback --passphrase-fd 3 -d -o "$RUNNER_TEMP/backup.tar.gz" "$f" 3<<<"$BACKUP_PASSPHRASE"
+          tar -xzf "$RUNNER_TEMP/backup.tar.gz" -C "$RUNNER_TEMP"
+      - name: Migrações (banco novo fica com o schema atual)
+        if: ${{ inputs.simular == false }}
+        run: node scripts/supabase-migrate.mjs
+      - name: Restaurar
+        run: |
+          args=("$RUNNER_TEMP/backup")
+          [ "$SIMULAR" = "true" ] && args+=(--simular)
+          [ -n "$TABELAS" ] && args+=("--tabelas=$TABELAS")
+          node scripts/supabase-restore.mjs "${args[@]}"
+      - name: Apagar a cópia sem cifra
+        if: ${{ always() }}
+        run: rm -rf "$RUNNER_TEMP/backup" "$RUNNER_TEMP/backup.tar.gz" "$RUNNER_TEMP/in"

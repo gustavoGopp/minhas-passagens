@@ -2,7 +2,7 @@
 
 > Leia este arquivo no início de toda sessão. Ele é a memória do projeto: decisões, o que está pronto, próximos passos e as respostas da entrevista. Atualize-o ao fim de cada marco.
 
-Última atualização: 2026-11-02 (M6 pronto; piloto do Travelpayouts aguardando o token)
+Última atualização: 2026-11-03 (M8 e pacote de segurança dos dados prontos; piloto do Travelpayouts no 2º dia)
 
 ## Estado atual
 
@@ -14,18 +14,20 @@
 | M3 Passagens: entrada e extração  | Pronto (MVP de passagens)                          |
 | M4 Regras de passagens            | Pronto                                             |
 | M5 Notificações + agendador       | Pronto (bot do Telegram depende do token do dono)  |
-| M6 Monitor de preços              | Pronto; piloto do Travelpayouts em andamento       |
+| M6 Monitor de preços              | Pronto; piloto do Travelpayouts até 09/11          |
 | M7 E-mail de entrada              | Pendente (precisa de domínio `.com.br`, R$ 40/ano) |
-| M8 Feriados × viagens e monitores | Pendente                                           |
+| M8 Feriados × viagens e monitores | Pronto (+ segurança dos dados)                     |
 | M9 Acabamento v1 + post LinkedIn  | Pendente                                           |
 
 ## Próximos passos
 
-1. Dono: criar conta gratuita no Travelpayouts e colar o token em Mais → Integrações. Os dois monitores da ponte aérea já existem (migração `20261103010000_seed_ponte_aerea.sql`, alvo R$ 250 ± R$ 50 a pedido do dono, editável) e checam em até 5 min depois de salvar o token.
-2. Claude: acompanhar o piloto por 7 dias com o diagnóstico `piloto-precos.sql`; se a cobertura ficar abaixo de ~80%, avisar o dono antes de manter o Travelpayouts como fonte principal (alternativa: SerpApi com a cota grátis do dono, ou Duffel).
-3. Dono: cadastrar a chave da Anthropic em Integrações e registrar as passagens já compradas; desativar no Google Cloud o secret antigo `****dmcf`.
-4. Dono: avisos por e-mail (preferência do dono, no lugar do Telegram): entrar em https://resend.com/api-keys com o Google (mesmo Gmail do app), criar a chave com "Sending access" e colar em Mais → Integrações → E-mail. Telegram fica opcional.
-5. M7: e-mail de entrada (precisa de domínio).
+1. Dono: criar o segredo `BACKUP_PASSPHRASE` no GitHub (a sessão do Claude não consegue criar segredos: o proxy bloqueia a API de secrets). Depois, rodar "Supabase — backup" uma vez para conferir.
+2. Claude: acompanhar o piloto até 09/11 com `piloto-precos.sql`. Leitura de 02/11 (1 checagem por rota): datas com preço CGH→SDU 93,8% e SDU→CGH 68,8%, mas dentro da janela de horário só 31,3% e 0%. Abaixo de 80%: o dono foi avisado e decidiu esperar os 7 dias antes de trocar (alternativas: SerpApi ou Duffel, com a chave do dono).
+3. Dono: depois que o deploy da Vercel ficar verde, colar a chave do Resend em Mais → Integrações → E-mail (passo 5 abaixo). É ela que manda o alerta de agendador parado.
+4. Dono: cadastrar a chave da Anthropic em Integrações e registrar as passagens já compradas; desativar no Google Cloud o secret antigo `****dmcf`.
+5. Dono: avisos por e-mail (preferência do dono, no lugar do Telegram): entrar em https://resend.com/api-keys com o Google (mesmo Gmail do app), criar a chave com "Sending access" e colar em Mais → Integrações → E-mail. Telegram fica opcional.
+6. Opcional: `CRON_SECRET` nas variáveis da Vercel para fechar o vigia diário só para o cron.
+7. M7: e-mail de entrada (precisa de domínio).
 
 ## Histórico de incidentes
 
@@ -39,6 +41,22 @@
 - Disparo: `gh api -X POST repos/gustavoGopp/minhas-passagens/actions/workflows/<arquivo>/dispatches -f ref=main -f 'inputs[alvo]=...'`; leitura: `gh run view <id> --log`.
 - **Regra:** os logs do Actions são públicos. Diagnósticos só retornam nomes de objetos, contagens e erros técnicos, nunca dados pessoais. Toda consulta nova vira arquivo em `supabase/diagnostics/` revisável no PR.
 - Migrações são idempotentes e registradas em `public.app_migrations`.
+- Diagnósticos úteis: `piloto-precos.sql` (cobertura do provedor), `uso-banco.sql` (tamanho do banco e das tabelas, % dos 500 MB, minutos desde o último tick, última retenção).
+
+## Segurança dos dados
+
+- **Backup:** workflow `supabase-backup.yml`, todo domingo às 03:23 (Brasília) e sob demanda. Exporta pela Management API todas as tabelas do `public` + `auth.users` e `auth.identities` em JSON, compacta e cifra com GPG (AES-256, senha no segredo `BACKUP_PASSPHRASE`) **antes** de virar artefato. Sem a senha, falha antes de exportar. Artefato `supabase-backup`, retenção de 28 dias (4 cópias). O log mostra só nomes de tabela e contagens. Não entram: arquivos do Storage (originais duram 30 dias por decisão), agendamento do `pg_cron` (o workflow de notificações recria) e configuração do Auth.
+- **Teste sem guardar nada:** rodar o backup com `modo = teste` exporta e simula a restauração inteira em `begin/rollback` contra o banco real.
+- **Restaurar:**
+  1. Actions → **Supabase — restaurar backup** → Run workflow.
+  2. `run_id`: o número no fim da URL da execução do backup (ex.: `.../actions/runs/123456789`).
+  3. Primeiro rode com `simular` ligado: confere a senha, o arquivo e cada tabela, sem gravar.
+  4. Depois desligue `simular` e digite `RESTAURAR` em `confirmar`. O workflow aplica as migrações (banco novo fica com o schema atual) e restaura na ordem certa (Auth primeiro, depois pais antes dos filhos). Em conflito de chave primária vale a versão do backup; linhas mais novas não são apagadas. `tabelas` restringe (ex.: `bookings,flights`).
+  5. Projeto novo do Supabase: ajustar `SUPABASE_PROJECT_REF`, rodar "Supabase — notificações e agendador" e trocar as chaves do Supabase na Vercel.
+  - Restaurar no computador: baixar o artefato, `gpg -d supabase-AAAA-MM-DD.tar.gz.gpg > b.tar.gz && tar xzf b.tar.gz`, e rodar `node scripts/supabase-restore.mjs backup --simular` com `SUPABASE_ACCESS_TOKEN` e `SUPABASE_PROJECT_REF` no ambiente.
+  - Atenção: o GitHub desliga workflows agendados após 60 dias sem commits no repositório.
+- **Agendador parado:** todo tick autorizado grava `app_config.last_tick_at`. O vigia `/api/jobs/watchdog` roda 1×/dia pelo Vercel Cron (`vercel.json`, 11:17 UTC; no plano Hobby a hora pode variar dentro da hora), independente do `pg_cron`. Se o último tick tiver mais de 30 min: roda um tick de reconciliação (no máximo 1/h, sem gravar `last_tick_at`, para não esconder o problema) e manda e-mail ao dono (usuário mais antigo) com a chave Resend dele (no máximo 1 a cada 20 h). Com `CRON_SECRET` na Vercel, só o cron consegue chamar.
+- **Retenção:** uma vez por dia (UTC), o tick apaga `price_observations` com mais de 180 dias e `price_checks` com mais de 365 dias, e pausa monitores de feriadão 10 dias depois do início. Registro em `app_config.retention_last_run`.
 
 ## Bloqueios conhecidos
 
@@ -58,7 +76,9 @@
 | Preços              | Adaptador plugável. Piloto de 7 dias com Travelpayouts/Aviasales (grátis) em SDU–CGH antes de fixar; Duffel e SerpApi opcionais com chave do usuário                                                                                                             | Amadeus Self-Service encerrado em 07/2026; demais fontes inviáveis para indivíduos                    |
 | Agendador           | Supabase pg_cron + pg_net chamando `POST /api/jobs/tick` a cada minuto; Cloudflare Worker cron como fallback; Vercel Cron só reconciliação diária                                                                                                                | Precisão de minuto para check-in, custo zero, evita pausa do Supabase                                 |
 | Notificações        | Imediatas: preço no alvo, check-in (abertura por cia + 24h), nova passagem por e-mail. Janela silenciosa 23h–7h exceto check-in                                                                                                                                  | Entrevista                                                                                            |
-| Retenção            | Original (e-mail/print) guardado 30 dias e apagado; ficam só dados estruturados                                                                                                                                                                                  | Entrevista                                                                                            |
+| Retenção            | Original (e-mail/print) guardado 30 dias e apagado; ficam só dados estruturados. Preços: observações 180 dias, checagens 365 dias                                                                                                                                | Entrevista; banco Free de 500 MB                                                                      |
+| Backup              | Export JSON semanal via Actions, cifrado com GPG AES-256 (segredo `BACKUP_PASSPHRASE`), artefato de 28 dias; restauração por workflow com simulação                                                                                                              | Supabase Free não tem backup; repositório e logs públicos                                             |
+| Vigia do agendador  | Vercel Cron diário em `/api/jobs/watchdog`: tick > 30 min → reconciliação + e-mail ao dono pela chave Resend dele                                                                                                                                                | Independe do pg_cron; custo zero                                                                      |
 | Gastos              | Competência pela data da compra; reembolso na data de recebimento; agrupar por mês, companhia, canal, etiqueta pessoal/trabalho e rota                                                                                                                           | Entrevista                                                                                            |
 
 ## Respostas da entrevista (2026-10-29)
@@ -151,3 +171,18 @@ Monitor internacional e conversão de moeda; WhatsApp; compra no app; raspagem d
 - Sem domínio próprio, o Resend só entrega no e-mail da conta que criou a chave, por isso a conta do Resend precisa ser do mesmo Gmail do app. Remetente: `onboarding@resend.dev`; com o domínio do M7, passa a ser o do app.
 - O agendador e o botão de teste usam a chave do usuário; `RESEND_API_KEY` da instalação continua como fallback.
 - Testes: 138 no total.
+
+## O que o M8 entregou (2026-11-03)
+
+- `src/lib/notify/holiday-events.ts` (puro, testado): três avisos pelo agendador, um por evento (`notification_log`), nenhum urgente (respeitam a janela silenciosa):
+  - `holiday-flight:<voo>:<data>`: feriado a até 3 dias de um voo meu (data local da origem; voos ativos nos próximos 30 dias);
+  - `holiday-monitor:<monitor>:<1ª data>`: feriado a ±2 dias de datas monitoradas, agrupadas em blocos de até 3 dias, com "o preço tende a subir". Ficam de fora os monitores do tipo feriado prolongado e os criados para um feriadão;
+  - `long-weekend:<início>`: feriadão nas próximas 8 semanas, com a emenda sugerida.
+- Feriados com as preferências do perfil (UF, cidade, facultativos, judaicos com início ao pôr do sol) e os ajustes do calendário (`holidaysAround`, `overridesFromRows`). A tela inicial passou a respeitar os ajustes e a usar ±3 dias.
+- `rule.ts`: `longWeekends` devolve os dias de emenda (`bridges`); `upcomingLongWeekends`, `bridgeSuggestion`, `longWeekendPlan` (ida SP → RJ na véspera a partir das 18h ou no 1º dia até 13h; volta RJ → SP no último dia a partir das 12h ou no dia seguinte até 8h, as janelas da ponte aérea) e `horizonFor`.
+- Telas: selo "feriado perto" nos voos (início e calendário); seção "Próximos feriadões" nas duas telas, com "Monitorar este feriadão", que cria os 2 monitores (tipo datas, copiando alvo, companhias e provedor do monitor semanal da mesma rota, ou R$ 250 ± R$ 50) e depois mostra "✓ Monitorando"; o calendário mostra os voos de cada mês.
+- Monitor: o gráfico destaca (âmbar, com legenda) as checagens cujo menor preço caiu perto de feriado; a tabela destaca as linhas.
+- Migração `20261104000000_m8_feriados.sql`: `price_monitors.long_weekend` e `price_checks.min_near_holiday`, com preenchimento das checagens antigas.
+- Agendador refatorado em `src/lib/jobs/tick.ts` (`runTick`), usado pela rota do pg_cron e pelo vigia. Pacote de segurança dos dados descrito em "Segurança dos dados".
+- Datas comemorativas (ex.: Chanucá) não geram aviso nem selo; continuam fora da média de 30 dias do monitor. Avisos de monitor cobrem as próximas 8 semanas.
+- Testes: 160 no total.

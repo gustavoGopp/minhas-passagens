@@ -108,3 +108,32 @@ function normalizeName(name: string): string {
     .replace(/\s*\(.*\)\s*/g, "")
     .trim();
 }
+
+/** Linhas de `holiday_overrides` (banco) → ajustes aceitos por getHolidays(). */
+export function overridesFromRows(
+  rows: {
+    action: string;
+    date: string;
+    event_key?: string | null;
+    name?: string | null;
+    kind?: string | null;
+  }[],
+): HolidayOverride[] {
+  return rows.map((o) => ({
+    action: o.action === "hide" ? "hide" : "add",
+    date: o.date,
+    key: o.event_key ?? null,
+    name: o.name ?? null,
+    kind: (o.kind as HolidayKind | null) ?? null,
+  }));
+}
+
+/** Feriados de `today` até o fim do ano seguinte (cobre monitores de até 52 semanas). */
+export function holidaysAround(
+  today: string,
+  prefs: HolidayPreferences = {},
+  overrides: HolidayOverride[] = [],
+): HolidayEvent[] {
+  const year = Number(today.slice(0, 4));
+  return [...getHolidays(year, prefs, overrides), ...getHolidays(year + 1, prefs, overrides)];
+}
