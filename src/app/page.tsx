@@ -33,7 +33,7 @@ export default function Home() {
         {features.map((f) => (
           <article
             key={f.title}
-            className="rounded-xl border border-zinc-200 p-5 dark:border-zinc-800"
+            className="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900"
           >
             <h2 className="text-base font-semibold">{f.title}</h2>
             <p className="mt-1 text-sm leading-6 text-zinc-600 dark:text-zinc-400">{f.text}</p>
@@ -44,7 +44,7 @@ export default function Home() {
       <p>
         <Link
           href="/login"
-          className="inline-block rounded-lg bg-zinc-900 px-4 py-3 text-sm font-medium text-white dark:bg-zinc-100 dark:text-zinc-900"
+          className="bg-brand hover:bg-brand-strong dark:bg-brand-dark inline-block rounded-xl px-4 py-3 text-sm font-medium text-white dark:text-zinc-950"
         >
           Entrar com Google
         </Link>

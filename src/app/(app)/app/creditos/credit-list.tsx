@@ -17,7 +17,7 @@ export function CreditList({
   if (!credits.length)
     return <p className="text-sm text-zinc-600 dark:text-zinc-400">Nada registrado.</p>;
   return (
-    <ul className="flex flex-col divide-y divide-zinc-200 rounded-xl border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
+    <ul className="flex flex-col divide-y divide-zinc-200 rounded-xl border border-zinc-200 bg-white dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-900">
       {credits.map((c) => {
         const expired = c.expires_on != null && c.expires_on < today;
         return (

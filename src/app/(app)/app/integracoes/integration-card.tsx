@@ -23,7 +23,7 @@ export function IntegrationCard({
     : { label: "Não configurada", cls: "text-zinc-600 dark:text-zinc-400" };
 
   return (
-    <article className="flex flex-col gap-3 rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+    <article className="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="font-semibold">{info.name}</h2>
@@ -57,7 +57,7 @@ export function IntegrationCard({
         <button
           type="submit"
           disabled={pending}
-          className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900"
+          className="bg-brand hover:bg-brand-strong dark:bg-brand-dark rounded-xl px-4 py-2 text-sm font-medium text-white disabled:opacity-60 dark:text-zinc-950"
         >
           {pending ? "Validando…" : "Salvar"}
         </button>

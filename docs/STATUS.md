@@ -248,3 +248,13 @@ Monitor internacional e conversão de moeda; WhatsApp; compra no app; raspagem d
 - **Importação:** a data da compra cai na data do e-mail quando não vem no texto. O prompt explica como deduzir o ano (o voo vem depois do e-mail e é o mais perto). A revisão mostra "confira o ano" para voo antes do e-mail ou quase um ano depois. A deduplicação também pega o mesmo voo e horário com códigos diferentes (pedido da agência × localizador).
 - **Duplicada antiga:** o alerta "Possível compra duplicada" vale também para voos passados vindos do e-mail, com links para as duas.
 - Migração `20261110000000_corrige_data_compra_importadas.sql`: corrige a data da compra das passagens já importadas para a data do e-mail, só onde ficou o valor padrão antigo.
+
+## Bloco 3, parte 2: visual novo (2026-11-03)
+
+- **Paleta:** a escala `zinc` do Tailwind foi redefinida em `globals.css` (`@theme`) com neutros próprios, e entraram os tokens `brand` (anil `#1E4FD8`, `#8FB0FF` no escuro), `brand-soft` e `on-brand-muted`. Fundo de "papel" (`#F6F5F1`) no claro e `#0E1116` no escuro. Contraste AA conferido por script e pelo axe.
+- **Componentes base** em `src/components/ui.tsx` (`button`, `Card`, `Badge`, `SectionTitle`, `LinkButton`). Botões principais em anil e cartões e listas com fundo próprio em todas as telas.
+- **Navegação:** barra de baixo com ícones (SVG próprio), 56 px mais a área segura do iPhone, item ativo destacado e "Mais" ativo nas telas de conta. No desktop, a barra vai para o topo e o conteúdo fica em `max-w-3xl`.
+- **Próximo voo como cartão de embarque:** códigos IATA grandes em fonte mono, picote e canhoto com o localizador e o check-in. O canhoto fica verde quando o check-in abre.
+- **"Comece por aqui"** (`src/lib/onboarding.ts`): Gmail, chave da Anthropic, avisos por e-mail, cidade de casa e monitor, marcados sozinhos. O cartão some quando tudo está feito.
+- **Gráfico de preços:** texto com ~12 px reais no celular, linha em anil e faixa verde "no alvo".
+- axe com 0 violações em todas as telas nos dois temas. Lighthouse das páginas públicas igual ao de antes (96–100).

@@ -24,7 +24,7 @@ export function PilotRunner() {
         </label>
         <button
           disabled={pending}
-          className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900"
+          className="bg-brand hover:bg-brand-strong dark:bg-brand-dark rounded-xl px-4 py-2 text-sm font-medium text-white disabled:opacity-60 dark:text-zinc-950"
         >
           {pending ? "Consultando…" : "Rodar piloto"}
         </button>

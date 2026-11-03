@@ -13,10 +13,18 @@ import {
 import { checkinRule, checkinState } from "@/lib/trips/checkin";
 import { listCredits } from "@/lib/trips/credits-repo";
 import { spendByMonth } from "@/lib/trips/reports";
+import { Card } from "@/components/ui";
+import { listIntegrationsPublic } from "@/lib/integrations/repo";
+import { getMailAccount } from "@/lib/mail/accounts";
+import { onboardingSteps } from "@/lib/onboarding";
+import { listMonitors } from "@/lib/prices/repo";
+import { getProfile } from "@/lib/profiles/repo";
 import { reviewItems } from "@/lib/trips/review";
 import { computeAlerts, type TripAlert } from "@/lib/trips/rules";
 import { formatInZone } from "@/lib/trips/time";
-import { airportTimeZone } from "@/lib/airports";
+import { airportTimeZone, findAirport } from "@/lib/airports";
+import { airlineName } from "@/lib/trips/airlines";
+import type { FlightRow } from "@/lib/trips/draft";
 import { listTrips } from "@/lib/trips/repo";
 import { formatBRL, groupByLocalYear, pastFlights, upcomingFlights } from "@/lib/trips/summary";
 
@@ -33,12 +41,15 @@ export default function AppHome() {
           </Link>
           <Link
             href="/app/passagens/nova"
-            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white dark:bg-zinc-100 dark:text-zinc-900"
+            className="bg-brand hover:bg-brand-strong dark:bg-brand-dark rounded-xl px-4 py-2 text-sm font-medium text-white dark:text-zinc-950"
           >
             + Nova
           </Link>
         </div>
       </div>
+      <Suspense fallback={null}>
+        <StartHere />
+      </Suspense>
       <Suspense
         fallback={<p className="text-sm text-zinc-600 dark:text-zinc-400">Carregando passagens…</p>}
       >
@@ -113,47 +124,12 @@ async function Trips() {
         <Alerts alerts={alerts.filter((a) => a.type !== "check_date")} />
       ) : null}
       {next ? (
-        <section className="flex flex-col gap-3 rounded-2xl bg-zinc-900 p-5 text-white dark:bg-zinc-100 dark:text-zinc-900">
-          <div className="flex items-center justify-between text-xs tracking-wide uppercase opacity-80">
-            <span>Próximo voo</span>
-            <span>{relativeTime(next.departs_at, now)}</span>
-          </div>
-          <FlightLine f={next} big />
-          <div className="flex flex-wrap items-center gap-2 text-sm">
-            {byId.get(next.booking_id)?.locator ? (
-              <span className="rounded-md bg-white/15 px-2 py-1 font-mono dark:bg-black/10">
-                {byId.get(next.booking_id)?.locator}
-              </span>
-            ) : null}
-            {nearNext.map((h) => (
-              <span
-                key={h.key + h.date}
-                className="rounded-md bg-amber-400/90 px-2 py-1 text-xs text-black"
-              >
-                Perto de {h.name}
-              </span>
-            ))}
-          </div>
-          <CheckinLine flight={next} now={now} />
-          <div className="flex items-center justify-between gap-2">
-            <form action={toggleCheckinAction}>
-              <input type="hidden" name="flight_id" value={next.id} />
-              <input type="hidden" name="done" value={String(!next.checkin_done)} />
-              <button
-                className="rounded-lg bg-white/15 px-3 py-2 text-sm dark:bg-black/10"
-                type="submit"
-              >
-                {next.checkin_done ? "✓ Check-in feito" : "Marcar check-in feito"}
-              </button>
-            </form>
-            <Link
-              className="text-sm underline underline-offset-4"
-              href={`/app/passagens/${next.booking_id}`}
-            >
-              Detalhes
-            </Link>
-          </div>
-        </section>
+        <BoardingPass
+          flight={next}
+          locator={byId.get(next.booking_id)?.locator ?? null}
+          now={now}
+          near={nearNext.map((h) => h.name)}
+        />
       ) : (
         <p className="text-sm text-zinc-600 dark:text-zinc-400">Nenhum voo futuro.</p>
       )}
@@ -165,7 +141,7 @@ async function Trips() {
           </h2>
           {groupByLocalYear(upcoming.slice(1)).map((g, gi, all) => (
             <YearGroup key={g.year} year={g.year} show={all.length > 1 || g.year !== currentYear}>
-              <ul className="flex flex-col divide-y divide-zinc-200 rounded-xl border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
+              <ul className="flex flex-col divide-y divide-zinc-200 rounded-xl border border-zinc-200 bg-white dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-900">
                 {g.items.map((f) => (
                   <li key={f.id}>
                     <Link
@@ -189,7 +165,7 @@ async function Trips() {
       <LongWeekends items={ctx.longWeekends} />
 
       <section className="grid grid-cols-2 gap-3">
-        <div className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+        <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
           <p className="text-xs text-zinc-600 dark:text-zinc-400">Gasto neste mês</p>
           <p className="text-lg font-semibold">{formatBRL(thisMonth?.netCents ?? 0)}</p>
           {thisMonth?.miles ? (
@@ -198,7 +174,7 @@ async function Trips() {
             </p>
           ) : null}
         </div>
-        <div className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+        <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
           <p className="text-xs text-zinc-600 dark:text-zinc-400">Voos futuros</p>
           <p className="text-lg font-semibold">{upcoming.length}</p>
         </div>
@@ -211,7 +187,7 @@ async function Trips() {
           </h2>
           {groupByLocalYear(past).map((g, gi, all) => (
             <YearGroup key={g.year} year={g.year} show={all.length > 1 || g.year !== currentYear}>
-              <ul className="flex flex-col divide-y divide-zinc-200 rounded-xl border border-zinc-200 opacity-80 dark:divide-zinc-800 dark:border-zinc-800">
+              <ul className="flex flex-col divide-y divide-zinc-200 rounded-xl border border-zinc-200 bg-white dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-900">
                 {g.items.map((f) => (
                   <li key={f.id}>
                     <Link href={`/app/passagens/${f.booking_id}`} className="block px-4 py-3">
@@ -243,9 +219,13 @@ function CheckinLine({
   const url = checkinRule(flight.airline).url;
   if (st.state === "done" || st.state === "closed") return null;
   if (st.state === "not_open")
-    return <p className="text-sm opacity-80">Check-in abre {formatInZone(st.opensAt, tz)}</p>;
+    return (
+      <p className="text-on-brand-muted text-sm dark:text-zinc-300">
+        Check-in abre {formatInZone(st.opensAt, tz)}
+      </p>
+    );
   return (
-    <p className="text-sm font-medium">
+    <p className="text-sm font-semibold">
       Check-in aberto até {formatInZone(st.closesAt, tz)}
       {url ? (
         <>
@@ -349,5 +329,191 @@ function YearGroup({
       <h3 className="text-base font-semibold tabular-nums">{year}</h3>
       {children}
     </div>
+  );
+}
+
+/**
+ * Próximo voo como cartão de embarque: rota grande à esquerda e, depois do
+ * picote, o canhoto com localizador e check-in (verde quando o check-in abre).
+ */
+function BoardingPass({
+  flight: f,
+  locator,
+  now,
+  near,
+}: {
+  flight: FlightRow;
+  locator: string | null;
+  now: string;
+  near: string[];
+}) {
+  const tz = airportTimeZone(f.origin) ?? "America/Sao_Paulo";
+  const arrTz = airportTimeZone(f.destination) ?? "America/Sao_Paulo";
+  const open = checkinState(f, now).state === "open";
+  const time = (iso: string, zone: string) =>
+    new Intl.DateTimeFormat("pt-BR", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+      timeZone: zone,
+    }).format(new Date(iso));
+  const city = (iata: string) => findAirport(iata)?.city ?? iata;
+  return (
+    <section
+      aria-label={`Próximo voo: ${f.origin} para ${f.destination}`}
+      className="bg-brand dark:bg-brand-dark-soft relative overflow-hidden rounded-3xl text-white shadow-md sm:flex dark:text-zinc-100"
+    >
+      <div className="flex flex-1 flex-col gap-3 p-5">
+        <div className="flex items-center justify-between text-xs font-semibold tracking-wider uppercase">
+          <span className="text-on-brand-muted dark:text-zinc-300">Próximo voo</span>
+          <span className="rounded-full bg-white/15 px-2.5 py-1 normal-case">
+            {relativeTime(f.departs_at, now)}
+          </span>
+        </div>
+        <div className="flex items-end justify-between gap-3">
+          <div className="flex flex-col">
+            <span className="font-mono text-4xl font-semibold tracking-tight">{f.origin}</span>
+            <span className="text-on-brand-muted text-xs dark:text-zinc-300">{city(f.origin)}</span>
+          </div>
+          <svg
+            viewBox="0 0 24 24"
+            className="mb-5 h-6 w-6 shrink-0"
+            fill="currentColor"
+            aria-hidden
+          >
+            <path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5Z" />
+          </svg>
+          <div className="flex flex-col items-end">
+            <span className="font-mono text-4xl font-semibold tracking-tight">{f.destination}</span>
+            <span className="text-on-brand-muted text-xs dark:text-zinc-300">
+              {city(f.destination)}
+            </span>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-baseline justify-between gap-2 text-sm">
+          <span className="font-medium">{formatInZone(f.departs_at, tz)}</span>
+          {f.arrives_at ? (
+            <span className="text-on-brand-muted tabular-nums dark:text-zinc-300">
+              chega {time(f.arrives_at, arrTz)}
+            </span>
+          ) : null}
+        </div>
+        <p className="text-on-brand-muted text-xs dark:text-zinc-300">
+          {[airlineName(f.airline), f.flight_number, findAirport(f.origin)?.name]
+            .filter(Boolean)
+            .join(" · ")}
+        </p>
+        {near.length ? (
+          <p className="self-start rounded-md bg-amber-300 px-2 py-1 text-xs font-medium text-zinc-950">
+            Perto de {[...new Set(near)].join(", ")}
+          </p>
+        ) : null}
+      </div>
+
+      {/* Picote: linha tracejada com os dois recortes do cartão. */}
+      <div
+        aria-hidden
+        className="relative h-0 border-t-2 border-dashed border-white/40 sm:h-auto sm:w-0 sm:border-t-0 sm:border-l-2"
+      >
+        <span className="bg-background absolute -top-3 -left-3 h-6 w-6 rounded-full sm:-top-3 sm:-left-3" />
+        <span className="bg-background absolute -top-3 -right-3 h-6 w-6 rounded-full sm:top-auto sm:-bottom-3 sm:-left-3" />
+      </div>
+
+      <div
+        className={`flex flex-col gap-3 p-5 sm:w-60 ${open ? "bg-green-700 dark:bg-green-900" : ""}`}
+      >
+        {locator ? (
+          <div className="flex flex-col">
+            <span className="text-on-brand-muted text-xs font-semibold tracking-wider uppercase dark:text-zinc-300">
+              Localizador
+            </span>
+            <span className="font-mono text-2xl font-semibold tracking-[0.2em]">{locator}</span>
+          </div>
+        ) : null}
+        <CheckinLine flight={f} now={now} />
+        <div className="flex items-center justify-between gap-2">
+          <form action={toggleCheckinAction}>
+            <input type="hidden" name="flight_id" value={f.id} />
+            <input type="hidden" name="done" value={String(!f.checkin_done)} />
+            <button
+              className="rounded-xl bg-white/15 px-3 py-2 text-sm font-medium hover:bg-white/25"
+              type="submit"
+            >
+              {f.checkin_done ? "✓ Check-in feito" : "Marcar check-in feito"}
+            </button>
+          </form>
+          <Link
+            className="text-sm font-medium underline underline-offset-4"
+            href={`/app/passagens/${f.booking_id}`}
+          >
+            Detalhes
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/** "Comece por aqui": some quando tudo estiver configurado. */
+async function StartHere() {
+  const user = await getCurrentUser();
+  const [account, integrations, profile, monitors] = await Promise.all([
+    getMailAccount(user.id).catch(() => null),
+    listIntegrationsPublic(user.id),
+    getProfile(user.id),
+    listMonitors(user.id),
+  ]);
+  const has = (p: string) => integrations.some((i) => i.provider === p);
+  const steps = onboardingSteps({
+    gmailActive: account?.status === "active",
+    hasAnthropic: has("anthropic"),
+    emailAlerts:
+      Boolean((profile as { notify_email?: boolean } | null)?.notify_email) && has("resend"),
+    homeCity: Boolean(profile?.home_city),
+    monitors: monitors.length,
+  });
+  const done = steps.filter((s) => s.done).length;
+  if (done === steps.length) return null;
+  return (
+    <Card aria-labelledby="comece">
+      <div className="flex items-center justify-between gap-3">
+        <h2 id="comece" className="font-semibold">
+          Comece por aqui
+        </h2>
+        <span className="text-xs font-medium text-zinc-600 tabular-nums dark:text-zinc-400">
+          {done} de {steps.length}
+        </span>
+      </div>
+      <ol className="flex flex-col gap-1">
+        {steps.map((s) => (
+          <li key={s.key}>
+            <Link
+              href={s.href}
+              className="flex items-start gap-3 rounded-xl px-2 py-2 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+            >
+              <span
+                aria-hidden
+                className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                  s.done
+                    ? "bg-green-700 text-white"
+                    : "border-2 border-zinc-300 dark:border-zinc-600"
+                }`}
+              >
+                {s.done ? "✓" : ""}
+              </span>
+              <span className="flex flex-col">
+                <span
+                  className={`text-sm font-medium ${s.done ? "line-through decoration-zinc-400" : ""}`}
+                >
+                  {s.title}
+                  <span className="sr-only">{s.done ? " (feito)" : " (falta)"}</span>
+                </span>
+                <span className="text-xs text-zinc-600 dark:text-zinc-400">{s.why}</span>
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ol>
+    </Card>
   );
 }

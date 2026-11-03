@@ -189,7 +189,7 @@ export function MonitorForm({
         </label>
       </div>
 
-      <fieldset className="flex flex-col gap-2 rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
+      <fieldset className="flex flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900">
         <legend className="px-1 text-sm font-medium">Quando (horário local da origem)</legend>
         {kind === "weekly" ? (
           <>
@@ -477,7 +477,7 @@ export function MonitorForm({
       ) : null}
       <button
         disabled={pending}
-        className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900"
+        className="bg-brand hover:bg-brand-strong dark:bg-brand-dark rounded-xl px-4 py-2 text-sm font-medium text-white disabled:opacity-60 dark:text-zinc-950"
       >
         {pending ? "Salvando…" : id ? "Salvar" : "Criar monitor"}
       </button>

@@ -9,7 +9,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       <Suspense fallback={<NavList pathname={null} />}>
         <AppNav />
       </Suspense>
-      <div className="mx-auto w-full max-w-2xl flex-1 px-4 pt-6 pb-24 sm:pb-10">
+      <div className="mx-auto w-full max-w-3xl flex-1 px-4 pt-6 pb-28 sm:pb-10">
         <Suspense
           fallback={
             <p className="text-sm text-zinc-600 dark:text-zinc-400">Carregando sua conta…</p>

@@ -163,7 +163,7 @@ export function BookingForm({
         {d.legs.map((l, i) => (
           <div
             key={i}
-            className="flex flex-col gap-3 rounded-xl border border-zinc-200 p-3 dark:border-zinc-800"
+            className="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900"
           >
             <div className="grid grid-cols-2 gap-3">
               <label className={label}>
@@ -284,7 +284,7 @@ export function BookingForm({
       <button
         type="submit"
         disabled={pending}
-        className="rounded-lg bg-zinc-900 px-4 py-3 text-sm font-medium text-white disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900"
+        className="bg-brand hover:bg-brand-strong dark:bg-brand-dark rounded-xl px-4 py-3 text-sm font-medium text-white disabled:opacity-60 dark:text-zinc-950"
       >
         {pending ? "Salvando…" : d.id ? "Salvar alterações" : "Salvar passagem"}
       </button>

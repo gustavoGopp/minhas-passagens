@@ -22,7 +22,7 @@ export default function MonitorPage() {
         <h1 className="text-2xl font-semibold tracking-tight">Monitor de preços</h1>
         <Link
           href="/app/monitor/novo"
-          className="rounded-lg bg-zinc-900 px-3 py-2 text-sm font-medium text-white dark:bg-zinc-100 dark:text-zinc-900"
+          className="bg-brand hover:bg-brand-strong dark:bg-brand-dark rounded-xl px-3 py-2 text-sm font-medium text-white dark:text-zinc-950"
         >
           Novo
         </Link>
@@ -97,7 +97,7 @@ async function Monitors() {
               <li key={m.id}>
                 <Link
                   href={`/app/monitor/${m.id}`}
-                  className="flex flex-col gap-1 rounded-xl border border-zinc-200 p-4 dark:border-zinc-800"
+                  className="flex flex-col gap-1 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900"
                 >
                   <div className="flex items-baseline justify-between gap-3">
                     <span className="font-semibold">
@@ -140,7 +140,7 @@ async function Monitors() {
         <p className="text-sm text-zinc-600 dark:text-zinc-400">Nenhum monitor ainda.</p>
       )}
 
-      <section className="flex flex-col gap-3 rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+      <section className="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
         <h2 className="font-semibold">Atalho: ponte aérea semanal</h2>
         <p className="text-xs text-zinc-600 dark:text-zinc-400">
           Cria dois monitores: SDU → CGH (segunda até 8h ou domingo a partir de 12h) e CGH → SDU

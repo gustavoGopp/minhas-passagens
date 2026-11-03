@@ -19,7 +19,7 @@ export function TelegramConnect() {
         <form action={action}>
           <button
             disabled={pending}
-            className="rounded-lg bg-zinc-900 px-3 py-2 text-sm text-white disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900"
+            className="bg-brand hover:bg-brand-strong dark:bg-brand-dark rounded-xl px-3 py-2 text-sm text-white disabled:opacity-60 dark:text-zinc-950"
           >
             {pending ? "Gerando link…" : "Conectar Telegram"}
           </button>

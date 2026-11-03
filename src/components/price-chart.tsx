@@ -20,9 +20,10 @@ export function PriceChart({
       </p>
     );
   }
-  const W = 600;
-  const H = 200;
-  const pad = { l: 64, r: 12, t: 12, b: 24 };
+  // Largura parecida com a do celular: o texto do SVG fica com ~12 px de verdade.
+  const W = 360;
+  const H = 190;
+  const pad = { l: 58, r: 10, t: 14, b: 24 };
   const values = [...points.map((p) => p.cents), targetCents];
   const lo = Math.min(...values) * 0.95;
   const hi = Math.max(...values) * 1.05;
@@ -46,6 +47,14 @@ export function PriceChart({
         role="img"
         aria-label={`Menor preço por checagem, de ${formatBRL(points[0].cents)} a ${formatBRL(points[points.length - 1].cents)}`}
       >
+        {/* Faixa "no alvo ou abaixo", em verde-claro. */}
+        <rect
+          x={pad.l}
+          y={y(targetCents)}
+          width={W - pad.l - pad.r}
+          height={Math.max(0, H - pad.b - y(targetCents))}
+          className="fill-green-50 dark:fill-green-950/50"
+        />
         {ticks.map((v) => (
           <g key={v}>
             <line
@@ -56,7 +65,12 @@ export function PriceChart({
               className="stroke-zinc-200 dark:stroke-zinc-800"
               strokeWidth={1}
             />
-            <text x={pad.l - 6} y={y(v) + 4} textAnchor="end" className="fill-zinc-500 text-[11px]">
+            <text
+              x={pad.l - 6}
+              y={y(v) + 4}
+              textAnchor="end"
+              className="fill-zinc-600 text-[12px] tabular-nums dark:fill-zinc-400"
+            >
               {formatBRL(v).replace(/,00$/, "")}
             </text>
           </g>
@@ -66,7 +80,7 @@ export function PriceChart({
           x2={W - pad.r}
           y1={y(targetCents)}
           y2={y(targetCents)}
-          className="stroke-zinc-500"
+          className="stroke-green-700 dark:stroke-green-400"
           strokeWidth={1.5}
           strokeDasharray="6 4"
         />
@@ -74,15 +88,15 @@ export function PriceChart({
           x={W - pad.r}
           y={y(targetCents) - 5}
           textAnchor="end"
-          className="fill-zinc-600 text-[11px] dark:fill-zinc-400"
+          className="fill-green-800 text-[12px] font-medium dark:fill-green-300"
         >
           alvo {formatBRL(targetCents)}
         </text>
         <path
           d={d}
           fill="none"
-          className="stroke-zinc-900 dark:stroke-zinc-100"
-          strokeWidth={2}
+          className="stroke-brand dark:stroke-brand-dark"
+          strokeWidth={2.5}
           strokeLinejoin="round"
         />
         {points.map((p) => (
@@ -90,11 +104,11 @@ export function PriceChart({
             <circle
               cx={x(p.at)}
               cy={y(p.cents)}
-              r={p.nearHoliday ? 5.5 : 4}
+              r={p.nearHoliday ? 5 : 3.5}
               className={
                 p.nearHoliday
                   ? "fill-amber-500 stroke-white dark:fill-amber-400 dark:stroke-zinc-950"
-                  : "fill-zinc-900 stroke-white dark:fill-zinc-100 dark:stroke-zinc-950"
+                  : "fill-brand dark:fill-brand-dark stroke-white dark:stroke-zinc-950"
               }
               strokeWidth={2}
             />
@@ -104,10 +118,19 @@ export function PriceChart({
             </circle>
           </g>
         ))}
-        <text x={pad.l} y={H - 6} className="fill-zinc-500 text-[11px]">
+        <text
+          x={pad.l}
+          y={H - 6}
+          className="fill-zinc-600 text-[12px] tabular-nums dark:fill-zinc-400"
+        >
           {fmtDay(points[0].at)}
         </text>
-        <text x={W - pad.r} y={H - 6} textAnchor="end" className="fill-zinc-500 text-[11px]">
+        <text
+          x={W - pad.r}
+          y={H - 6}
+          textAnchor="end"
+          className="fill-zinc-600 text-[12px] tabular-nums dark:fill-zinc-400"
+        >
           {fmtDay(points[points.length - 1].at)}
         </text>
       </svg>

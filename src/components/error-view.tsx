@@ -24,7 +24,7 @@ export function ErrorView({ error, retry }: { error: unknown; retry: () => void 
         <button
           type="button"
           onClick={() => retry()}
-          className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white dark:bg-zinc-100 dark:text-zinc-900"
+          className="bg-brand hover:bg-brand-strong dark:bg-brand-dark rounded-xl px-4 py-2 text-sm font-medium text-white dark:text-zinc-950"
         >
           Tentar de novo
         </button>
