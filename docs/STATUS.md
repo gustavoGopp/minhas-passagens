@@ -184,4 +184,5 @@ Monitor internacional e conversão de moeda; WhatsApp; compra no app; raspagem d
 - Monitor: o gráfico destaca (âmbar, com legenda) as checagens cujo menor preço caiu perto de feriado; a tabela destaca as linhas.
 - Migração `20261104000000_m8_feriados.sql`: `price_monitors.long_weekend` e `price_checks.min_near_holiday`, com preenchimento das checagens antigas.
 - Agendador refatorado em `src/lib/jobs/tick.ts` (`runTick`), usado pela rota do pg_cron e pelo vigia. Pacote de segurança dos dados descrito em "Segurança dos dados".
-- Testes: 159 no total.
+- Datas comemorativas (ex.: Chanucá) não geram aviso nem selo; continuam fora da média de 30 dias do monitor. Avisos de monitor cobrem as próximas 8 semanas.
+- Testes: 160 no total.

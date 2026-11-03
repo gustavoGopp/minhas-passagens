@@ -156,6 +156,10 @@ describe("avisos de feriado", () => {
     expect(ev[0].body).toContain("Dia da Consciência Negra (20/11)");
   });
 
+  it("não põe selo nem avisa por data comemorativa (Chanucá)", () => {
+    expect(holidaysNearFlight(holidays, flight("f", "2026-12-08T12:00:00Z"))).toEqual([]);
+  });
+
   it("ignora voo longe de feriado, cancelado, passado ou além de 30 dias", () => {
     const ev = holidayEvents({
       bookings: [booking("b1"), booking("b2", "cancelled")],
@@ -188,6 +192,8 @@ describe("avisos de feriado", () => {
       "holiday-monitor:m1:2026-11-19",
     ]);
     expect(new Set(keys).size).toBe(keys.length);
+    // Chanucá (data comemorativa, 05 a 12/12) não gera aviso; Natal sim; nada além de 8 semanas.
+    expect(keys.slice(2)).toEqual(["holiday-monitor:m1:2026-12-24"]);
     const nov = ev.find((e) => e.key === "holiday-monitor:m1:2026-11-19")!;
     expect(nov.body).toContain("19/11, 20/11");
     expect(nov.body).toContain("tende a subir");

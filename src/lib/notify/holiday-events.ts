@@ -43,13 +43,26 @@ export function flightLocalDate(f: { origin: string; departs_at: string }): stri
   return utcToLocal(f.departs_at, airportTimeZone(f.origin) ?? "America/Sao_Paulo").slice(0, 10);
 }
 
+/**
+ * Feriados (e facultativos) a até `days` dias de uma data. Datas comemorativas
+ * (ex.: Chanucá) ficam de fora dos avisos e do selo, mas continuam tirando o
+ * preço da média de 30 dias no monitor.
+ */
+export function dayOffHolidaysNear(
+  holidays: HolidayEvent[],
+  date: string,
+  days: number,
+): HolidayEvent[] {
+  return holidaysNear(holidays, date, days).filter((h) => h.kind !== "observance");
+}
+
 /** Feriados perto de um voo (para o selo "feriado perto" e para o aviso). */
 export function holidaysNearFlight(
   holidays: HolidayEvent[],
   f: { origin: string; departs_at: string },
   days = NEAR_FLIGHT_DAYS,
 ): HolidayEvent[] {
-  return holidaysNear(holidays, flightLocalDate(f), days);
+  return dayOffHolidaysNear(holidays, flightLocalDate(f), days);
 }
 
 function uniqueNames(list: HolidayEvent[]): string {
@@ -93,12 +106,14 @@ export function holidayEvents(input: {
     });
   }
 
-  // 2. Feriado numa data monitorada: um aviso por monitor e bloco de feriados.
+  // 2. Feriado numa data monitorada (próximas 8 semanas): um aviso por monitor e bloco.
+  const lastMonitorDay = addDays(today, LONG_WEEKEND_WEEKS * 7);
   for (const m of input.monitors) {
     if (!m.active || m.kind === "holiday" || m.long_weekend) continue;
     const targets = expandRule(m.rule, { today, horizonWeeks: m.horizon_weeks, holidays });
     const hits = targets
-      .map((t) => ({ date: t.date, near: holidaysNear(holidays, t.date, NEAR_MONITOR_DAYS) }))
+      .filter((t) => t.date <= lastMonitorDay)
+      .map((t) => ({ date: t.date, near: dayOffHolidaysNear(holidays, t.date, NEAR_MONITOR_DAYS) }))
       .filter((h) => h.near.length);
     // Agrupa datas a até 3 dias uma da outra (ex.: quinta e sexta do mesmo feriado).
     const clusters: (typeof hits)[] = [];
