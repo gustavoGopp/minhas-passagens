@@ -44,3 +44,13 @@ describe("parseAuthHash", () => {
     expect(friendlyAuthError("outra coisa")).toBe("outra coisa");
   });
 });
+
+describe("friendlyAuthError", () => {
+  it("explica o cadastro fechado (conta Google nova)", () => {
+    const msg = parseAuthHash(
+      "#error=access_denied&error_code=signup_disabled&error_description=Signups+not+allowed+for+this+instance",
+    );
+    expect(msg.type).toBe("error");
+    expect(friendlyAuthError(msg.type === "error" ? msg.message : "")).toMatch(/^Cadastro fechado/);
+  });
+});
