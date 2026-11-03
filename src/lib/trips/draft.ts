@@ -68,7 +68,10 @@ export function emptyDraft(): BookingDraft {
 
 const money = (n: number | null) => (n == null ? "" : n.toFixed(2).replace(".", ","));
 
-export function draftFromExtraction(b: ExtractedBooking, source: "text" | "image"): BookingDraft {
+export function draftFromExtraction(
+  b: ExtractedBooking,
+  source: "text" | "image" | "email",
+): BookingDraft {
   return {
     locator: b.locator ?? "",
     airline: b.airline_code,
@@ -79,7 +82,7 @@ export function draftFromExtraction(b: ExtractedBooking, source: "text" | "image
     taxes: money(b.taxes_amount),
     purchased_on: b.purchased_on ?? new Date().toISOString().slice(0, 10),
     tag: "personal",
-    status: "active",
+    status: b.status === "cancelled" ? "cancelled" : "active",
     source,
     notes: "",
     legs: b.flights.map((f) => ({

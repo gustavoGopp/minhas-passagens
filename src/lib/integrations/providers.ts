@@ -31,8 +31,9 @@ export const PROVIDER_INFO: Record<
   },
   serpapi: {
     name: "SerpApi (Google Flights)",
-    purpose: "Confirmação de preço de alta precisão (250 buscas grátis/mês).",
-    help: "Cadastre-se e copie a chave de API.",
+    purpose:
+      "Preços do Google Flights nas próximas 2 semanas, ao lado do Travelpayouts (piloto). Plano grátis: 250 buscas/mês; o app para em 240.",
+    help: "Crie uma conta grátis (sem cartão), abra Dashboard → Your Private API Key, copie e cole aqui. Validar a chave não gasta busca.",
     url: "https://serpapi.com/",
   },
 };

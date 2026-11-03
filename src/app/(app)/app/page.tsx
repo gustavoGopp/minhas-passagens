@@ -26,12 +26,17 @@ export default function AppHome() {
     <main className="flex flex-col gap-6">
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold tracking-tight">Passagens</h1>
-        <Link
-          href="/app/passagens/nova"
-          className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white dark:bg-zinc-100 dark:text-zinc-900"
-        >
-          + Nova
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link href="/app/passagens/importar" className="text-sm underline underline-offset-4">
+            Importar do Gmail
+          </Link>
+          <Link
+            href="/app/passagens/nova"
+            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white dark:bg-zinc-100 dark:text-zinc-900"
+          >
+            + Nova
+          </Link>
+        </div>
       </div>
       <Suspense
         fallback={<p className="text-sm text-zinc-600 dark:text-zinc-400">Carregando passagens…</p>}
@@ -75,7 +80,11 @@ async function Trips() {
           <p>Nenhuma passagem ainda.</p>
           <p>
             Toque em <strong>+ Nova</strong> e cole o e-mail de confirmação, envie um print ou
-            preencha à mão.
+            preencha à mão. Ou{" "}
+            <Link className="underline underline-offset-4" href="/app/passagens/importar">
+              importe direto do seu Gmail
+            </Link>
+            .
           </p>
         </section>
         <LongWeekends items={ctx.longWeekends} />
