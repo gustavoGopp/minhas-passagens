@@ -8,7 +8,9 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { utcToLocal } from "@/lib/trips/time";
 import type { HistoryPoint } from "./alerts";
 import { runCheck, type CheckResult } from "./check";
-import { getProvider, ProviderAuthError } from "./providers";
+import { monthStart, serpapiAllowance } from "./hybrid";
+import { getProvider, ProviderAuthError, type PriceProvider } from "./providers";
+import { serpapiSearchesLeft } from "./providers/serpapi";
 import { nextCheckAt } from "./schedule";
 import type { MonitorInput } from "./schema";
 import type { MonitorConfig, MonitorKind, MonitorRule } from "./types";
@@ -307,9 +309,13 @@ export async function performCheck(
     if (!lastAlerted.has(d)) lastAlerted.set(d, Number(a.price_cents));
   }
 
+  const near = await nearProvider(client, monitor, now);
+
   let result: CheckResult;
   try {
     result = await runCheck({
+      near: near.use,
+      nearSkipped: near.skipped,
       monitor,
       provider: getProvider(monitor.provider),
       apiKey,
@@ -337,28 +343,35 @@ export async function performCheck(
   }
 
   const s = result.summary;
-  const { data: check, error: checkErr } = await client
-    .from("price_checks")
-    .insert({
-      monitor_id: monitor.id,
-      user_id: monitor.user_id,
-      provider: s.provider,
-      checked_at: now,
-      target_dates: s.target_dates,
-      dates_with_data: s.dates_with_data,
-      dates_in_window: s.dates_in_window,
-      dates_matched: s.dates_matched,
-      requests: s.requests,
-      failed: s.failed,
-      min_price_cents: s.min_price_cents,
-      min_near_holiday: s.min_near_holiday,
-      error: s.failed && s.failed === s.requests ? "Todas as consultas falharam." : null,
-    })
-    .select("id")
-    .single();
-  if (checkErr) {
-    await finish(checkErr.message);
-    return { ok: false, error: checkErr.message };
+  const base = {
+    monitor_id: monitor.id,
+    user_id: monitor.user_id,
+    provider: s.provider,
+    checked_at: now,
+    target_dates: s.target_dates,
+    dates_with_data: s.dates_with_data,
+    dates_in_window: s.dates_in_window,
+    dates_matched: s.dates_matched,
+    requests: s.requests,
+    failed: s.failed,
+    min_price_cents: s.min_price_cents,
+    min_near_holiday: s.min_near_holiday,
+    error: s.failed && s.failed === s.requests ? "Todas as consultas falharam." : null,
+  };
+  const insertCheck = (row: Record<string, unknown>) =>
+    client.from("price_checks").insert(row).select("id").single();
+  let { data: check, error: checkErr } = await insertCheck({
+    ...base,
+    ...(s.near ?? {}),
+    near_skipped: s.near_skipped,
+  });
+  // Deploy antes da migração do piloto: grava sem as colunas novas em vez de perder a checagem.
+  if (checkErr && /near_/.test(checkErr.message))
+    ({ data: check, error: checkErr } = await insertCheck(base));
+  if (checkErr || !check) {
+    const msg = checkErr?.message ?? "falha ao gravar a checagem";
+    await finish(msg);
+    return { ok: false, error: msg };
   }
   const checkId = check.id as string;
 
@@ -391,4 +404,97 @@ export async function performCheck(
   }
   await finish(s.failed && s.failed === s.requests ? "Todas as consultas falharam." : null);
   return { ok: true, result, checkId };
+}
+
+/**
+ * Piloto híbrido: decide se as datas próximas também vão à SerpApi. Só com chave
+ * do próprio usuário, monitor no Travelpayouts e cota grátis do mês sobrando.
+ * Na dúvida (erro ao contar), não usa: nunca passa do plano grátis.
+ */
+async function nearProvider(
+  client: SupabaseClient,
+  monitor: MonitorRow,
+  now: string,
+): Promise<{
+  use: { provider: PriceProvider; apiKey: string; allowance: number } | null;
+  skipped: string | null;
+}> {
+  if (monitor.provider !== "travelpayouts") return { use: null, skipped: null };
+  const key = await getDecryptedKeyWith(client, monitor.user_id, "serpapi").catch(() => null);
+  if (!key) return { use: null, skipped: null };
+  const { data, error } = await client
+    .from("price_checks")
+    .select("near_requests")
+    .eq("user_id", monitor.user_id)
+    .eq("near_provider", "serpapi")
+    .gte("checked_at", monthStart(now));
+  if (error) return { use: null, skipped: "não deu para contar a cota" };
+  const used = (data ?? []).reduce((n, r) => n + Number(r.near_requests ?? 0), 0);
+  const allowance = serpapiAllowance({
+    usedThisMonth: used,
+    searchesLeft: await serpapiSearchesLeft(key),
+  });
+  return { use: { provider: getProvider("serpapi"), apiKey: key, allowance }, skipped: null };
+}
+
+export interface PilotComparisonRow {
+  route: string;
+  checks: number;
+  nearDates: number;
+  serpInWindow: number;
+  tpInWindow: number;
+}
+
+/** Comparação do piloto híbrido (últimos 7 dias) e buscas da SerpApi usadas no mês. */
+export async function pilotComparison(
+  userId: string,
+  now = new Date().toISOString(),
+): Promise<{ rows: PilotComparisonRow[]; serpUsedThisMonth: number; skipped: string[] }> {
+  const supabase = await createSupabaseServerClient();
+  const since = new Date(Date.parse(now) - 7 * 86_400_000).toISOString();
+  const [recent, month, monitors] = await Promise.all([
+    supabase
+      .from("price_checks")
+      .select(
+        "monitor_id, near_provider, near_dates, near_in_window, near_tp_in_window, near_skipped",
+      )
+      .eq("user_id", userId)
+      .gte("checked_at", since),
+    supabase
+      .from("price_checks")
+      .select("near_requests")
+      .eq("user_id", userId)
+      .eq("near_provider", "serpapi")
+      .gte("checked_at", monthStart(now)),
+    supabase.from("price_monitors").select("id, origin, destination").eq("user_id", userId),
+  ]);
+  if (recent.error) throw new Error(`Falha ao ler o piloto: ${recent.error.message}`);
+  const routeOf = new Map(
+    (monitors.data ?? []).map((m) => [
+      m.id as string,
+      `${String(m.origin).trim()} → ${String(m.destination).trim()}`,
+    ]),
+  );
+  const by = new Map<string, PilotComparisonRow>();
+  const skipped = new Set<string>();
+  for (const c of recent.data ?? []) {
+    if (c.near_skipped) skipped.add(c.near_skipped as string);
+    if (c.near_provider !== "serpapi") continue;
+    const route = routeOf.get(c.monitor_id as string) ?? "—";
+    const row = by.get(route) ?? { route, checks: 0, nearDates: 0, serpInWindow: 0, tpInWindow: 0 };
+    row.checks++;
+    row.nearDates += Number(c.near_dates ?? 0);
+    row.serpInWindow += Number(c.near_in_window ?? 0);
+    row.tpInWindow += Number(c.near_tp_in_window ?? 0);
+    by.set(route, row);
+  }
+  const serpUsedThisMonth = (month.data ?? []).reduce(
+    (n, r) => n + Number(r.near_requests ?? 0),
+    0,
+  );
+  return {
+    rows: [...by.values()].sort((a, b) => a.route.localeCompare(b.route)),
+    serpUsedThisMonth,
+    skipped: [...skipped],
+  };
 }

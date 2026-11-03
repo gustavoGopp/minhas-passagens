@@ -103,3 +103,24 @@ export function serpapi(): PriceProvider {
     },
   };
 }
+
+/**
+ * Saldo da conta na SerpApi (account.json não consome busca). Devolve null se a
+ * resposta não trouxer o saldo; aí vale só a contagem local.
+ */
+export async function serpapiSearchesLeft(
+  key: string,
+  f: FetchLike = fetch,
+): Promise<number | null> {
+  try {
+    const res = await f(`https://serpapi.com/account.json?api_key=${encodeURIComponent(key)}`, {
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!res.ok) return null;
+    const j = (await res.json()) as { total_searches_left?: unknown; plan_searches_left?: unknown };
+    const v = j.total_searches_left ?? j.plan_searches_left;
+    return typeof v === "number" && Number.isFinite(v) ? v : null;
+  } catch {
+    return null;
+  }
+}

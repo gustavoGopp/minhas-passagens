@@ -210,3 +210,11 @@ Monitor internacional e conversão de moeda; WhatsApp; compra no app; raspagem d
 - **Teste dos 8 dias:** o tick renova o acesso no máximo a cada 20 h. `invalid_grant` marca `expired` e gera o aviso "Reconecte o Gmail". O diagnóstico `gmail.sql` mostra status, dias desde a conexão e horas desde a última renovação OK.
 - "Desconectar" e "Apagar conta" revogam o acesso no Google. A exportação inclui `mail_accounts`.
 - Variáveis na Vercel: `GOOGLE_OAUTH_CLIENT_ID` e `GOOGLE_OAUTH_CLIENT_SECRET` (passo a passo no README, seção 5). Migração `20261106000000_gmail.sql`.
+
+## Bloco 1: piloto da SerpApi e agendador robusto (2026-11-03)
+
+- **Piloto híbrido** (`src/lib/prices/hybrid.ts`, puro e testado): com chave `serpapi` do usuário e monitor no Travelpayouts, as datas das próximas 2 semanas também vão ao Google Flights pela SerpApi. O Travelpayouts continua em todas as datas, para comparar nas mesmas datas. O menor preço dos dois alimenta observações e avisos.
+- **Cota grátis protegida:** teto de 240 buscas/mês (o plano grátis tem 250), contado em `price_checks.near_requests` e conferido no `account.json` da SerpApi (que não gasta busca). Sem cota, a checagem segue só no Travelpayouts com `near_skipped = 'cota do mês'`. Nunca passa para o plano pago.
+- `price_checks` ganhou `near_provider`, `near_dates`, `near_with_data`, `near_in_window`, `near_requests`, `near_tp_with_data`, `near_tp_in_window` e `near_skipped` (migração `20261107000000_piloto_serpapi.sql`). O `piloto-precos.sql` mostra a comparação, as buscas do mês e os motivos de pulo.
+- Tela **Preços → Piloto**: tabela Google Flights × Travelpayouts (datas com voo na janela, 7 dias) e "buscas da SerpApi neste mês: X de 240".
+- **Agendador:** avisos de preço e retenção rodam antes das checagens. Cada monitor é reservado antes de checar (`claimMonitor`; uma falha no meio volta a vencer em 30 min). Novas checagens param depois de 35 s do tick. No máximo 60 datas por checagem.
