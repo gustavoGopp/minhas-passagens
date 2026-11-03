@@ -1,3 +1,4 @@
+import { safeBuyUrl } from "../buy-link";
 import type { Offer } from "../types";
 import {
   ProviderAuthError,
@@ -41,7 +42,16 @@ export function serpUrl(
 
 /** Normaliza `best_flights` + `other_flights` do Google Flights (preço total em BRL). */
 export function parseSerpApi(json: unknown, q: PriceSearch): Offer[] {
-  const body = json as { best_flights?: SerpItinerary[]; other_flights?: SerpItinerary[] };
+  const body = json as {
+    best_flights?: SerpItinerary[];
+    other_flights?: SerpItinerary[];
+    search_metadata?: { google_flights_url?: unknown };
+  };
+  // Um link por busca (por data): a página do Google Flights com os mesmos filtros.
+  const gfUrl =
+    typeof body.search_metadata?.google_flights_url === "string"
+      ? safeBuyUrl(body.search_metadata.google_flights_url)
+      : null;
   const out: Offer[] = [];
   for (const it of [...(body.best_flights ?? []), ...(body.other_flights ?? [])]) {
     const legs = it.flights ?? [];
@@ -62,6 +72,7 @@ export function parseSerpApi(json: unknown, q: PriceSearch): Offer[] {
       transfers: Math.max(0, legs.length - 1),
       durationMin: it.total_duration ?? null,
       foundAt: new Date().toISOString(),
+      bookingUrl: gfUrl,
     });
   }
   return out;

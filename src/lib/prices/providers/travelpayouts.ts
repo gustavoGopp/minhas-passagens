@@ -1,4 +1,5 @@
 import { utcToLocal } from "@/lib/trips/time";
+import { aviasalesUrl } from "../buy-link";
 import type { Offer } from "../types";
 import {
   ProviderAuthError,
@@ -25,6 +26,8 @@ interface TpItem {
   transfers?: number;
   duration_to?: number;
   duration?: number;
+  /** Caminho relativo da busca no Aviasales (ex.: "/search/SDU0911CGH1?t=…"). */
+  link?: string;
 }
 
 export function tpUrl(q: {
@@ -78,6 +81,7 @@ export function parseTravelpayouts(json: unknown, q: PriceSearch): Offer[] {
       transfers: it.transfers ?? 0,
       durationMin: it.duration_to ?? it.duration ?? null,
       foundAt: null, // a API devolve só o que usuários viram nas últimas 48h
+      bookingUrl: aviasalesUrl(it.link),
     });
   }
   return offers;

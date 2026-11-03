@@ -263,7 +263,13 @@ describe("provedores", () => {
       q,
     );
     expect(offers).toEqual([
-      offer({ time: "06:05", priceCents: 38900, flightNumber: "G3 1001", durationMin: 65 }),
+      offer({
+        time: "06:05",
+        priceCents: 38900,
+        flightNumber: "G3 1001",
+        durationMin: 65,
+        bookingUrl: null, // sem `link` na resposta
+      }),
     ]);
     expect(
       tpUrl({

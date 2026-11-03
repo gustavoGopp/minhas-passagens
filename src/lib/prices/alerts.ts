@@ -2,6 +2,7 @@ import { airlineName } from "@/lib/trips/airlines";
 import { formatBRL } from "@/lib/trips/summary";
 import { weekday } from "@/lib/holidays/dates";
 import { holidaysNear, type HolidayEvent } from "@/lib/holidays";
+import { buyUrlFor } from "./buy-link";
 import { normalizeAirline } from "./filter";
 import type { MonitorConfig, Offer } from "./types";
 
@@ -124,7 +125,7 @@ export function formatFlightDate(date: string, time?: string): string {
 export function alertMessage(
   monitor: { id: string; origin: string; destination: string },
   items: PriceAlertItem[],
-): { title: string; body: string; path: string } {
+): { title: string; body: string; path: string; buyUrl: string } {
   const best = items.reduce((a, b) => (b.offer.priceCents < a.offer.priceCents ? b : a));
   const title = `Preço ${monitor.origin} → ${monitor.destination}: ${formatBRL(best.offer.priceCents)} (${SIGNAL_LABEL[best.signals[0]]})`;
   const lines = items.slice(0, 5).map((i) => {
@@ -135,7 +136,14 @@ export function alertMessage(
     return `${formatFlightDate(i.date, o.time)} · ${flight} · ${formatBRL(o.priceCents)} · ${i.signals.map((s) => SIGNAL_LABEL[s]).join(", ")}`;
   });
   if (items.length > 5) lines.push(`+${items.length - 5} datas`);
-  return { title, body: lines.join("\n"), path: `/app/monitor/${monitor.id}` };
+  // Link da melhor oferta: o da fonte ou, sem ele, a busca do Google Flights.
+  const buyUrl = buyUrlFor({
+    bookingUrl: best.offer.bookingUrl,
+    origin: monitor.origin,
+    destination: monitor.destination,
+    date: best.date,
+  });
+  return { title, body: lines.join("\n"), path: `/app/monitor/${monitor.id}`, buyUrl };
 }
 
 /** Datas a até `days` dias de um feriado (via holidaysNear); ficam fora da média. */

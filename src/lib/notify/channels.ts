@@ -31,7 +31,7 @@ export interface PushSub {
 export async function sendPush(
   vapid: { publicKey: string; privateKey: string; subject: string },
   sub: PushSub,
-  payload: { title: string; body: string; url: string },
+  payload: { title: string; body: string; url: string; buyUrl?: string; buyLabel?: string },
 ): Promise<"ok" | "gone" | "error"> {
   try {
     await webpush.sendNotification(

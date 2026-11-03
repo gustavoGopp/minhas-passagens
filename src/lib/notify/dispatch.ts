@@ -3,7 +3,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { sendEmailDetailed, sendPush, sendTelegram, type PushSub } from "./channels";
 import { getConfig } from "./config";
 import { availableChannels, type Channel, type DeliveryResult } from "./delivery";
-import type { NotifyEvent } from "./events";
+import { BUY_LABEL, eventText, type NotifyEvent } from "./events";
 
 export interface Recipient {
   userId: string;
@@ -76,7 +76,7 @@ export async function deliver(
         const sent = await sendTelegram(
           cfg.telegramToken!,
           r.telegramChatId!,
-          `${e.title}\n${e.body}\n${link}`,
+          `${e.title}\n${eventText(e, link)}`,
         );
         if (sent) result.ok.push("telegram");
         else result.errors.push("telegram: falhou");
@@ -88,6 +88,7 @@ export async function deliver(
             title: e.title,
             body: e.body,
             url: e.path,
+            ...(e.buyUrl ? { buyUrl: e.buyUrl, buyLabel: BUY_LABEL } : {}),
           });
           if (res === "ok") any = true;
           if (res === "gone") await admin.from("push_subscriptions").delete().eq("id", sub.id);
@@ -95,7 +96,7 @@ export async function deliver(
         if (any) result.ok.push("push");
         else result.errors.push("push: falhou");
       } else {
-        const res = await sendEmailDetailed(r.email!, e.title, `${e.body}\n\n${link}`, r.resendKey);
+        const res = await sendEmailDetailed(r.email!, e.title, eventText(e, link), r.resendKey);
         if (res.ok) result.ok.push("email");
         else result.errors.push(`email: ${res.reason}`);
       }

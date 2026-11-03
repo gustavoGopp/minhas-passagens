@@ -74,4 +74,6 @@ export interface Offer {
   durationMin: number | null;
   /** Quando o provedor viu esse preço (se informado). */
   foundAt: string | null;
+  /** Link da oferta devolvido pela fonte (já validado por safeBuyUrl), se houver. */
+  bookingUrl?: string | null;
 }
