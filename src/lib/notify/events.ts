@@ -58,6 +58,7 @@ export function dueEvents(input: {
 
   for (const a of computeAlerts(input)) {
     if (a.type === "checkin") continue; // coberto acima
+    if (a.type === "check_date") continue; // conferência de dados: só na tela, sem e-mail
     events.push({
       key: `alert:${a.key}`,
       title: a.title,

@@ -46,6 +46,25 @@ select json_build_object(
     where b.purchased_on is not null
       and (f.departs_at at time zone 'America/Sao_Paulo')::date < b.purchased_on
   ),
+  -- Detalhe dos voos antes da compra (só números): quantos dias antes, se a data da
+  -- compra veio do texto do e-mail ou da data de recebimento, e o tipo do e-mail.
+  'voo_antes_da_compra_detalhe', (
+    select coalesce(json_agg(r order by r.dias_antes), '[]'::json) from (
+      select b.purchased_on - (f.departs_at at time zone 'America/Sao_Paulo')::date as dias_antes,
+        case
+          when c.id is null then 'sem_candidato'
+          when (c.received_at at time zone 'America/Sao_Paulo')::date = b.purchased_on then 'data_do_email'
+          else 'data_do_texto'
+        end as origem_da_data,
+        m.class as tipo_do_email
+      from public.flights f
+      join public.bookings b on b.id = f.booking_id
+      left join public.import_candidates c on c.booking_id = b.id and c.status = 'imported'
+      left join public.mail_messages m on m.id = c.message_id
+      where b.purchased_on is not null
+        and (f.departs_at at time zone 'America/Sao_Paulo')::date < b.purchased_on
+    ) r
+  ),
   -- Voo mais de 11 meses depois da compra: também suspeito (ano a mais).
   'voo_mais_de_330_dias_depois_da_compra', (
     select count(*) from public.flights f join public.bookings b on b.id = f.booking_id

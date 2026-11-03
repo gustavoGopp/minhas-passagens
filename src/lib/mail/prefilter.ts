@@ -75,7 +75,8 @@ export function bodyDecision(text: string): "candidate" | "skip" {
 /** Tipo do e-mail, para a tela de revisão (remarcação e cancelamento viram propostas). */
 export function classify(subject: string, text: string): MailClass {
   const t = `${subject}\n${text.slice(0, 3000)}`;
-  if (/cancelad[ao]|cancelamento/i.test(t)) return "cancellation";
+  // Só pelo assunto: confirmações costumam citar a "política de cancelamento" no corpo.
+  if (/cancelad[ao]|cancelamento/i.test(subject)) return "cancellation";
   if (
     /remarca[çc][ãa]o|altera[çc][ãa]o (de|do|no) (voo|hor[áa]rio)|mudan[çc]a de hor[áa]rio|voo alterado/i.test(
       t,
