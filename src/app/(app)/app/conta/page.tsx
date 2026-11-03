@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LogoutButton } from "@/components/logout-button";
 import { Suspense } from "react";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { DeleteAccountForm } from "./delete-account-form";
@@ -31,11 +32,7 @@ export default function ContaPage() {
         <a className="px-4 py-3 text-sm" href="/api/conta/exportar">
           Exportar meus dados (JSON)
         </a>
-        <form action="/auth/sair" method="post">
-          <button className="w-full px-4 py-3 text-left text-sm" type="submit">
-            Sair
-          </button>
-        </form>
+        <LogoutButton className="w-full px-4 py-3 text-left text-sm" />
       </nav>
       <section className="flex flex-col gap-3 rounded-xl border border-red-200 p-4 dark:border-red-900">
         <h2 className="font-semibold text-red-800 dark:text-red-200">Apagar conta</h2>

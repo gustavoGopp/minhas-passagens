@@ -1,4 +1,5 @@
 "use client";
+import { clearOfflineData } from "@/components/offline-sync";
 import { useActionState } from "react";
 import { deleteAccountAction, type DeleteAccountState } from "./actions";
 
@@ -8,7 +9,11 @@ export function DeleteAccountForm() {
     {},
   );
   return (
-    <form action={action} className="flex flex-col gap-2 sm:flex-row">
+    <form
+      action={action}
+      onSubmit={() => clearOfflineData()}
+      className="flex flex-col gap-2 sm:flex-row"
+    >
       <input
         name="confirmacao"
         placeholder="Digite APAGAR"
