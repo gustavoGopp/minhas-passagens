@@ -2,7 +2,8 @@
  * Tabelas do usuário na exportação de dados. As de `EXTRA_EXPORT_COLUMNS` saem
  * por inteiro (pelo RLS do próprio usuário), com as colunas que fazem sentido
  * fora do app; ficam de fora só segredos: chaves de API cifradas, chaves do
- * push (endpoint, p256dh, auth) e o token de vínculo do Telegram.
+ * push (endpoint, p256dh, auth), o token de vínculo do Telegram e o hash do link do
+ * calendário assinado.
  * O teste confere que toda tabela com user_id nas migrações está aqui.
  */
 export const CORE_EXPORT_TABLES = [
@@ -27,4 +28,5 @@ export const EXTRA_EXPORT_COLUMNS = {
   mail_scans: "id, status, created_at, confirmed_at, finished_at, last_error",
   mail_messages: "provider_message_id, received_at, sender_domain, class, status, created_at",
   import_candidates: "id, received_at, draft, status, booking_id, decided_at, created_at",
+  calendar_feeds: "created_at, last_fetched_at",
 } as const;

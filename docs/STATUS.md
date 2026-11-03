@@ -2,7 +2,7 @@
 
 > Leia este arquivo no início de toda sessão. Ele é a memória do projeto: decisões, o que está pronto, próximos passos e as respostas da entrevista. Atualize-o ao fim de cada marco.
 
-Última atualização: 2026-11-03 (item 1 da nova lista: "Ver onde comprar")
+Última atualização: 2026-11-03 (itens 1 e 2 da nova lista: "Ver onde comprar" e calendário assinado)
 
 ## Estado atual
 
@@ -282,3 +282,24 @@ Monitor internacional e conversão de moeda; WhatsApp; compra no app; raspagem d
 - Diagnóstico `precos-links.sql`: observações dos últimos 7 dias por provedor e site do link (só contagens).
 - Prints com Supabase falso (servidor HTTP sobre `src/test/fake-supabase.ts`), celular e desktop, claro e escuro: axe sem violações.
 - Testes: 249 no total (11 novos em `buy-link.test.ts`).
+
+## Item 2: calendário assinado (.ics) (2026-11-03)
+
+- **Calendário → Ver no celular** (também em Mais), em `/app/calendario/assinar`:
+  - "Gerar link" mostra o link **uma vez**, com "Copiar link" e "Abrir no iPhone/Mac" (`webcal://`); depois a tela mostra só "ativo desde" e a última leitura pelo calendário;
+  - "Gerar novo link" faz o antigo parar na hora, e "Desligar" apaga;
+  - aviso de risco e passo a passo para o Google Agenda (Do URL) e o iPhone (calendário assinado).
+- **Token:** 32 bytes aleatórios em base64url. O banco guarda só o sha256, em `calendar_feeds` (migração `20261112000000_calendario_assinado.sql`). A RLS deixa o dono só ler e apagar; criar e trocar o link passam pelo servidor (service role). A exportação leva `created_at` e `last_fetched_at`, sem o hash. Apagar a conta remove a linha pela cascata.
+- **Rota** `GET /api/calendario/<token>.ics` (`src/lib/calendar/feed.ts`):
+  - token desconhecido ou malformado: 404, sem distinguir o motivo;
+  - `Cache-Control: no-store`, `noindex` e `no-referrer`;
+  - fica fora do proxy de sessão;
+  - grava a última leitura no máximo 1 vez por hora.
+- **Arquivo** (`src/lib/calendar/ics.ts`, puro e testado):
+  - um evento por trecho de passagem ativa (canceladas e remarcadas ficam fora, como em `activeFlights`), do último ano em diante;
+  - `UID` = id do trecho (estável ao editar), horários em UTC, título "SDU → CGH · LA 3001" e, na descrição, o localizador e o link da passagem;
+  - sem nome do passageiro nem valores;
+  - escape, linhas dobradas em 75 octetos e CRLF; conferido com um parser de .ics (node-ical).
+- Diagnóstico `calendario.sql`: RLS, policies e contagens (links ativos, lidos em 24 h).
+- O Google Agenda relê o link quando quer e pode levar até um dia; o iPhone costuma ser mais rápido.
+- Testes: 267 no total (18 novos em `ics.test.ts` e `feed.test.ts`).
