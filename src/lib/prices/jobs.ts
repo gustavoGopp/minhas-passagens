@@ -1,5 +1,6 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { MAX_ATTEMPTS, type AttemptState } from "@/lib/notify/delivery";
 import type { NotifyEvent } from "@/lib/notify/events";
 import type { Profile } from "@/lib/profiles/repo";
 import { utcToLocal } from "@/lib/trips/time";
@@ -59,6 +60,8 @@ export interface PendingPriceEvent {
   alertIds: string[];
   /** Data do voo já passou: marca como resolvido sem enviar. */
   expired: boolean;
+  /** Tentativas anteriores (canais que falharam), para a espera crescente. */
+  attempt?: AttemptState;
   event: NotifyEvent;
 }
 
@@ -71,7 +74,7 @@ export async function pendingPriceEvents(
   const { data, error } = await admin
     .from("price_alerts")
     .select(
-      "id, monitor_id, user_id, flight_date, departs_local, airline, flight_number, price_cents, signals, price_monitors(origin, destination)",
+      "id, monitor_id, user_id, flight_date, departs_local, airline, flight_number, price_cents, signals, attempts, last_attempt_at, price_monitors(origin, destination)",
     )
     .is("sent_at", null)
     .order("flight_date")
@@ -111,6 +114,15 @@ export async function pendingPriceEvents(
       },
     }));
     const ids = rows.map((r) => r.id as string);
+    const attempts = Math.max(0, ...rows.map((r) => Number(r.attempts ?? 0)));
+    const lastAttempt = rows
+      .map((r) => r.last_attempt_at as string | null)
+      .filter((v): v is string => Boolean(v))
+      .sort()
+      .pop();
+    const attempt: AttemptState | undefined = attempts
+      ? { status: "failed", attempts, last_attempt_at: lastAttempt ?? null }
+      : undefined;
     if (!items.length || !mon) {
       out.push({ userId, alertIds: ids, expired: true, event: emptyEvent(monitorId) });
       continue;
@@ -123,6 +135,7 @@ export async function pendingPriceEvents(
       userId,
       alertIds: ids,
       expired: false,
+      attempt,
       event: { key: `price:${ids[0]}`, ...msg, urgent: false },
     });
   }
@@ -140,5 +153,35 @@ export async function markPriceAlertsSent(
   channels: string[],
   now: string,
 ) {
-  await admin.from("price_alerts").update({ sent_at: now, channels }).in("id", ids);
+  const { error } = await admin
+    .from("price_alerts")
+    .update({ sent_at: now, channels, last_error: null })
+    .in("id", ids);
+  if (error) throw new Error(`price_alerts: ${error.message}`);
+}
+
+/**
+ * Registra uma tentativa sem entrega. Depois de MAX_ATTEMPTS (ou sem canal, com
+ * `resolve`), o aviso é encerrado com `sent_at` e canais vazios, e o motivo fica em last_error.
+ */
+export async function markPriceAlertsFailed(
+  admin: SupabaseClient,
+  ids: string[],
+  prev: AttemptState | undefined,
+  error: string,
+  now: string,
+  resolve: boolean,
+) {
+  const attempts = (prev?.attempts ?? 0) + (resolve ? 0 : 1);
+  const giveUp = resolve || attempts >= MAX_ATTEMPTS;
+  const res = await admin
+    .from("price_alerts")
+    .update({
+      attempts,
+      last_error: error.slice(0, 300),
+      last_attempt_at: now,
+      ...(giveUp ? { sent_at: now, channels: [] } : {}),
+    })
+    .in("id", ids);
+  if (res.error) throw new Error(`price_alerts: ${res.error.message}`);
 }

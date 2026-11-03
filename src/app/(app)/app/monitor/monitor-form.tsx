@@ -135,7 +135,7 @@ export function MonitorForm({
 
       {!id ? (
         <div className="flex flex-wrap gap-2 text-xs">
-          <span className="text-zinc-500">Preencher com a ponte aérea:</span>
+          <span className="text-zinc-600 dark:text-zinc-400">Preencher com a ponte aérea:</span>
           <button type="button" className={small} onClick={() => fillPonte("rioSp")}>
             SDU → CGH
           </button>
@@ -448,7 +448,7 @@ export function MonitorForm({
         </label>
       </div>
 
-      <p className="text-xs text-zinc-500">
+      <p className="text-xs text-zinc-600 dark:text-zinc-400">
         {quota
           ? `${quota.n} datas no horizonte · ${quota.perCheck} requisições por checagem · ≈ ${quota.perMonth} por mês. `
           : "As datas dependem dos feriados do seu calendário. "}

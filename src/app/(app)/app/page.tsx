@@ -5,7 +5,11 @@ import { LongWeekends, NearHolidayBadge } from "@/components/long-weekends";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { loadHolidayContext } from "@/lib/holidays/context";
 import { holidaysNearFlight } from "@/lib/notify/holiday-events";
-import { ignoreMissingLegAction, toggleCheckinAction } from "./passagens/actions";
+import {
+  ignoreMissingLegAction,
+  ignoreMissingReturnAction,
+  toggleCheckinAction,
+} from "./passagens/actions";
 import { checkinRule, checkinState } from "@/lib/trips/checkin";
 import { listCredits } from "@/lib/trips/credits-repo";
 import { spendByMonth } from "@/lib/trips/reports";
@@ -29,7 +33,9 @@ export default function AppHome() {
           + Nova
         </Link>
       </div>
-      <Suspense fallback={<p className="text-sm text-zinc-500">Carregando passagens…</p>}>
+      <Suspense
+        fallback={<p className="text-sm text-zinc-600 dark:text-zinc-400">Carregando passagens…</p>}
+      >
         <Trips />
       </Suspense>
     </main>
@@ -44,7 +50,13 @@ async function Trips() {
     loadHolidayContext(user.id),
     listCredits(user.id),
   ]);
-  const alerts = computeAlerts({ bookings, flights, credits, now });
+  const alerts = computeAlerts({
+    bookings,
+    flights,
+    credits,
+    now,
+    homeCity: ctx.profile?.home_city ?? null,
+  });
   const byId = new Map(bookings.map((b) => [b.id, b]));
   const upcoming = upcomingFlights(flights, byId, now);
   const past = pastFlights(flights, now).slice(0, 10);
@@ -122,7 +134,9 @@ async function Trips() {
 
       {upcoming.length > 1 ? (
         <section className="flex flex-col gap-2">
-          <h2 className="text-sm font-semibold tracking-wide text-zinc-500 uppercase">Próximos</h2>
+          <h2 className="text-sm font-semibold tracking-wide text-zinc-600 uppercase dark:text-zinc-400">
+            Próximos
+          </h2>
           <ul className="flex flex-col divide-y divide-zinc-200 rounded-xl border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
             {upcoming.slice(1).map((f) => (
               <li key={f.id}>
@@ -131,7 +145,7 @@ async function Trips() {
                   className="flex items-center justify-between gap-3 px-4 py-3"
                 >
                   <FlightLine f={f} />
-                  <span className="flex shrink-0 flex-col items-end gap-1 text-xs text-zinc-500">
+                  <span className="flex shrink-0 flex-col items-end gap-1 text-xs text-zinc-600 dark:text-zinc-400">
                     {relativeTime(f.departs_at, now)}
                     <NearHolidayBadge names={nearNames(f)} />
                   </span>
@@ -146,23 +160,23 @@ async function Trips() {
 
       <section className="grid grid-cols-2 gap-3">
         <div className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
-          <p className="text-xs text-zinc-500">Gasto neste mês</p>
+          <p className="text-xs text-zinc-600 dark:text-zinc-400">Gasto neste mês</p>
           <p className="text-lg font-semibold">{formatBRL(thisMonth?.netCents ?? 0)}</p>
           {thisMonth?.miles ? (
-            <p className="text-xs text-zinc-500">
+            <p className="text-xs text-zinc-600 dark:text-zinc-400">
               + {thisMonth.miles.toLocaleString("pt-BR")} milhas
             </p>
           ) : null}
         </div>
         <div className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
-          <p className="text-xs text-zinc-500">Voos futuros</p>
+          <p className="text-xs text-zinc-600 dark:text-zinc-400">Voos futuros</p>
           <p className="text-lg font-semibold">{upcoming.length}</p>
         </div>
       </section>
 
       {past.length ? (
         <section className="flex flex-col gap-2">
-          <h2 className="text-sm font-semibold tracking-wide text-zinc-500 uppercase">
+          <h2 className="text-sm font-semibold tracking-wide text-zinc-600 uppercase dark:text-zinc-400">
             Anteriores
           </h2>
           <ul className="flex flex-col divide-y divide-zinc-200 rounded-xl border border-zinc-200 opacity-80 dark:divide-zinc-800 dark:border-zinc-800">
@@ -250,6 +264,14 @@ function Alerts({ alerts }: { alerts: TripAlert[] }) {
                 <input type="hidden" name="flight_id" value={a.flightIds[1]} />
                 <button className="underline underline-offset-2" type="submit">
                   Cheguei por outro meio
+                </button>
+              </form>
+            ) : null}
+            {a.type === "missing_return" ? (
+              <form action={ignoreMissingReturnAction}>
+                <input type="hidden" name="flight_id" value={a.flightIds[0]} />
+                <button className="underline underline-offset-2" type="submit">
+                  Volto por outro meio
                 </button>
               </form>
             ) : null}

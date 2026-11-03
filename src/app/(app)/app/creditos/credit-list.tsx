@@ -14,7 +14,8 @@ export function CreditList({
   today: string;
   showBookingLink?: boolean;
 }) {
-  if (!credits.length) return <p className="text-sm text-zinc-500">Nada registrado.</p>;
+  if (!credits.length)
+    return <p className="text-sm text-zinc-600 dark:text-zinc-400">Nada registrado.</p>;
   return (
     <ul className="flex flex-col divide-y divide-zinc-200 rounded-xl border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
       {credits.map((c) => {
@@ -45,7 +46,7 @@ export function CreditList({
               <form action={deleteCreditAction}>
                 <input type="hidden" name="id" value={c.id} />
                 <input type="hidden" name="booking_id" value={c.booking_id ?? ""} />
-                <button className="text-xs text-zinc-500 underline underline-offset-2">
+                <button className="text-xs text-zinc-600 underline underline-offset-2 dark:text-zinc-400">
                   Apagar
                 </button>
               </form>
@@ -53,8 +54,14 @@ export function CreditList({
             {c.kind === "credit" && !expired ? (
               <form action={updateRemainingAction} className="flex items-center gap-2 text-sm">
                 <input type="hidden" name="id" value={c.id} />
-                <span className="text-xs text-zinc-500">Saldo</span>
+                <label
+                  htmlFor={`saldo-${c.id}`}
+                  className="text-xs text-zinc-600 dark:text-zinc-400"
+                >
+                  Saldo
+                </label>
                 <input
+                  id={`saldo-${c.id}`}
                   name="remaining"
                   inputMode="decimal"
                   defaultValue={((c.remaining_cents ?? c.amount_cents) / 100)

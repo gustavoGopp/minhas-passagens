@@ -2,7 +2,7 @@
 
 > Leia este arquivo no início de toda sessão. Ele é a memória do projeto: decisões, o que está pronto, próximos passos e as respostas da entrevista. Atualize-o ao fim de cada marco.
 
-Última atualização: 2026-11-03 (M8 e pacote de segurança dos dados prontos; piloto do Travelpayouts no 2º dia)
+Última atualização: 2026-11-03 (revisão completa em `docs/REVISAO-2026-11.md`; Bloco 0 da revisão pronto)
 
 ## Estado atual
 
@@ -17,17 +17,17 @@
 | M6 Monitor de preços              | Pronto; piloto do Travelpayouts até 09/11          |
 | M7 E-mail de entrada              | Pendente (precisa de domínio `.com.br`, R$ 40/ano) |
 | M8 Feriados × viagens e monitores | Pronto (+ segurança dos dados)                     |
+| Revisão 2026-11, Bloco 0          | Pronto (ganhos rápidos; ver seção abaixo)          |
 | M9 Acabamento v1 + post LinkedIn  | Pendente                                           |
 
 ## Próximos passos
 
-1. Dono: criar o segredo `BACKUP_PASSPHRASE` no GitHub (a sessão do Claude não consegue criar segredos: o proxy bloqueia a API de secrets). Depois, rodar "Supabase — backup" uma vez para conferir.
-2. Claude: acompanhar o piloto até 09/11 com `piloto-precos.sql`. Leitura de 02/11 (1 checagem por rota): datas com preço CGH→SDU 93,8% e SDU→CGH 68,8%, mas dentro da janela de horário só 31,3% e 0%. Abaixo de 80%: o dono foi avisado e decidiu esperar os 7 dias antes de trocar (alternativas: SerpApi ou Duffel, com a chave do dono).
-3. Dono: depois que o deploy da Vercel ficar verde, colar a chave do Resend em Mais → Integrações → E-mail (passo 5 abaixo). É ela que manda o alerta de agendador parado.
-4. Dono: cadastrar a chave da Anthropic em Integrações e registrar as passagens já compradas; desativar no Google Cloud o secret antigo `****dmcf`.
-5. Dono: avisos por e-mail (preferência do dono, no lugar do Telegram): entrar em https://resend.com/api-keys com o Google (mesmo Gmail do app), criar a chave com "Sending access" e colar em Mais → Integrações → E-mail. Telegram fica opcional.
-6. Opcional: `CRON_SECRET` nas variáveis da Vercel para fechar o vigia diário só para o cron.
-7. M7: e-mail de entrada (precisa de domínio).
+1. Dono: criar `CRON_SECRET` nas variáveis da Vercel (gere com `openssl rand -base64 32`) e fazer Redeploy. **Desde o Bloco 0 o vigia diário exige o segredo**; sem ele, `/api/jobs/watchdog` responde 503 e o alerta de agendador parado fica desligado.
+2. Dono: em Mais → Perfil, escolher "Cidade onde você mora" (liga o aviso de volta não comprada).
+3. Dono: registrar as passagens já compradas (em 03/11 o banco tinha 0 passagens) e confirmar de quem é a 2ª conta criada em 03/11.
+4. Claude: acompanhar o piloto até 09/11 com `piloto-precos.sql`. Leitura de 02/11: na janela de horário só 31,3% (CGH→SDU) e 0% (SDU→CGH). Desde o Bloco 0, erros do Travelpayouts contam como falha e não como "sem preço". Próximo bloco sugerido: piloto grátis da SerpApi (ver revisão, seção 6.6).
+5. Dono: desativar no Google Cloud o secret antigo `****dmcf`.
+6. Próximos blocos da revisão (escolha do dono): 1 fonte de preços, 2 importação do Gmail, 3 visual, 4 robustez, 5 testes, 6 abrir para outros.
 
 ## Histórico de incidentes
 
@@ -57,7 +57,7 @@
   5. Projeto novo do Supabase: ajustar `SUPABASE_PROJECT_REF`, rodar "Supabase — notificações e agendador" e trocar as chaves do Supabase na Vercel.
   - Restaurar no computador: baixar o artefato, `gpg -d supabase-AAAA-MM-DD.tar.gz.gpg > b.tar.gz && tar xzf b.tar.gz`, e rodar `node scripts/supabase-restore.mjs backup --simular` com `SUPABASE_ACCESS_TOKEN` e `SUPABASE_PROJECT_REF` no ambiente.
   - Atenção: o GitHub desliga workflows agendados após 60 dias sem commits no repositório.
-- **Agendador parado:** todo tick autorizado grava `app_config.last_tick_at`. O vigia `/api/jobs/watchdog` roda 1×/dia pelo Vercel Cron (`vercel.json`, 11:17 UTC; no plano Hobby a hora pode variar dentro da hora), independente do `pg_cron`. Se o último tick tiver mais de 30 min: roda um tick de reconciliação (no máximo 1/h, sem gravar `last_tick_at`, para não esconder o problema) e manda e-mail ao dono (usuário mais antigo) com a chave Resend dele (no máximo 1 a cada 20 h). Com `CRON_SECRET` na Vercel, só o cron consegue chamar.
+- **Agendador parado:** todo tick autorizado grava `app_config.last_tick_at`. O vigia `/api/jobs/watchdog` roda 1×/dia pelo Vercel Cron (`vercel.json`, 11:17 UTC; no plano Hobby a hora pode variar dentro da hora), independente do `pg_cron`. Se o último tick tiver mais de 30 min: roda um tick de reconciliação (no máximo 1/h, sem gravar `last_tick_at`, para não esconder o problema) e manda e-mail ao dono (usuário mais antigo) com a chave Resend dele (no máximo 1 a cada 20 h). **Exige `CRON_SECRET` na Vercel** (sem ele responde 503). As duas travas (reconciliação e e-mail) são reservas atômicas em `app_config`: chamadas simultâneas não rodam ticks em paralelo.
 - **Retenção:** uma vez por dia (UTC), o tick apaga `price_observations` com mais de 180 dias e `price_checks` com mais de 365 dias, e pausa monitores de feriadão 10 dias depois do início. Registro em `app_config.retention_last_run`.
 
 ## Bloqueios conhecidos
@@ -76,9 +76,9 @@
 | Extração            | Haiku 5.5 padrão; retry com Sonnet 5.5 se a validação do schema falhar; saída estruturada por JSON Schema; fuso vem da tabela de aeroportos, não do modelo                                                                                                       | Custo de centavos por mês                                                                             |
 | E-mail de entrada   | Cloudflare Email Routing + Email Worker no domínio raiz (`u-<token>@dominio.com.br`); app em `app.dominio.com.br`; Resend Inbound como fallback                                                                                                                  | Custo zero; catch-all só funciona no apex                                                             |
 | Preços              | Adaptador plugável. Piloto de 7 dias com Travelpayouts/Aviasales (grátis) em SDU–CGH antes de fixar; Duffel e SerpApi opcionais com chave do usuário                                                                                                             | Amadeus Self-Service encerrado em 07/2026; demais fontes inviáveis para indivíduos                    |
-| Agendador           | Supabase pg_cron + pg_net chamando `POST /api/jobs/tick` a cada minuto; Cloudflare Worker cron como fallback; Vercel Cron só reconciliação diária                                                                                                                | Precisão de minuto para check-in, custo zero, evita pausa do Supabase                                 |
+| Agendador           | Supabase pg_cron + pg_net chamando `POST /api/jobs/tick` a cada 5 min; Vercel Cron diário como vigia e reconciliação (o fallback por Cloudflare Worker não foi implementado)                                                                                     | Precisão suficiente para check-in, custo zero, evita pausa do Supabase                                |
 | Notificações        | Imediatas: preço no alvo, check-in (abertura por cia + 24h), nova passagem por e-mail. Janela silenciosa 23h–7h exceto check-in                                                                                                                                  | Entrevista                                                                                            |
-| Retenção            | Original (e-mail/print) guardado 30 dias e apagado; ficam só dados estruturados. Preços: observações 180 dias, checagens 365 dias                                                                                                                                | Entrevista; banco Free de 500 MB                                                                      |
+| Retenção            | O original (texto, print, PDF) não é guardado: vai só para a extração e é descartado; ficam só dados estruturados. Preços: observações 180 dias, checagens 365 dias                                                                                              | Entrevista; banco Free de 500 MB                                                                      |
 | Backup              | Export JSON semanal via Actions, cifrado com GPG AES-256 (segredo `BACKUP_PASSPHRASE`), artefato de 28 dias; restauração por workflow com simulação                                                                                                              | Supabase Free não tem backup; repositório e logs públicos                                             |
 | Vigia do agendador  | Vercel Cron diário em `/api/jobs/watchdog`: tick > 30 min → reconciliação + e-mail ao dono pela chave Resend dele                                                                                                                                                | Independe do pg_cron; custo zero                                                                      |
 | Gastos              | Competência pela data da compra; reembolso na data de recebimento; agrupar por mês, companhia, canal, etiqueta pessoal/trabalho e rota                                                                                                                           | Entrevista                                                                                            |
@@ -188,3 +188,17 @@ Monitor internacional e conversão de moeda; WhatsApp; compra no app; raspagem d
 - Agendador refatorado em `src/lib/jobs/tick.ts` (`runTick`), usado pela rota do pg_cron e pelo vigia. Pacote de segurança dos dados descrito em "Segurança dos dados".
 - Datas comemorativas (ex.: Chanucá) não geram aviso nem selo; continuam fora da média de 30 dias do monitor. Avisos de monitor cobrem as próximas 8 semanas.
 - Testes: 160 no total.
+
+## O que o Bloco 0 da revisão entregou (2026-11-03)
+
+- **Avisos só contam como enviados quando algum canal entrega** (`src/lib/notify/delivery.ts`, puro e testado). Sem canal configurado, nada é registrado: o aviso sai quando houver canal, se ainda valer. Canal falhou: nova tentativa com espera de 5, 10, 20, 40 e 80 min (até 6 tentativas). `notification_log` ganhou `status`, `attempts`, `last_error` e `last_attempt_at`; `price_alerts` ganhou `attempts`, `last_error` e `last_attempt_at`. Aviso de preço sem canal é encerrado com `last_error = 'sem canal'` (preço é perecível). A tela de Notificações mostra "falhou, tentando de novo".
+- **Tick isolado:** `try/catch` por usuário e por canal; timeout de 10 s no Telegram e no push; `userErrors` e `failed` no resultado do tick. Fuso do perfil validado no banco (`profiles_timezone_valid`, função `is_valid_timezone`).
+- **Editar passagem não recria trechos** (`planLegChanges` em `src/lib/trips/draft.ts`): mantém ids, "check-in feito" e "cheguei por outro meio"; zera o check-in só se o voo mudar. Chaves de check-in incluem o horário, então uma remarcação gera aviso novo.
+- **Vigia** exige `CRON_SECRET` e usa reserva atômica (`claimInterval`); `safeEqual` compara hashes.
+- **Exportação** cobre todas as tabelas do usuário (`src/lib/account/export-tables.ts`; um teste lê as migrações e falha se faltar alguma).
+- **Volta não comprada:** perfil com "Cidade onde você mora" (`profiles.home_city`); a última ida que termina fora de casa nos próximos 45 dias gera alerta e aviso, com "Volto por outro meio" (`flights.ignore_missing_return`).
+- **Travelpayouts:** qualquer `success:false` é falha da data (não "sem preço"); 429 tenta mais uma vez.
+- **Front-end:** `not-found`, `error`, `global-error` e `loading` em pt-BR; `io()` antes do cliente do Supabase (some o aviso de `Date.now()` na pré-renderização); contraste AA nos dois temas e rótulos que faltavam (axe: 0 violações em todas as telas); cabeçalhos `frame-ancestors`/`X-Frame-Options`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`.
+- Textos corrigidos: retenção dos originais (o campo de dias saiu do perfil), "e-mail encaminhado" na página inicial, README.
+- Migração `20261105000000_avisos_entrega.sql` (idempotente). Apaga os avisos antigos registrados sem nenhum canal, para serem reavaliados.
+- Testes: 182 no total.

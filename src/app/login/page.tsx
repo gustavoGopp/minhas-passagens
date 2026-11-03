@@ -23,7 +23,7 @@ export default function LoginPage({
       <Suspense fallback={null}>
         <LoginForm searchParams={searchParams} />
       </Suspense>
-      <p className="text-sm text-zinc-500 dark:text-zinc-400">
+      <p className="text-sm text-zinc-600 dark:text-zinc-400">
         <Link className="underline underline-offset-4" href="/">
           Voltar para a página inicial
         </Link>

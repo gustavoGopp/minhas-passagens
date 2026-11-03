@@ -31,7 +31,7 @@ export function NavList({ pathname }: { pathname: string | null }) {
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={`block px-3 py-3 text-xs font-medium sm:text-sm ${
-                  active ? "text-zinc-900 dark:text-zinc-50" : "text-zinc-500 dark:text-zinc-400"
+                  active ? "text-zinc-900 dark:text-zinc-50" : "text-zinc-600 dark:text-zinc-400"
                 }`}
               >
                 {item.label}

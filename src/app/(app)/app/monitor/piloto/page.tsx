@@ -6,7 +6,10 @@ export const metadata = { title: "Piloto de preços" };
 export default function PilotoPage() {
   return (
     <main className="flex flex-col gap-6">
-      <Link href="/app/monitor" className="text-sm text-zinc-500 underline underline-offset-4">
+      <Link
+        href="/app/monitor"
+        className="text-sm text-zinc-600 underline underline-offset-4 dark:text-zinc-400"
+      >
         ← Preços
       </Link>
       <header className="flex flex-col gap-2">

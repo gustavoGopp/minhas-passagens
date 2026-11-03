@@ -22,17 +22,20 @@ export const metadata = { title: "Monitor" };
 export default function MonitorDetailPage({ params }: { params: Promise<{ id: string }> }) {
   return (
     <main className="flex flex-col gap-6">
-      <Link href="/app/monitor" className="text-sm text-zinc-500 underline underline-offset-4">
+      <Link
+        href="/app/monitor"
+        className="text-sm text-zinc-600 underline underline-offset-4 dark:text-zinc-400"
+      >
         ← Preços
       </Link>
-      <Suspense fallback={<p className="text-sm text-zinc-500">Carregando…</p>}>
+      <Suspense fallback={<p className="text-sm text-zinc-600 dark:text-zinc-400">Carregando…</p>}>
         <Detail params={params} />
       </Suspense>
     </main>
   );
 }
 
-const h2 = "text-sm font-semibold tracking-wide text-zinc-500 uppercase";
+const h2 = "text-sm font-semibold tracking-wide text-zinc-600 dark:text-zinc-400 uppercase";
 
 async function Detail({ params }: { params: Promise<{ id: string }> }) {
   const user = await getCurrentUser();
@@ -78,7 +81,7 @@ async function Detail({ params }: { params: Promise<{ id: string }> }) {
           {m.allow_connections ? "aceita conexão" : "só direto"}
           {m.max_duration_min ? ` · até ${m.max_duration_min} min` : ""}
         </p>
-        <p className="text-xs text-zinc-500">
+        <p className="text-xs text-zinc-600 dark:text-zinc-400">
           {FREQUENCY_LABEL[m.frequency]} · {m.horizon_weeks} semanas ·{" "}
           {m.active ? "ativo" : "pausado"}
           {m.next_check_at && m.active ? ` · próxima ${formatInZone(m.next_check_at, tz)}` : ""}
@@ -125,18 +128,18 @@ async function Detail({ params }: { params: Promise<{ id: string }> }) {
       <section className="flex flex-col gap-2">
         <h2 className={h2}>Preços da última checagem</h2>
         {lastOk ? (
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs text-zinc-600 dark:text-zinc-400">
             {formatInZone(lastOk.checked_at, tz)} · {lastOk.dates_matched} de {lastOk.target_dates}{" "}
             datas com preço nas janelas ({lastOk.dates_with_data} com algum dado do provedor) ·{" "}
             {lastOk.requests} requisições
           </p>
         ) : (
-          <p className="text-sm text-zinc-500">Ainda não houve checagem.</p>
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">Ainda não houve checagem.</p>
         )}
         {bestByDate.size ? (
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-xs text-zinc-500">
+              <tr className="text-left text-xs text-zinc-600 dark:text-zinc-400">
                 <th className="py-1 font-medium">Voo</th>
                 <th className="py-1 font-medium">Companhia</th>
                 <th className="py-1 text-right font-medium">Preço</th>
@@ -171,7 +174,7 @@ async function Detail({ params }: { params: Promise<{ id: string }> }) {
             </tbody>
           </table>
         ) : null}
-        <p className="text-xs text-zinc-500">
+        <p className="text-xs text-zinc-600 dark:text-zinc-400">
           Preços com “feriado perto” (destacados) tendem a subir e ficam fora da média de 30 dias. ≈{" "}
           {q.perMonth} requisições por mês · {PROVIDER_QUOTA[m.provider].note}.
         </p>
@@ -187,14 +190,14 @@ async function Detail({ params }: { params: Promise<{ id: string }> }) {
                   {formatFlightDate(a.flight_date as string, String(a.departs_local).slice(11, 16))}{" "}
                   · {(a.signals as Signal[]).map((s) => SIGNAL_LABEL[s]).join(", ")}
                 </span>
-                <span className="text-zinc-500 tabular-nums">
+                <span className="text-zinc-600 tabular-nums dark:text-zinc-400">
                   {formatBRL(Number(a.price_cents))} · {a.sent_at ? "enviado" : "na fila"}
                 </span>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="text-sm text-zinc-500">Nenhum aviso ainda.</p>
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">Nenhum aviso ainda.</p>
         )}
       </section>
     </>

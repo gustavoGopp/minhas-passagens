@@ -1,10 +1,16 @@
-import { airportTimeZone } from "@/lib/airports";
+import { airportTimeZone, findAirport } from "@/lib/airports";
 import { checkinState } from "./checkin";
 import type { BookingRow, FlightRow } from "./draft";
 import { utcToLocal } from "./time";
 
 export type AlertType =
-  "checkin" | "conflict" | "tight_connection" | "missing_leg" | "duplicate" | "credit_expiring";
+  | "checkin"
+  | "conflict"
+  | "tight_connection"
+  | "missing_leg"
+  | "missing_return"
+  | "duplicate"
+  | "credit_expiring";
 
 export interface TripAlert {
   key: string;
@@ -34,6 +40,8 @@ const MIN_CONNECTION_MIN = 60;
 /** Sem chegada informada, assume 1h10 de voo (ponte aérea). */
 const DEFAULT_DURATION = 70 * 60_000;
 const MISSING_LEG_WINDOW_DAYS = 30;
+/** Avisa da volta não comprada para idas que saem nos próximos 45 dias. */
+const MISSING_RETURN_WINDOW_DAYS = 45;
 
 const arrival = (f: FlightRow) =>
   f.arrives_at ? Date.parse(f.arrives_at) : Date.parse(f.departs_at) + DEFAULT_DURATION;
@@ -57,6 +65,8 @@ export function computeAlerts(input: {
   flights: FlightRow[];
   credits?: CreditRow[];
   now: string;
+  /** Cidade onde a pessoa mora (perfil). Sem ela, não há aviso de volta não comprada. */
+  homeCity?: string | null;
 }): TripAlert[] {
   const bookings = new Map(input.bookings.map((b) => [b.id, b]));
   const now = Date.parse(input.now);
@@ -126,6 +136,29 @@ export function computeAlerts(input: {
         bookingIds: [...new Set([a.booking_id, b.booking_id])],
       });
     }
+  }
+
+  // Volta não comprada: a última ida termina fora da cidade de casa.
+  const last = flights[flights.length - 1];
+  const destCity = last ? findAirport(last.destination)?.city : undefined;
+  if (
+    last &&
+    input.homeCity &&
+    destCity &&
+    destCity !== input.homeCity &&
+    !last.ignore_missing_return &&
+    Date.parse(last.departs_at) >= now &&
+    Date.parse(last.departs_at) - now <= MISSING_RETURN_WINDOW_DAYS * 24 * HOUR
+  ) {
+    alerts.push({
+      key: `return:${last.id}`,
+      type: "missing_return",
+      severity: "medium",
+      title: `Volta não comprada: ${destCity} → ${input.homeCity}`,
+      detail: `Você chega em ${last.destination} em ${brDate(localDay(last))} e não há voo de volta para ${input.homeCity}.`,
+      flightIds: [last.id],
+      bookingIds: [last.booking_id],
+    });
   }
 
   // Compra duplicada: mesma rota, mesmo dia local, reservas diferentes.

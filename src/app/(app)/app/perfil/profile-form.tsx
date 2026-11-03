@@ -17,10 +17,12 @@ export function ProfileForm({
   profile,
   ufs,
   cities,
+  homeCities,
 }: {
   profile: Profile;
   ufs: readonly string[];
   cities: CityOption[];
+  homeCities: string[];
 }) {
   const [uf, setUf] = useState(profile.uf ?? "");
   const citiesOfUf = cities.filter((c) => c.uf === uf);
@@ -45,6 +47,20 @@ export function ProfileForm({
       <label className={labelClass}>
         Fuso horário
         <input className={inputClass} name="timezone" defaultValue={profile.timezone} />
+      </label>
+      <label className={labelClass}>
+        Cidade onde você mora
+        <select className={inputClass} name="home_city" defaultValue={profile.home_city ?? ""}>
+          <option value="">Não informar</option>
+          {homeCities.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
+        <span className="text-xs font-normal text-zinc-600 dark:text-zinc-400">
+          Usada para avisar quando a volta para casa ainda não foi comprada.
+        </span>
       </label>
       <label className={labelClass}>
         Estado (para feriados estaduais)
@@ -75,7 +91,7 @@ export function ProfileForm({
             </option>
           ))}
         </select>
-        <span className="text-xs font-normal text-zinc-500 dark:text-zinc-400">
+        <span className="text-xs font-normal text-zinc-600 dark:text-zinc-400">
           Sua cidade não está na lista? Cadastre os feriados dela no Calendário.
         </span>
       </label>
@@ -114,17 +130,10 @@ export function ProfileForm({
           />
         </label>
       </div>
-      <label className={labelClass}>
-        Guardar e-mails e prints originais por (dias)
-        <input
-          className={inputClass}
-          type="number"
-          min={0}
-          max={365}
-          name="original_retention_days"
-          defaultValue={profile.original_retention_days}
-        />
-      </label>
+      <p className="text-sm text-zinc-600 dark:text-zinc-400">
+        O texto, print ou PDF que você envia para ler com IA não fica guardado: vai só para a
+        extração, com a sua chave da Anthropic, e é descartado. Ficam só os dados da passagem.
+      </p>
       {state.error ? (
         <p role="alert" className="text-sm text-red-700 dark:text-red-300">
           {state.error}

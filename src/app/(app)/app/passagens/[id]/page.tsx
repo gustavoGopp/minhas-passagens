@@ -17,10 +17,13 @@ export const metadata = { title: "Passagem" };
 export default function PassagemPage({ params }: { params: Promise<{ id: string }> }) {
   return (
     <main className="flex flex-col gap-6">
-      <Link href="/app" className="text-sm text-zinc-500 underline underline-offset-4">
+      <Link
+        href="/app"
+        className="text-sm text-zinc-600 underline underline-offset-4 dark:text-zinc-400"
+      >
         ← Passagens
       </Link>
-      <Suspense fallback={<p className="text-sm text-zinc-500">Carregando…</p>}>
+      <Suspense fallback={<p className="text-sm text-zinc-600 dark:text-zinc-400">Carregando…</p>}>
         <Detail params={params} />
       </Suspense>
     </main>

@@ -16,7 +16,7 @@ export default function IntegracoesPage() {
           navegador e o custo de uso é cobrado só na sua conta do provedor.
         </p>
       </header>
-      <Suspense fallback={<p className="text-sm text-zinc-500">Carregando…</p>}>
+      <Suspense fallback={<p className="text-sm text-zinc-600 dark:text-zinc-400">Carregando…</p>}>
         <IntegrationsList />
       </Suspense>
     </main>

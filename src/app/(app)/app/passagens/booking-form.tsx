@@ -233,7 +233,7 @@ export function BookingForm({
             {d.legs.length > 1 ? (
               <button
                 type="button"
-                className="self-start text-xs text-zinc-500 underline underline-offset-2"
+                className="self-start text-xs text-zinc-600 underline underline-offset-2 dark:text-zinc-400"
                 onClick={() => setD((p) => ({ ...p, legs: p.legs.filter((_, j) => j !== i) }))}
               >
                 Remover trecho

@@ -49,7 +49,9 @@ export default function CalendarioPage({
 }) {
   return (
     <main className="flex flex-col gap-6">
-      <Suspense fallback={<p className="text-sm text-zinc-500">Carregando feriados…</p>}>
+      <Suspense
+        fallback={<p className="text-sm text-zinc-600 dark:text-zinc-400">Carregando feriados…</p>}
+      >
         <Calendar searchParams={searchParams} />
       </Suspense>
     </main>
@@ -132,7 +134,7 @@ async function Calendar({ searchParams }: { searchParams: Promise<{ ano?: string
 
       {months.map((month) => (
         <section key={month} className="flex flex-col gap-2">
-          <h2 className="text-sm font-semibold tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
+          <h2 className="text-sm font-semibold tracking-wide text-zinc-600 uppercase dark:text-zinc-400">
             {MONTHS[month - 1]}
           </h2>
           {flightsByMonth.get(month)?.length ? (
@@ -182,7 +184,7 @@ async function Calendar({ searchParams }: { searchParams: Promise<{ ano?: string
 
       {hidden.length ? (
         <section className="flex flex-col gap-2">
-          <h2 className="text-sm font-semibold text-zinc-500 dark:text-zinc-400">
+          <h2 className="text-sm font-semibold text-zinc-600 dark:text-zinc-400">
             Ocultados em {year}
           </h2>
           <ul className="flex flex-col gap-1 text-sm">
@@ -203,7 +205,7 @@ async function Calendar({ searchParams }: { searchParams: Promise<{ ano?: string
         </section>
       ) : null}
 
-      <p className="text-xs text-zinc-500 dark:text-zinc-400">
+      <p className="text-xs text-zinc-600 dark:text-zinc-400">
         Feriados estaduais e municipais: {REGIONAL_SOURCE}. Pontos facultativos federais mudam por
         portaria a cada ano; confira com seu empregador.
       </p>
@@ -229,7 +231,11 @@ function HolidayRow({
       <div className="flex flex-col gap-1">
         <span className="text-sm font-medium">
           {e.name}
-          {isNext ? <span className="ml-2 text-xs font-normal text-zinc-500">próximo</span> : null}
+          {isNext ? (
+            <span className="ml-2 text-xs font-normal text-zinc-600 dark:text-zinc-400">
+              próximo
+            </span>
+          ) : null}
         </span>
         <span className="text-xs text-zinc-600 dark:text-zinc-400">
           {formatDate(e.date)}
@@ -237,7 +243,7 @@ function HolidayRow({
           {e.startsAtSunset ? " · começa ao pôr do sol da véspera" : ""}
           {e.fast ? " · jejum" : ""}
         </span>
-        {e.note ? <span className="text-xs text-zinc-500 dark:text-zinc-400">{e.note}</span> : null}
+        {e.note ? <span className="text-xs text-zinc-600 dark:text-zinc-400">{e.note}</span> : null}
       </div>
       <div className="flex shrink-0 flex-col items-end gap-1">
         <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${kind.cls}`}>
@@ -246,7 +252,10 @@ function HolidayRow({
         {customId ? (
           <form action={removeOverrideAction}>
             <input type="hidden" name="id" value={customId} />
-            <button className="text-xs text-zinc-500 underline underline-offset-2" type="submit">
+            <button
+              className="text-xs text-zinc-600 underline underline-offset-2 dark:text-zinc-400"
+              type="submit"
+            >
               Remover
             </button>
           </form>
@@ -254,7 +263,10 @@ function HolidayRow({
           <form action={hideHolidayAction}>
             <input type="hidden" name="date" value={e.date} />
             <input type="hidden" name="key" value={e.key} />
-            <button className="text-xs text-zinc-500 underline underline-offset-2" type="submit">
+            <button
+              className="text-xs text-zinc-600 underline underline-offset-2 dark:text-zinc-400"
+              type="submit"
+            >
               Ocultar
             </button>
           </form>

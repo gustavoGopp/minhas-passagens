@@ -83,26 +83,41 @@ export function parseTravelpayouts(json: unknown, q: PriceSearch): Offer[] {
   return offers;
 }
 
-async function get(url: string, token: string, f: FetchLike) {
-  const res = await f(url, {
-    headers: { "X-Access-Token": token, "Accept-Encoding": "gzip" },
-    signal: AbortSignal.timeout(15_000),
-  });
+async function get(url: string, token: string, f: FetchLike, retryAfterMs = 1_000) {
+  const once = () =>
+    f(url, {
+      headers: { "X-Access-Token": token, "Accept-Encoding": "gzip" },
+      signal: AbortSignal.timeout(15_000),
+    });
+  let res = await once();
+  // Limite de requisições: uma nova tentativa curta antes de contar a data como falha.
+  if (res.status === 429) {
+    await new Promise((r) => setTimeout(r, retryAfterMs));
+    res = await once();
+  }
   if (res.status === 401 || res.status === 403) throw new ProviderAuthError("Token inválido");
   if (!res.ok) throw new Error(`Travelpayouts respondeu ${res.status}`);
   const json = (await res.json()) as { success?: boolean; error?: string };
-  if (json.success === false && /token|auth/i.test(json.error ?? ""))
-    throw new ProviderAuthError("Token inválido");
+  if (json.success === false) {
+    if (/token|auth/i.test(json.error ?? "")) throw new ProviderAuthError("Token inválido");
+    // Qualquer outro erro é falha da data, não "sem preço" (não distorce a cobertura).
+    throw new Error(`Travelpayouts: ${(json.error ?? "erro").slice(0, 120)}`);
+  }
   return json;
 }
 
-export function travelpayouts(opts: { market?: string } = { market: "br" }): PriceProvider {
+export function travelpayouts(
+  opts: { market?: string; retryAfterMs?: number } = { market: "br" },
+): PriceProvider {
   return {
     id: "travelpayouts",
     name: "Travelpayouts (Aviasales)",
     async search(q, token, f = fetch) {
       return searchByDate(q.dates, async (date) =>
-        parseTravelpayouts(await get(tpUrl({ ...q, date, market: opts.market }), token, f), q),
+        parseTravelpayouts(
+          await get(tpUrl({ ...q, date, market: opts.market }), token, f, opts.retryAfterMs),
+          q,
+        ),
       );
     },
     async validateKey(token, f = fetch) {

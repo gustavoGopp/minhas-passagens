@@ -49,7 +49,7 @@ export function PilotRunner() {
           </p>
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-xs text-zinc-500">
+              <tr className="text-left text-xs text-zinc-600 dark:text-zinc-400">
                 <th className="py-1 font-medium">Trecho</th>
                 <th className="py-1 font-medium">Mercado</th>
                 <th className="py-1 text-right font-medium">Com preço</th>
@@ -78,7 +78,7 @@ export function PilotRunner() {
               ))}
             </tbody>
           </table>
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs text-zinc-600 dark:text-zinc-400">
             {r.legs
               .map(
                 (l) =>

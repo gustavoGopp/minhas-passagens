@@ -106,7 +106,7 @@ export async function sendTestAction(): Promise<TestState> {
     admin.from("telegram_links").select("chat_id").eq("user_id", user.id).maybeSingle(),
     admin.from("push_subscriptions").select("id, endpoint, p256dh, auth").eq("user_id", user.id),
   ]);
-  const channels = await deliver(
+  const { ok: channels, attempted } = await deliver(
     {
       userId: user.id,
       email: profile.data?.email ?? null,
@@ -129,6 +129,8 @@ export async function sendTestAction(): Promise<TestState> {
   return {
     result: channels.length
       ? `Enviado por: ${channels.join(", ")}.`
-      : "Nenhum canal ativo recebeu o teste.",
+      : attempted.length
+        ? `Falhou em: ${attempted.join(", ")}. Confira as chaves e tente de novo.`
+        : "Nenhum canal configurado. Ative um canal acima e salve.",
   };
 }

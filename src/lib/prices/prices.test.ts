@@ -287,6 +287,45 @@ describe("provedores", () => {
     expect(seen[0]).not.toContain("tok");
   });
 
+  it("Travelpayouts: success:false conta como falha da data, não como 'sem preço'", async () => {
+    const r = await travelpayouts({ market: "br", retryAfterMs: 0 }).search(
+      {
+        origin: "SDU",
+        destination: "CGH",
+        dates: ["2026-11-09", "2026-11-10"],
+        directOnly: true,
+        originTimeZone: "America/Sao_Paulo",
+      },
+      "tok",
+      async (url) =>
+        String(url).includes("2026-11-09")
+          ? Response.json({ success: false, error: "invalid params" })
+          : Response.json({ success: true, data: [] }),
+    );
+    expect(r.failedDates).toEqual(["2026-11-09"]);
+    expect(r.datesWithData).toEqual([]);
+  });
+
+  it("Travelpayouts: 429 tenta mais uma vez antes de falhar", async () => {
+    let calls = 0;
+    const r = await travelpayouts({ market: "br", retryAfterMs: 0 }).search(
+      {
+        origin: "SDU",
+        destination: "CGH",
+        dates: ["2026-11-09"],
+        directOnly: true,
+        originTimeZone: "America/Sao_Paulo",
+      },
+      "tok",
+      async () =>
+        ++calls === 1
+          ? new Response("", { status: 429 })
+          : Response.json({ success: true, data: [] }),
+    );
+    expect(calls).toBe(2);
+    expect(r.failedDates).toEqual([]);
+  });
+
   it("Duffel: offers com segmentos", () => {
     const [o] = parseDuffel(
       {

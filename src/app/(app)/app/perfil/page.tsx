@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { listAirportCities } from "@/lib/airports";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { listCities } from "@/lib/holidays";
 import { getProfile, UF_LIST } from "@/lib/profiles/repo";
@@ -10,7 +11,7 @@ export default function PerfilPage() {
   return (
     <main className="flex flex-col gap-6">
       <h1 className="text-2xl font-semibold tracking-tight">Perfil</h1>
-      <Suspense fallback={<p className="text-sm text-zinc-500">Carregando…</p>}>
+      <Suspense fallback={<p className="text-sm text-zinc-600 dark:text-zinc-400">Carregando…</p>}>
         <ProfileLoader />
       </Suspense>
     </main>
@@ -27,5 +28,12 @@ async function ProfileLoader() {
       </p>
     );
   }
-  return <ProfileForm profile={profile} ufs={UF_LIST} cities={listCities()} />;
+  return (
+    <ProfileForm
+      profile={profile}
+      ufs={UF_LIST}
+      cities={listCities()}
+      homeCities={listAirportCities()}
+    />
+  );
 }

@@ -1,4 +1,5 @@
 import "server-only";
+import { io } from "next/cache";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -22,6 +23,10 @@ export async function getCurrentUser(): Promise<CurrentUser> {
 
 /** Igual a getCurrentUser, mas devolve null em vez de redirecionar. */
 export async function getOptionalUser(): Promise<CurrentUser | null> {
+  // O cliente do Supabase lê o relógio (validade da sessão) assim que é criado.
+  // Com Cache Components, io() mantém essa leitura fora da pré-renderização
+  // (no pedido real, resolve na hora).
+  await io();
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },

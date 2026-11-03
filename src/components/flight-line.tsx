@@ -24,7 +24,7 @@ export function FlightLine({ f, big = false }: { f: FlightRow; big?: boolean }) 
         {formatInZone(f.departs_at, tz)}
         {arrTime ? ` · chega ${arrTime}` : ""}
       </span>
-      <span className="text-xs text-zinc-500 dark:text-zinc-400">
+      <span className={big ? "text-xs opacity-80" : "text-xs text-zinc-600 dark:text-zinc-400"}>
         {[airlineName(f.airline), f.flight_number, findAirport(f.origin)?.name]
           .filter(Boolean)
           .join(" · ")}

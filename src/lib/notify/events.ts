@@ -23,6 +23,7 @@ export function dueEvents(input: {
   flights: FlightRow[];
   credits: CreditRow[];
   now: string;
+  homeCity?: string | null;
 }): NotifyEvent[] {
   const now = Date.parse(input.now);
   const bookings = new Map(input.bookings.map((b) => [b.id, b]));
@@ -38,7 +39,7 @@ export function dueEvents(input: {
     const path = `/app/passagens/${f.booking_id}`;
     if (now >= Date.parse(dayBefore)) {
       events.push({
-        key: `checkin-24h:${f.id}`,
+        key: `checkin-24h:${f.id}:${f.departs_at}`,
         title: `Check-in pendente: ${f.origin} → ${f.destination}`,
         body: `Voo ${when}. Faltam menos de 24 horas.${url ? ` ${url}` : ""}`,
         path,
@@ -46,7 +47,7 @@ export function dueEvents(input: {
       });
     } else {
       events.push({
-        key: `checkin-open:${f.id}`,
+        key: `checkin-open:${f.id}:${f.departs_at}`,
         title: `Check-in aberto: ${f.origin} → ${f.destination}`,
         body: `Voo ${when}.${url ? ` ${url}` : ""}`,
         path,

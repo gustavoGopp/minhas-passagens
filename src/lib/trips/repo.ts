@@ -1,13 +1,13 @@
 import "server-only";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import type { BookingRow, FlightRow, rowsFromDraft } from "./draft";
+import { planLegChanges, type BookingRow, type FlightRow, type rowsFromDraft } from "./draft";
 
 type Rows = ReturnType<typeof rowsFromDraft>;
 
 const BOOKING_COLS =
   "id, locator, airline, seller, channel, amount_cents, currency, miles, taxes_cents, purchased_on, tag, status, source, notes";
 const FLIGHT_COLS =
-  "id, booking_id, airline, flight_number, origin, destination, departs_at, arrives_at, passenger, checkin_done, ignore_missing_leg";
+  "id, booking_id, airline, flight_number, origin, destination, departs_at, arrives_at, passenger, checkin_done, ignore_missing_leg, ignore_missing_return";
 
 export async function listTrips(
   userId: string,
@@ -48,9 +48,13 @@ export async function createTrip(userId: string, rows: Rows): Promise<string> {
     .single();
   if (error) throw new Error(`Falha ao salvar a passagem: ${error.message}`);
   const id = data.id as string;
-  const ins = await supabase
-    .from("flights")
-    .insert(rows.flights.map((f) => ({ ...f, booking_id: id, user_id: userId })));
+  const ins = await supabase.from("flights").insert(
+    planLegChanges([], rows.flights).insert.map((f) => ({
+      ...f,
+      booking_id: id,
+      user_id: userId,
+    })),
+  );
   if (ins.error) {
     await supabase.from("bookings").delete().eq("id", id).eq("user_id", userId);
     throw new Error(`Falha ao salvar os trechos: ${ins.error.message}`);
@@ -66,13 +70,31 @@ export async function updateTrip(userId: string, id: string, rows: Rows): Promis
     .eq("id", id)
     .eq("user_id", userId);
   if (up.error) throw new Error(`Falha ao atualizar a passagem: ${up.error.message}`);
-  // Trechos são substituídos pelo que está no formulário.
-  const del = await supabase.from("flights").delete().eq("booking_id", id).eq("user_id", userId);
-  if (del.error) throw new Error(`Falha ao atualizar trechos: ${del.error.message}`);
-  const ins = await supabase
+
+  const cur = await supabase
     .from("flights")
-    .insert(rows.flights.map((f) => ({ ...f, booking_id: id, user_id: userId })));
-  if (ins.error) throw new Error(`Falha ao atualizar trechos: ${ins.error.message}`);
+    .select("id, departs_at, flight_number, origin")
+    .eq("booking_id", id)
+    .eq("user_id", userId);
+  if (cur.error) throw new Error(`Falha ao ler trechos: ${cur.error.message}`);
+  const plan = planLegChanges((cur.data ?? []) as FlightRow[], rows.flights);
+
+  // Ordem segura sem transação: atualiza e insere antes de apagar, para a
+  // passagem nunca ficar sem trechos se algo falhar no meio.
+  for (const u of plan.update) {
+    const r = await supabase.from("flights").update(u.fields).eq("id", u.id).eq("user_id", userId);
+    if (r.error) throw new Error(`Falha ao atualizar trechos: ${r.error.message}`);
+  }
+  if (plan.insert.length) {
+    const ins = await supabase
+      .from("flights")
+      .insert(plan.insert.map((f) => ({ ...f, booking_id: id, user_id: userId })));
+    if (ins.error) throw new Error(`Falha ao atualizar trechos: ${ins.error.message}`);
+  }
+  if (plan.remove.length) {
+    const del = await supabase.from("flights").delete().in("id", plan.remove).eq("user_id", userId);
+    if (del.error) throw new Error(`Falha ao atualizar trechos: ${del.error.message}`);
+  }
 }
 
 export async function setTripStatus(userId: string, id: string, status: BookingRow["status"]) {
@@ -99,6 +121,17 @@ export async function setCheckin(userId: string, flightId: string, done: boolean
     .eq("id", flightId)
     .eq("user_id", userId);
   if (error) throw new Error(`Falha ao marcar check-in: ${error.message}`);
+}
+
+/** "Volto por outro meio": silencia o aviso de volta não comprada depois deste voo. */
+export async function setIgnoreMissingReturn(userId: string, flightId: string, value: boolean) {
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase
+    .from("flights")
+    .update({ ignore_missing_return: value })
+    .eq("id", flightId)
+    .eq("user_id", userId);
+  if (error) throw new Error(`Falha ao atualizar o trecho: ${error.message}`);
 }
 
 /** "Cheguei por outro meio": silencia o alerta de trecho faltando antes deste voo. */

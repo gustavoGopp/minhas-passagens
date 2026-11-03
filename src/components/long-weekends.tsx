@@ -9,7 +9,7 @@ export function LongWeekends({ items }: { items: LongWeekendItem[] }) {
     <section className="flex flex-col gap-2" aria-labelledby="feriadoes">
       <h2
         id="feriadoes"
-        className="text-sm font-semibold tracking-wide text-zinc-500 uppercase dark:text-zinc-400"
+        className="text-sm font-semibold tracking-wide text-zinc-600 uppercase dark:text-zinc-400"
       >
         Próximos feriadões
       </h2>
@@ -53,9 +53,11 @@ export function LongWeekends({ items }: { items: LongWeekendItem[] }) {
           })}
         </ul>
       ) : (
-        <p className="text-sm text-zinc-500">Nenhum feriadão nas próximas 8 semanas.</p>
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+          Nenhum feriadão nas próximas 8 semanas.
+        </p>
       )}
-      <p className="text-xs text-zinc-500 dark:text-zinc-400">
+      <p className="text-xs text-zinc-600 dark:text-zinc-400">
         O monitor cria ida (SP → RJ na véspera à noite ou no 1º dia de manhã) e volta (RJ → SP no
         último dia à tarde ou no dia seguinte cedo), com as janelas da ponte aérea.
       </p>

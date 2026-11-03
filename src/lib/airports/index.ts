@@ -26,6 +26,11 @@ export function findAirport(iata: string): Airport | undefined {
   return byIata.get(iata.trim().toUpperCase());
 }
 
+/** Cidades com aeroporto na tabela, em ordem alfabética (para "cidade onde você mora"). */
+export function listAirportCities(): string[] {
+  return [...new Set(airports.map((a) => a.city))].sort((a, b) => a.localeCompare(b, "pt-BR"));
+}
+
 /** Fuso IANA do aeroporto, ou undefined se o código não estiver na tabela. */
 export function airportTimeZone(iata: string): string | undefined {
   return findAirport(iata)?.tz;

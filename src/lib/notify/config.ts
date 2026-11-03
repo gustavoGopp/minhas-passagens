@@ -1,4 +1,5 @@
 import "server-only";
+import { createHash, timingSafeEqual } from "node:crypto";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export type ConfigKey =
@@ -40,10 +41,48 @@ export async function setConfig(values: Partial<Record<ConfigKey, string>>): Pro
   if (error) throw new Error(`Falha ao gravar app_config: ${error.message}`);
 }
 
-/** Comparação em tempo constante para segredos. */
+/** Comparação em tempo constante para segredos (compara hashes: não revela o tamanho). */
 export function safeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return diff === 0;
+  const ha = createHash("sha256").update(a).digest();
+  const hb = createHash("sha256").update(b).digest();
+  return timingSafeEqual(ha, hb);
+}
+
+/**
+ * Reserva atômica de um intervalo: grava `nowIso` na chave só se o valor
+ * anterior for mais velho que `minutes` (ou não existir). Duas chamadas
+ * simultâneas não conseguem reservar o mesmo intervalo.
+ */
+export async function claimInterval(
+  key: ConfigKey,
+  nowIso: string,
+  minutes: number,
+): Promise<{ claimed: true; previous: string | null } | { claimed: false }> {
+  const admin = createSupabaseAdminClient();
+  const { data: cur, error: readErr } = await admin
+    .from("app_config")
+    .select("value")
+    .eq("key", key)
+    .maybeSingle();
+  if (readErr) throw new Error(`Falha ao ler app_config: ${readErr.message}`);
+  const row = { key, value: nowIso, updated_at: nowIso };
+  if (!cur) {
+    const ins = await admin
+      .from("app_config")
+      .upsert(row, { onConflict: "key", ignoreDuplicates: true })
+      .select("key");
+    if (ins.error) throw new Error(`Falha ao gravar app_config: ${ins.error.message}`);
+    if (ins.data?.length) return { claimed: true, previous: null };
+  }
+  const cutoff = new Date(Date.parse(nowIso) - minutes * 60_000).toISOString();
+  const up = await admin
+    .from("app_config")
+    .update(row)
+    .eq("key", key)
+    .lt("value", cutoff)
+    .select("key");
+  if (up.error) throw new Error(`Falha ao gravar app_config: ${up.error.message}`);
+  return up.data?.length
+    ? { claimed: true, previous: (cur?.value as string) ?? null }
+    : { claimed: false };
 }
