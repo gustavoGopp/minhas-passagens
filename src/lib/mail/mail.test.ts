@@ -116,6 +116,9 @@ describe("pré-filtro", () => {
 
   it("classifica cancelamento, remarcação e confirmação", () => {
     expect(classify("Sua reserva foi cancelada", "")).toBe("cancellation");
+    expect(classify("Confirmação de compra", "Política de cancelamento: até 24h")).toBe(
+      "confirmation",
+    );
     expect(classify("Alteração de horário", "Seu voo alterado para 08:10")).toBe("change");
     expect(classify("Confirmação de compra", "")).toBe("confirmation");
     expect(senderDomain("LATAM <NoReply@LATAM.com>")).toBe("latam.com");
@@ -328,7 +331,9 @@ describe("duplicadas com códigos diferentes e ano suspeito", () => {
     );
     expect(yearWarning(d("X", "2027-12-10T08:00"), "2026-12-20T10:00:00Z")).toMatch(/quase um ano/);
     expect(yearWarning(d("X", "2027-01-05T08:00"), "2026-12-20T10:00:00Z")).toBeNull();
-    expect(yearWarning(d("X", "2026-01-05T08:00", "cancelled"), "2026-12-20T10:00:00Z")).toBeNull();
+    expect(yearWarning(d("X", "2026-01-05T08:00", "cancelled"), "2026-12-20T10:00:00Z")).toMatch(
+      /anterior/,
+    );
   });
 });
 

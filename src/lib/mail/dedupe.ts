@@ -82,7 +82,7 @@ const timedRows = (flights: FlightRow[]) =>
  */
 export function yearWarning(d: BookingDraft, receivedAt: string): string | null {
   const received = receivedAt.slice(0, 10);
-  if (!received || d.status === "cancelled") return null;
+  if (!received) return null;
   for (const l of d.legs) {
     const day = l.departure_local.slice(0, 10);
     const diff = (Date.parse(day) - Date.parse(received)) / 86_400_000;

@@ -9,6 +9,7 @@ export type AlertType =
   | "tight_connection"
   | "missing_leg"
   | "missing_return"
+  | "check_date"
   | "duplicate"
   | "credit_expiring";
 
@@ -158,6 +159,23 @@ export function computeAlerts(input: {
       detail: `Você chega em ${last.destination} em ${brDate(localDay(last))} e não há voo de volta para ${input.homeCity}.`,
       flightIds: [last.id],
       bookingIds: [last.booking_id],
+    });
+  }
+
+  // Data a conferir: voo antes da data da compra (ano lido errado na importação, por exemplo).
+  for (const f of flights) {
+    const b = bookings.get(f.booking_id);
+    if (!b?.purchased_on) continue;
+    const day = localDay(f);
+    if (day >= b.purchased_on) continue;
+    alerts.push({
+      key: `checkdate:${f.id}:${f.departs_at}:${b.purchased_on}`,
+      type: "check_date",
+      severity: "medium",
+      title: `Confira a data: ${route(f)}`,
+      detail: `O voo (${brDate(day)}) está antes da compra (${brDate(b.purchased_on)}). O ano pode estar errado: edite a passagem ou apague se não for sua.`,
+      flightIds: [f.id],
+      bookingIds: [f.booking_id],
     });
   }
 

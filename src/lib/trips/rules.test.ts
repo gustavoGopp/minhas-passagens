@@ -337,3 +337,12 @@ describe("duplicada vinda da importação", () => {
     ).toBe(false);
   });
 });
+
+describe("data a conferir", () => {
+  it("voo antes da data da compra pede conferência (ano errado na importação)", () => {
+    const b = booking({ source: "email", purchased_on: "2026-11-01" });
+    const f = [flight(b, "SDU", "CGH", "2026-02-20T10:00:00.000Z", null)];
+    const a = computeAlerts({ bookings: [b], flights: f, now: "2026-11-03T12:00:00.000Z" });
+    expect(a.find((x) => x.type === "check_date")?.detail).toContain("20/02/2026");
+  });
+});
