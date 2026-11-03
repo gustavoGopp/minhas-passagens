@@ -57,6 +57,7 @@ describe("rascunho de passagem", () => {
         miles: 12000,
         taxes_amount: 45.9,
         purchased_on: "2026-11-01",
+        status: "active",
         flights: [
           {
             airline_code: "G3",

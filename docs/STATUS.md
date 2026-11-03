@@ -218,3 +218,16 @@ Monitor internacional e conversão de moeda; WhatsApp; compra no app; raspagem d
 - `price_checks` ganhou `near_provider`, `near_dates`, `near_with_data`, `near_in_window`, `near_requests`, `near_tp_with_data`, `near_tp_in_window` e `near_skipped` (migração `20261107000000_piloto_serpapi.sql`). O `piloto-precos.sql` mostra a comparação, as buscas do mês e os motivos de pulo.
 - Tela **Preços → Piloto**: tabela Google Flights × Travelpayouts (datas com voo na janela, 7 dias) e "buscas da SerpApi neste mês: X de 240".
 - **Agendador:** avisos de preço e retenção rodam antes das checagens. Cada monitor é reservado antes de checar (`claimMonitor`; uma falha no meio volta a vencer em 30 min). Novas checagens param depois de 35 s do tick. No máximo 60 datas por checagem.
+
+## Bloco 2b: importar passagens do Gmail (2026-11-03)
+
+- **Passagens → Importar do Gmail** (`/app/passagens/importar`). A varredura anda em etapas curtas (`src/lib/mail/scan.ts`), pela tela (enquanto aberta) e pelo agendador (com o tempo que sobra no tick):
+  1. **listing:** duas consultas com `in:anywhere` e `includeSpamTrash=true` (por remetente e por termos, 5 anos), só os ids;
+  2. **filtering:** cabeçalhos (remetente, assunto, lista de e-mails), **sem IA**;
+  3. **awaiting_confirmation:** mostra quantos e-mails parecem passagens e a estimativa de custo (`src/lib/mail/cost.ts`) e **espera o dono confirmar**;
+  4. **processing:** baixa o corpo, aplica o pré-filtro por sinais (localizador, aeroporto, voo, valor) e só então chama o Haiku 5.5 com a chave do dono. Usa `allowEmpty` (propaganda não dispara o reforço com Sonnet) e a data do e-mail para deduzir o ano;
+  5. **review:** lista para revisão.
+- Cada e-mail é reservado antes da extração: duas chamadas ao mesmo tempo não pagam duas vezes. "Cancelar" vale na hora. Chave recusada ou sem crédito para a varredura com o motivo.
+- **Revisão em lote:** a deduplicação (`src/lib/mail/dedupe.ts`) é recalculada contra as passagens atuais. Classifica cada candidato em nova, remarcação (mesmo localizador, outro horário: troca só os trechos e mantém valores), cancelamento ou já cadastrada (vem desmarcada). Inclui o link "Abrir no Gmail".
+- **Dados:** `mail_scans`, `mail_messages` (só id, data, domínio do remetente, tipo e estado: **sem assunto nem corpo**) e `import_candidates` (rascunho até a decisão; apagado 30 dias depois). RLS só de leitura para o dono; tudo na exportação e na cascata. Migração `20261108000000_gmail_importacao.sql`.
+- Testes com um Supabase falso em memória (`src/test/fake-supabase.ts`) e Gmail, Google e Anthropic falsos: listagem sem duplicar, filtro sem IA, confirmação antes de gastar, só metadados no banco, extração única sob concorrência, cancelamento e chave recusada. Um bug achado assim: o pré-filtro gravava "skip", que o CHECK do banco recusaria.

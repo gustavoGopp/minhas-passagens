@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { holidaysAround, overridesFromRows } from "@/lib/holidays";
 import { listDecryptedKeys } from "@/lib/integrations/repo";
 import { gmailHealth } from "@/lib/mail/accounts";
+import { advanceRunningScans } from "@/lib/mail/scan";
 import { gmailExpiredEvent } from "@/lib/mail/status";
 import { getConfig, setConfig } from "@/lib/notify/config";
 import { outcomeOf, retryDecision, type AttemptState, type Channel } from "@/lib/notify/delivery";
@@ -36,6 +37,8 @@ export interface TickResult {
     | { checked: number; failed: number; skipped: number; sent: number; deferred: number }
     | { error: string };
   retention: { observations: number; checks: number } | { error: string } | null;
+  /** Varreduras do Gmail avançadas neste tick (com o tempo que sobrou). */
+  mailScans: { advanced: number } | { error: string };
   /** Renovação diária do acesso ao Gmail (null se não há cliente OAuth configurado). */
   gmail: { checked: number; expired: number; failed: number } | { error: string } | null;
   at: string;
@@ -48,6 +51,8 @@ export interface TickResult {
  */
 /** Tempo do tick para começar checagens de preço (a função da Vercel tem 60 s). */
 export const TICK_BUDGET_MS = 35_000;
+/** Até quando o tick avança varreduras do Gmail (sobra folga para responder). */
+export const MAIL_BUDGET_MS = 48_000;
 
 export async function runTick(
   opts: { now?: string; recordTick?: boolean } = {},
@@ -276,6 +281,11 @@ export async function runTick(
     prices = { error: (e as Error).message };
   }
 
+  const mailScans: TickResult["mailScans"] = await advanceRunningScans(
+    admin,
+    startedAt + MAIL_BUDGET_MS,
+  ).catch((e: Error) => ({ error: e.message }));
+
   return {
     ok: true,
     sent,
@@ -284,6 +294,7 @@ export async function runTick(
     userErrors,
     prices,
     retention,
+    mailScans,
     gmail,
     at: now,
   };
@@ -422,6 +433,12 @@ async function dailyRetention(
       .update({ active: false, next_check_at: null })
       .eq("active", true)
       .lt("long_weekend", new Date(Date.parse(now) - 10 * 86_400_000).toISOString().slice(0, 10));
+    // Candidatos da importação do Gmail: apagados 30 dias depois da decisão.
+    await admin
+      .from("import_candidates")
+      .delete()
+      .neq("status", "pending")
+      .lt("decided_at", new Date(Date.parse(now) - 30 * 86_400_000).toISOString());
     return { observations: obs.count ?? 0, checks: checks.count ?? 0 };
   } catch (e) {
     return { error: (e as Error).message };

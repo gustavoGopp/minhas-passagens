@@ -17,6 +17,7 @@ const ok: Extraction = {
       miles: null,
       taxes_amount: null,
       purchased_on: "2026-11-02",
+      status: "active",
       flights: [
         {
           airline_code: "AD",
@@ -51,7 +52,7 @@ describe("validação da extração", () => {
 describe("cleanText", () => {
   it("remove HTML, estilos e espaços", () => {
     expect(cleanText("<style>x{}</style><p>Voo&nbsp;AD 4512</p><div>SDU → CGH</div>")).toBe(
-      "Voo AD 4512\n SDU → CGH",
+      "Voo AD 4512\nSDU → CGH",
     );
   });
 });
