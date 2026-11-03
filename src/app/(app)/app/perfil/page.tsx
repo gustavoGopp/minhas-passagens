@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { listAirportCities } from "@/lib/airports";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { listCities } from "@/lib/holidays";
 import { getProfile, UF_LIST } from "@/lib/profiles/repo";
@@ -27,5 +28,12 @@ async function ProfileLoader() {
       </p>
     );
   }
-  return <ProfileForm profile={profile} ufs={UF_LIST} cities={listCities()} />;
+  return (
+    <ProfileForm
+      profile={profile}
+      ufs={UF_LIST}
+      cities={listCities()}
+      homeCities={listAirportCities()}
+    />
+  );
 }

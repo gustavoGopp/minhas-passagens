@@ -17,10 +17,12 @@ export function ProfileForm({
   profile,
   ufs,
   cities,
+  homeCities,
 }: {
   profile: Profile;
   ufs: readonly string[];
   cities: CityOption[];
+  homeCities: string[];
 }) {
   const [uf, setUf] = useState(profile.uf ?? "");
   const citiesOfUf = cities.filter((c) => c.uf === uf);
@@ -45,6 +47,20 @@ export function ProfileForm({
       <label className={labelClass}>
         Fuso horário
         <input className={inputClass} name="timezone" defaultValue={profile.timezone} />
+      </label>
+      <label className={labelClass}>
+        Cidade onde você mora
+        <select className={inputClass} name="home_city" defaultValue={profile.home_city ?? ""}>
+          <option value="">Não informar</option>
+          {homeCities.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
+        <span className="text-xs font-normal text-zinc-600 dark:text-zinc-400">
+          Usada para avisar quando a volta para casa ainda não foi comprada.
+        </span>
       </label>
       <label className={labelClass}>
         Estado (para feriados estaduais)

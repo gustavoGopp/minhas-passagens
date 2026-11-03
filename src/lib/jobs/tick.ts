@@ -56,7 +56,7 @@ export async function runTick(
     admin
       .from("flights")
       .select(
-        "id, user_id, booking_id, airline, flight_number, origin, destination, departs_at, arrives_at, passenger, checkin_done, ignore_missing_leg",
+        "id, user_id, booking_id, airline, flight_number, origin, destination, departs_at, arrives_at, passenger, checkin_done, ignore_missing_leg, ignore_missing_return",
       )
       .gte("departs_at", since),
     admin
@@ -164,6 +164,7 @@ export async function runTick(
         flights: userFlights,
         credits: creditsBy.get(userId) ?? [],
         now,
+        homeCity: p.home_city ?? null,
       });
       try {
         const localToday = utcToLocal(now, tz).slice(0, 10);

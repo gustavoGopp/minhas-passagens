@@ -259,3 +259,55 @@ describe("relatórios", () => {
     ).toEqual([{ label: "LATAM", cents: 15000, miles: 0, count: 1 }]);
   });
 });
+
+describe("volta não comprada", () => {
+  const now = "2026-11-03T12:00:00.000Z";
+  const alertsOf = (
+    flights: FlightRow[],
+    b: BookingRow[],
+    homeCity: string | null = "Rio de Janeiro",
+  ) =>
+    computeAlerts({ bookings: b, flights, now, homeCity }).filter(
+      (a) => a.type === "missing_return",
+    );
+
+  it("avisa quando a última ida termina fora de casa", () => {
+    const b = booking();
+    const a = alertsOf([flight(b, "SDU", "CGH", "2026-11-16T09:05:00.000Z", null)], [b]);
+    expect(a).toHaveLength(1);
+    expect(a[0].title).toBe("Volta não comprada: São Paulo → Rio de Janeiro");
+    expect(a[0].detail).toContain("16/11/2026");
+  });
+
+  it("não avisa quando a volta existe, mesmo por outro aeroporto da cidade", () => {
+    const b = booking();
+    const f = [
+      flight(b, "SDU", "CGH", "2026-11-16T09:05:00.000Z", null),
+      flight(b, "GRU", "GIG", "2026-11-19T22:00:00.000Z", null),
+    ];
+    expect(alertsOf(f, [b])).toEqual([]);
+  });
+
+  it("sem cidade de casa, silenciado, longe demais ou já passado: não avisa", () => {
+    const b = booking();
+    const one = (dep: string, over: Partial<FlightRow> = {}) => [
+      flight(b, "SDU", "CGH", dep, null, over),
+    ];
+    expect(alertsOf(one("2026-11-16T09:05:00.000Z"), [b], null)).toEqual([]);
+    expect(alertsOf(one("2026-11-16T09:05:00.000Z", { ignore_missing_return: true }), [b])).toEqual(
+      [],
+    );
+    expect(alertsOf(one("2027-01-20T09:05:00.000Z"), [b])).toEqual([]);
+    expect(alertsOf(one("2026-11-01T09:05:00.000Z"), [b])).toEqual([]);
+  });
+
+  it("passagem cancelada não conta como volta", () => {
+    const ida = booking();
+    const volta = booking({ status: "cancelled" });
+    const f = [
+      flight(ida, "SDU", "CGH", "2026-11-16T09:05:00.000Z", null),
+      flight(volta, "CGH", "SDU", "2026-11-19T22:00:00.000Z", null),
+    ];
+    expect(alertsOf(f, [ida, volta])).toHaveLength(1);
+  });
+});

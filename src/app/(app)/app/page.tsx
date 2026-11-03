@@ -5,7 +5,11 @@ import { LongWeekends, NearHolidayBadge } from "@/components/long-weekends";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { loadHolidayContext } from "@/lib/holidays/context";
 import { holidaysNearFlight } from "@/lib/notify/holiday-events";
-import { ignoreMissingLegAction, toggleCheckinAction } from "./passagens/actions";
+import {
+  ignoreMissingLegAction,
+  ignoreMissingReturnAction,
+  toggleCheckinAction,
+} from "./passagens/actions";
 import { checkinRule, checkinState } from "@/lib/trips/checkin";
 import { listCredits } from "@/lib/trips/credits-repo";
 import { spendByMonth } from "@/lib/trips/reports";
@@ -44,7 +48,13 @@ async function Trips() {
     loadHolidayContext(user.id),
     listCredits(user.id),
   ]);
-  const alerts = computeAlerts({ bookings, flights, credits, now });
+  const alerts = computeAlerts({
+    bookings,
+    flights,
+    credits,
+    now,
+    homeCity: ctx.profile?.home_city ?? null,
+  });
   const byId = new Map(bookings.map((b) => [b.id, b]));
   const upcoming = upcomingFlights(flights, byId, now);
   const past = pastFlights(flights, now).slice(0, 10);
@@ -250,6 +260,14 @@ function Alerts({ alerts }: { alerts: TripAlert[] }) {
                 <input type="hidden" name="flight_id" value={a.flightIds[1]} />
                 <button className="underline underline-offset-2" type="submit">
                   Cheguei por outro meio
+                </button>
+              </form>
+            ) : null}
+            {a.type === "missing_return" ? (
+              <form action={ignoreMissingReturnAction}>
+                <input type="hidden" name="flight_id" value={a.flightIds[0]} />
+                <button className="underline underline-offset-2" type="submit">
+                  Volto por outro meio
                 </button>
               </form>
             ) : null}

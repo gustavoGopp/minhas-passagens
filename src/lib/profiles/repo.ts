@@ -1,5 +1,6 @@
 import "server-only";
 import { z } from "zod";
+import { listAirportCities } from "@/lib/airports";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const UF_LIST = [
@@ -45,6 +46,9 @@ export const profileUpdateSchema = z.object({
   uf: z.enum(UF_LIST).or(z.literal("")),
   quiet_hours_start: z.string().regex(/^\d{2}:\d{2}$/, "Use HH:MM"),
   quiet_hours_end: z.string().regex(/^\d{2}:\d{2}$/, "Use HH:MM"),
+  home_city: z
+    .string()
+    .refine((c) => c === "" || listAirportCities().includes(c), "Cidade sem aeroporto na lista"),
   holiday_city: z
     .string()
     .regex(/^[A-Z]{2}-[A-Z]+$/)
@@ -68,6 +72,8 @@ export interface Profile {
   quiet_hours_end: string;
   original_retention_days: number;
   holiday_city: string | null;
+  /** Cidade onde a pessoa mora (aviso de volta não comprada). */
+  home_city: string | null;
   show_optional_holidays: boolean;
   show_christian_holidays: boolean;
   show_jewish_holidays: boolean;
@@ -97,6 +103,7 @@ export async function updateProfile(userId: string, input: ProfileUpdate): Promi
       uf: input.uf || null,
       quiet_hours_start: input.quiet_hours_start,
       quiet_hours_end: input.quiet_hours_end,
+      home_city: input.home_city || null,
       // Cidade só vale se for da UF escolhida.
       holiday_city:
         input.holiday_city && input.uf && input.holiday_city.startsWith(`${input.uf}-`)

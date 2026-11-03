@@ -16,6 +16,7 @@ import {
   deleteTrip,
   setCheckin,
   setIgnoreMissingLeg,
+  setIgnoreMissingReturn,
   setTripStatus,
   updateTrip,
 } from "@/lib/trips/repo";
@@ -127,6 +128,13 @@ export async function toggleCheckinAction(formData: FormData) {
   const user = await getCurrentUser();
   const flightId = idSchema.parse(formData.get("flight_id"));
   await setCheckin(user.id, flightId, formData.get("done") === "true");
+  revalidatePath("/app");
+}
+
+export async function ignoreMissingReturnAction(formData: FormData) {
+  const user = await getCurrentUser();
+  const flightId = idSchema.parse(formData.get("flight_id"));
+  await setIgnoreMissingReturn(user.id, flightId, formData.get("value") !== "false");
   revalidatePath("/app");
 }
 

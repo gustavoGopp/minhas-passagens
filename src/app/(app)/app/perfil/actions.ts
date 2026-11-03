@@ -20,6 +20,7 @@ export async function saveProfileAction(
     quiet_hours_start: formData.get("quiet_hours_start"),
     quiet_hours_end: formData.get("quiet_hours_end"),
     holiday_city: formData.get("holiday_city") ?? "",
+    home_city: formData.get("home_city") ?? "",
     show_optional_holidays: formData.get("show_optional_holidays") === "on",
     show_christian_holidays: formData.get("show_christian_holidays") === "on",
     show_jewish_holidays: formData.get("show_jewish_holidays") === "on",

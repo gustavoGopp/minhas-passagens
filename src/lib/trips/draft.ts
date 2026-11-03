@@ -123,6 +123,8 @@ export interface FlightRow {
   passenger: string | null;
   checkin_done: boolean;
   ignore_missing_leg?: boolean;
+  /** "Volto por outro meio": silencia o aviso de volta não comprada depois deste voo. */
+  ignore_missing_return?: boolean;
 }
 
 export function draftFromRows(b: BookingRow, flights: FlightRow[]): BookingDraft {

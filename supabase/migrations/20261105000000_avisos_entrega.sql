@@ -56,3 +56,14 @@ begin
       add constraint profiles_timezone_valid check (public.is_valid_timezone(timezone));
   end if;
 end $$;
+
+-- 5. Volta não comprada: cidade onde a pessoa mora e "volto por outro meio".
+alter table public.profiles add column if not exists home_city text;
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'profiles_home_city_len') then
+    alter table public.profiles
+      add constraint profiles_home_city_len check (char_length(home_city) <= 80);
+  end if;
+end $$;
+alter table public.flights add column if not exists ignore_missing_return boolean not null default false;

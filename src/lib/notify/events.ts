@@ -23,6 +23,7 @@ export function dueEvents(input: {
   flights: FlightRow[];
   credits: CreditRow[];
   now: string;
+  homeCity?: string | null;
 }): NotifyEvent[] {
   const now = Date.parse(input.now);
   const bookings = new Map(input.bookings.map((b) => [b.id, b]));
