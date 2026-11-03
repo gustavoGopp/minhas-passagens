@@ -1,3 +1,5 @@
+import { airportTimeZone } from "@/lib/airports";
+import { utcToLocal } from "./time";
 export interface FlightLike {
   id: string;
   booking_id: string;
@@ -70,4 +72,23 @@ export function parseBRL(text: string): number | null {
   const normalized = clean.includes(",") ? clean.replace(/\./g, "").replace(",", ".") : clean;
   const value = Number(normalized);
   return Number.isFinite(value) && value >= 0 ? Math.round(value * 100) : null;
+}
+
+/**
+ * Agrupa trechos pelo ano local da partida, mantendo a ordem. A tela mostra o
+ * ano como título quando há mais de um ano, ou quando não é o ano atual.
+ */
+export function groupByLocalYear<T extends { origin: string; departs_at: string }>(
+  list: T[],
+): { year: number; items: T[] }[] {
+  const out: { year: number; items: T[] }[] = [];
+  for (const f of list) {
+    const year = Number(
+      utcToLocal(f.departs_at, airportTimeZone(f.origin) ?? "America/Sao_Paulo").slice(0, 4),
+    );
+    const last = out[out.length - 1];
+    if (last && last.year === year) last.items.push(f);
+    else out.push({ year, items: [f] });
+  }
+  return out;
 }

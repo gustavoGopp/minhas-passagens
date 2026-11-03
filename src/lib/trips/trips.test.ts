@@ -30,8 +30,22 @@ describe("horário local ↔ UTC", () => {
   });
 
   it("formata em pt-BR no fuso do aeroporto", () => {
-    expect(formatInZone("2026-11-10T10:30:00.000Z", "America/Sao_Paulo")).toBe(
-      "ter., 10/11 às 07:30",
+    expect(
+      formatInZone("2026-11-10T10:30:00.000Z", "America/Sao_Paulo", "2026-11-03T12:00:00.000Z"),
+    ).toBe("ter., 10/11 às 07:30");
+  });
+
+  it("mostra o ano quando o voo é de outro ano (2026 e 2027 nunca se confundem)", () => {
+    const now = "2026-11-03T12:00:00.000Z";
+    expect(formatInZone("2027-02-08T10:30:00.000Z", "America/Sao_Paulo", now)).toBe(
+      "seg., 08/02/2027 às 07:30",
+    );
+    expect(formatInZone("2025-12-29T10:30:00.000Z", "America/Sao_Paulo", now)).toBe(
+      "seg., 29/12/2025 às 07:30",
+    );
+    // Virada do ano pelo fuso local: 31/12 às 22h em SP já é 2027 em UTC.
+    expect(formatInZone("2027-01-01T01:00:00.000Z", "America/Sao_Paulo", now)).toBe(
+      "qui., 31/12 às 22:00",
     );
   });
 });

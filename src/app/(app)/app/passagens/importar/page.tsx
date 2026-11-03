@@ -4,7 +4,7 @@ import { getCurrentUser } from "@/lib/auth/current-user";
 import { listIntegrationsPublic } from "@/lib/integrations/repo";
 import { getMailAccount, googleClient } from "@/lib/mail/accounts";
 import { estimateUsd, formatUsd } from "@/lib/mail/cost";
-import { decideCandidates, type Candidate } from "@/lib/mail/dedupe";
+import { decideCandidates, yearWarning, type Candidate } from "@/lib/mail/dedupe";
 import { gmailLink } from "@/lib/mail/gmail";
 import { latestScan, RUNNING_STATUSES, scanCounts } from "@/lib/mail/scan";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -80,6 +80,7 @@ function view(
       .join(" · "),
     receivedOn: ddmmyyyy(c.receivedAt),
     gmailUrl: c.messageId ? gmailLink(c.messageId) : null,
+    warning: c.receivedAt ? yearWarning(d, c.receivedAt) : null,
   };
 }
 

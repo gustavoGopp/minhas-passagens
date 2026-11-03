@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { emptyDraft, type BookingDraft, type BookingRow, type FlightRow } from "@/lib/trips/draft";
 import { estimateUsd, formatUsd } from "./cost";
-import { decideCandidates } from "./dedupe";
+import { decideCandidates, yearWarning } from "./dedupe";
 import { bodyText, listMessageIds, parseMeta, scanQueries } from "./gmail";
 import { bodyDecision, bodySignals, classify, headerDecision, senderDomain } from "./prefilter";
 
@@ -236,6 +236,99 @@ describe("deduplicação", () => {
       ["new", "new", null],
       ["other", "new", null],
     ]);
+  });
+});
+
+describe("duplicadas com códigos diferentes e ano suspeito", () => {
+  const d = (
+    locator: string,
+    dep: string,
+    status: "active" | "cancelled" = "active",
+  ): BookingDraft => ({
+    ...emptyDraft(),
+    source: "email",
+    locator,
+    status,
+    legs: [
+      {
+        airline: "AD",
+        flight_number: "",
+        origin: "SDU",
+        destination: "CGH",
+        departure_local: dep,
+        arrival_local: "",
+        passenger: "",
+      },
+    ],
+  });
+
+  it("mesmo voo e horário com outro código (agência × companhia) = duplicada", () => {
+    const r = decideCandidates({
+      bookings: [],
+      flights: [],
+      candidates: [
+        {
+          id: "agencia",
+          receivedAt: "2026-10-01T10:00:00Z",
+          draft: d("PED123456", "2026-11-16T06:05"),
+        },
+        { id: "cia", receivedAt: "2026-10-01T10:05:00Z", draft: d("AZ9M2L", "2026-11-16T06:05") },
+      ],
+    });
+    expect(r.map((x) => [x.id, x.kind])).toEqual([
+      ["agencia", "duplicate"],
+      ["cia", "new"],
+    ]);
+  });
+
+  it("mesmo voo já cadastrado com outro localizador = já cadastrada", () => {
+    const r = decideCandidates({
+      bookings: [
+        {
+          id: "b9",
+          locator: "OUTRO1",
+          airline: "AD",
+          seller: null,
+          channel: "agency",
+          amount_cents: 1,
+          currency: "BRL",
+          miles: null,
+          taxes_cents: null,
+          purchased_on: null,
+          tag: "personal",
+          status: "active",
+          source: "email",
+          notes: null,
+        },
+      ],
+      flights: [
+        {
+          id: "f9",
+          booking_id: "b9",
+          airline: "AD",
+          flight_number: null,
+          origin: "SDU",
+          destination: "CGH",
+          departs_at: "2026-11-16T09:05:00.000Z",
+          arrives_at: null,
+          passenger: null,
+          checkin_done: false,
+        },
+      ],
+      candidates: [
+        { id: "c", receivedAt: "2026-10-01T10:00:00Z", draft: d("AZ9M2L", "2026-11-16T06:05") },
+      ],
+    });
+    expect(r[0]).toMatchObject({ kind: "duplicate", coveredBy: "b9" });
+  });
+
+  it("avisa ano suspeito: voo antes do e-mail ou quase um ano depois", () => {
+    expect(yearWarning(d("X", "2026-01-05T08:00"), "2026-12-20T10:00:00Z")).toMatch(
+      /anterior ao e-mail/,
+    );
+    expect(yearWarning(d("X", "2027-12-10T08:00"), "2026-12-20T10:00:00Z")).toMatch(/quase um ano/);
+    expect(yearWarning(d("X", "2027-01-05T08:00"), "2026-12-20T10:00:00Z")).toBeNull();
+    expect(yearWarning(d("X", "2026-01-05T08:00", "cancelled"), "2026-12-20T10:00:00Z")).toBeNull();
   });
 });
 

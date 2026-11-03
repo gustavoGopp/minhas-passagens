@@ -50,13 +50,24 @@ export function utcToLocal(iso: string, timeZone: string): string {
   return local.toISOString().slice(0, 16);
 }
 
-/** Texto amigável em pt-BR no fuso do aeroporto, ex.: "seg., 10/11 às 07:30". */
-export function formatInZone(iso: string, timeZone: string): string {
+/**
+ * Texto amigável em pt-BR no fuso do aeroporto, ex.: "seg., 10/11 às 07:30".
+ * Fora do ano atual, o ano aparece sempre ("seg., 08/02/2027 às 07:30"), para
+ * voos de anos diferentes nunca parecerem do mesmo ano.
+ */
+export function formatInZone(
+  iso: string,
+  timeZone: string,
+  nowIso = new Date().toISOString(),
+): string {
   const d = new Date(iso);
+  const sameYear =
+    utcToLocal(iso, timeZone).slice(0, 4) === utcToLocal(nowIso, timeZone).slice(0, 4);
   const day = new Intl.DateTimeFormat("pt-BR", {
     weekday: "short",
     day: "2-digit",
     month: "2-digit",
+    ...(sameYear ? {} : { year: "numeric" }),
     timeZone,
   }).format(d);
   const time = new Intl.DateTimeFormat("pt-BR", {
@@ -66,4 +77,9 @@ export function formatInZone(iso: string, timeZone: string): string {
     timeZone,
   }).format(d);
   return `${day} às ${time}`;
+}
+
+/** Ano local (fuso do aeroporto de origem) de um instante. */
+export function localYear(iso: string, timeZone: string): number {
+  return Number(utcToLocal(iso, timeZone).slice(0, 4));
 }

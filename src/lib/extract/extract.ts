@@ -27,7 +27,8 @@ Regras:
 - Companhia: AD (Azul), G3 (Gol), LA (LATAM) ou OTHER.
 - channel: airline (comprado no site/app da companhia), agency (123milhas, Zupper, Decolar, MaxMilhas...), miles (emissão com pontos/milhas), corporate (agência corporativa/empresa).
 - Valores numéricos sem símbolo (459.90). Se for emissão com milhas, use miles e taxes_amount e deixe total_amount nulo.
-- Se o ano não aparecer, deduza pelo contexto (datas futuras próximas). Registre dúvidas em warnings, em português.
+- Se o ano não aparecer, deduza pelo contexto: o voo acontece DEPOIS da data da compra (ou do recebimento do e-mail) e o mais perto possível dela. Ex.: e-mail de 20/12/2025 sobre um voo em "05/01" é de 05/01/2026. Registre dúvidas em warnings, em português.
+- purchased_on só quando a data da compra ou emissão aparecer no texto; senão, null.
 - Ignore propaganda e texto sem relação com a viagem.`;
 
 export interface ExtractOptions {

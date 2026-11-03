@@ -239,3 +239,12 @@ Monitor internacional e conversão de moeda; WhatsApp; compra no app; raspagem d
 - Quando a sincronização deixa candidatos pendentes, sai o aviso "Passagens novas no Gmail" (um por sincronização), que leva à tela de revisão.
 - `gmail.sql` passou a mostrar a leitura automática, os minutos desde a última sincronização e as contagens de varreduras, e-mails e candidatos.
 - Migração `20261109000000_gmail_sync.sql`.
+
+## Bloco 3, parte 1: anos claros, calendário em grade e duplicadas (2026-11-03)
+
+- Pedido do dono depois da 1ª importação: passagens de 2026 e 2027 pareciam do mesmo ano, e havia duplicadas. O diagnóstico `passagens-anos.sql` (só contagens) mostrou 24 trechos em 2026, 2 em 2027, 1 trecho repetido e **15 voos com data de compra depois do voo**. Nos e-mails sem data de compra, o app usava o dia da importação.
+- **Datas:** `formatInZone` mostra o ano sempre que não é o ano atual (no fuso do aeroporto). As listas de Passagens agrupam por ano, com o ano como título.
+- **Calendário:** um mês por vez em grade (domingo a sábado), só com dias daquele mês, com voo (azul), feriado (vermelho), facultativo (âmbar) e hoje (anel). O ano fica grande no topo, os 12 meses viram atalhos com marcadores e o título é "Novembro de 2026". A navegação de mês vira o ano explicitamente. Abre no mês atual. Lógica pura em `src/lib/calendar/grid.ts`.
+- **Importação:** a data da compra cai na data do e-mail quando não vem no texto. O prompt explica como deduzir o ano (o voo vem depois do e-mail e é o mais perto). A revisão mostra "confira o ano" para voo antes do e-mail ou quase um ano depois. A deduplicação também pega o mesmo voo e horário com códigos diferentes (pedido da agência × localizador).
+- **Duplicada antiga:** o alerta "Possível compra duplicada" vale também para voos passados vindos do e-mail, com links para as duas.
+- Migração `20261110000000_corrige_data_compra_importadas.sql`: corrige a data da compra das passagens já importadas para a data do e-mail, só onde ficou o valor padrão antigo.

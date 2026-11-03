@@ -9,6 +9,8 @@ export interface CandidateView {
   detail: string;
   receivedOn: string;
   gmailUrl: string | null;
+  /** Ano suspeito (voo antes do e-mail ou quase um ano depois). */
+  warning: string | null;
 }
 
 const KIND: Record<CandidateView["kind"], string> = {
@@ -43,6 +45,11 @@ export function ImportForm({ items }: { items: CandidateView[] }) {
               <span className="text-xs text-zinc-600 dark:text-zinc-400">
                 <span className="font-medium">{KIND[c.kind]}</span> · e-mail de {c.receivedOn}
               </span>
+              {c.warning ? (
+                <span className="text-xs font-medium text-amber-800 dark:text-amber-200">
+                  ⚠ {c.warning}
+                </span>
+              ) : null}
             </label>
             {c.gmailUrl ? (
               <a
