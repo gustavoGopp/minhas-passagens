@@ -2,6 +2,9 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { holidaysAround, overridesFromRows } from "@/lib/holidays";
 import { listDecryptedKeys } from "@/lib/integrations/repo";
+import { gmailHealth } from "@/lib/mail/accounts";
+import { advanceRunningScans, syncAccounts, syncFoundEvent } from "@/lib/mail/scan";
+import { gmailExpiredEvent } from "@/lib/mail/status";
 import { getConfig, setConfig } from "@/lib/notify/config";
 import { outcomeOf, retryDecision, type AttemptState, type Channel } from "@/lib/notify/delivery";
 import { deliver, loadChannelConfig, type Recipient } from "@/lib/notify/dispatch";
@@ -11,6 +14,7 @@ import {
   markPriceAlertsFailed,
   markPriceAlertsSent,
   pendingPriceEvents,
+  MONITORS_PER_TICK,
   runDueMonitors,
 } from "@/lib/prices/jobs";
 import type { MonitorRule } from "@/lib/prices/types";
@@ -29,8 +33,16 @@ export interface TickResult {
   failed: number;
   /** Usuários pulados por erro neste tick (os demais seguem). */
   userErrors: number;
-  prices: { checked: number; failed: number; sent: number; deferred: number } | { error: string };
+  prices:
+    | { checked: number; failed: number; skipped: number; sent: number; deferred: number }
+    | { error: string };
   retention: { observations: number; checks: number } | { error: string } | null;
+  /** Varreduras do Gmail avançadas neste tick (com o tempo que sobrou). */
+  mailScans: { advanced: number } | { error: string };
+  /** Sincronização contínua do Gmail (contas lidas e e-mails novos na fila). */
+  mailSync: { synced: number; found: number } | { error: string };
+  /** Renovação diária do acesso ao Gmail (null se não há cliente OAuth configurado). */
+  gmail: { checked: number; expired: number; failed: number } | { error: string } | null;
   at: string;
 }
 
@@ -39,17 +51,28 @@ export interface TickResult {
  * vencidas, avisos de preço e a limpeza diária. `recordTick` grava o horário em
  * app_config (o vigia diário roda sem gravar, para não esconder o pg_cron parado).
  */
+/** Tempo do tick para começar checagens de preço (a função da Vercel tem 60 s). */
+export const TICK_BUDGET_MS = 35_000;
+/** Até quando o tick avança varreduras do Gmail (sobra folga para responder). */
+export const MAIL_BUDGET_MS = 48_000;
+
 export async function runTick(
   opts: { now?: string; recordTick?: boolean } = {},
 ): Promise<TickResult> {
+  const startedAt = Date.now();
   const admin = createSupabaseAdminClient();
   const now = opts.now ?? new Date().toISOString();
   if (opts.recordTick !== false) await setConfig({ last_tick_at: now });
 
+  // Antes de ler os perfis: assim um acesso que acabou de expirar já gera o aviso neste tick.
+  const gmail: TickResult["gmail"] = await gmailHealth(admin, now).catch((e: Error) => ({
+    error: e.message,
+  }));
+
   const today = now.slice(0, 10);
   const since = new Date(Date.parse(now) - 2 * 86_400_000).toISOString();
 
-  const [profiles, links, subs, flights, credits, monitors, overrides] = await Promise.all([
+  const [profiles, links, subs, flights, credits, monitors, overrides, mail] = await Promise.all([
     admin.from("profiles").select("*"),
     admin.from("telegram_links").select("user_id, chat_id").not("chat_id", "is", null),
     admin.from("push_subscriptions").select("id, user_id, endpoint, p256dh, auth"),
@@ -73,7 +96,10 @@ export async function runTick(
       )
       .eq("active", true),
     admin.from("holiday_overrides").select("user_id, action, date, event_key, name, kind"),
+    admin.from("mail_accounts").select("user_id, status, connected_at").eq("status", "expired"),
   ]);
+  // mail_accounts fica de fora: se a tabela ainda não existir (deploy antes da migração),
+  // o tick segue sem o aviso do Gmail.
   for (const r of [profiles, links, subs, flights, credits, monitors, overrides]) {
     if (r.error) throw new Error(r.error.message);
   }
@@ -117,6 +143,15 @@ export async function runTick(
   );
   const subsBy = group(
     subs.data as { id: string; user_id: string; endpoint: string; p256dh: string; auth: string }[],
+  );
+  const syncFoundBy = await syncFoundEvents(admin, now).catch(
+    () => new Map<string, NotifyEvent[]>(),
+  );
+  const expiredMailBy = new Map(
+    (mail.error ? [] : (mail.data ?? [])).map((m) => [
+      m.user_id as string,
+      { connected_at: m.connected_at as string },
+    ]),
   );
   const chatBy = new Map((links.data ?? []).map((l) => [l.user_id as string, Number(l.chat_id)]));
 
@@ -185,6 +220,9 @@ export async function runTick(
       } catch {
         // Feriados nunca derrubam os demais avisos.
       }
+      const expiredMail = expiredMailBy.get(userId);
+      if (expiredMail) events.push(gmailExpiredEvent(expiredMail, now));
+      events.push(...(syncFoundBy.get(userId) ?? []));
       if (!events.length) continue;
       const r = await deliverNew(admin, userId, events, quietFor(p), recipientFor(p), cfg, now);
       sent += r.sent;
@@ -195,11 +233,12 @@ export async function runTick(
     }
   }
 
-  // Monitor de preços: checagens vencidas e avisos pendentes. Falhas aqui não
+  // Monitor de preços: primeiro os avisos pendentes e a limpeza diária (rápidos),
+  // depois as checagens vencidas, dentro do orçamento de tempo. Falhas aqui não
   // derrubam os avisos acima.
   let prices: TickResult["prices"];
+  const retention: TickResult["retention"] = await dailyRetention(admin, now);
   try {
-    const run = await runDueMonitors(admin, now);
     let priceSent = 0;
     let priceDeferred = 0;
     const pending = await pendingPriceEvents(
@@ -242,10 +281,21 @@ export async function runTick(
         userErrors++;
       }
     }
+    const run = await runDueMonitors(admin, now, MONITORS_PER_TICK, startedAt + TICK_BUDGET_MS);
     prices = { ...run, sent: priceSent, deferred: priceDeferred };
   } catch (e) {
     prices = { error: (e as Error).message };
   }
+
+  const mailSync: TickResult["mailSync"] = await syncAccounts(
+    admin,
+    now,
+    startedAt + MAIL_BUDGET_MS,
+  ).catch((e: Error) => ({ error: e.message }));
+  const mailScans: TickResult["mailScans"] = await advanceRunningScans(
+    admin,
+    startedAt + MAIL_BUDGET_MS,
+  ).catch((e: Error) => ({ error: e.message }));
 
   return {
     ok: true,
@@ -254,7 +304,10 @@ export async function runTick(
     failed,
     userErrors,
     prices,
-    retention: await dailyRetention(admin, now),
+    retention,
+    mailScans,
+    mailSync,
+    gmail,
     at: now,
   };
 }
@@ -392,8 +445,43 @@ async function dailyRetention(
       .update({ active: false, next_check_at: null })
       .eq("active", true)
       .lt("long_weekend", new Date(Date.parse(now) - 10 * 86_400_000).toISOString().slice(0, 10));
+    // Candidatos da importação do Gmail: apagados 30 dias depois da decisão.
+    await admin
+      .from("import_candidates")
+      .delete()
+      .neq("status", "pending")
+      .lt("decided_at", new Date(Date.parse(now) - 30 * 86_400_000).toISOString());
     return { observations: obs.count ?? 0, checks: checks.count ?? 0 };
   } catch (e) {
     return { error: (e as Error).message };
   }
+}
+
+/**
+ * Avisos "Passagens novas no Gmail": sincronizações concluídas nos últimos 2 dias
+ * que deixaram candidatos pendentes (um aviso por sincronização).
+ */
+async function syncFoundEvents(admin: SupabaseClient, now: string) {
+  const since = new Date(Date.parse(now) - 2 * 86_400_000).toISOString();
+  const out = new Map<string, NotifyEvent[]>();
+  const { data: scans, error } = await admin
+    .from("mail_scans")
+    .select("id, user_id, created_at")
+    .eq("kind", "sync")
+    .eq("status", "review")
+    .gte("finished_at", since)
+    .limit(50);
+  if (error) return out;
+  for (const sc of scans ?? []) {
+    const { data } = await admin
+      .from("import_candidates")
+      .select("id")
+      .eq("user_id", sc.user_id)
+      .eq("status", "pending")
+      .gte("created_at", sc.created_at);
+    if (!data?.length) continue;
+    const userId = sc.user_id as string;
+    out.set(userId, [...(out.get(userId) ?? []), syncFoundEvent(sc.id as string, data.length)]);
+  }
+  return out;
 }

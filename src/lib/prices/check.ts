@@ -1,7 +1,15 @@
 import type { HolidayEvent } from "@/lib/holidays/types";
 import { evaluateAlerts, nearHolidayDates, type HistoryPoint, type PriceAlertItem } from "./alerts";
 import { cheapestPerDate, filterOffers } from "./filter";
-import type { FetchLike, PriceProvider } from "./providers";
+import {
+  MAX_TARGET_DATES,
+  mergeResults,
+  nearStats,
+  nearTargets,
+  pickNearDates,
+  type NearStats,
+} from "./hybrid";
+import { ProviderAuthError, type FetchLike, type PriceProvider } from "./providers";
 import { expandRule, inWindows } from "./rule";
 import type { MonitorConfig, Offer, Target } from "./types";
 
@@ -32,6 +40,10 @@ export interface CheckSummary {
   min_price_cents: number | null;
   /** O menor preço caiu numa data perto de feriado (fica fora da média de 30 dias). */
   min_near_holiday: boolean;
+  /** Piloto híbrido: cobertura do provedor das datas próximas × Travelpayouts. */
+  near: NearStats | null;
+  /** Motivo de não usar o provedor das datas próximas (ex.: cota do mês). */
+  near_skipped: string | null;
 }
 
 export interface CheckResult {
@@ -56,24 +68,57 @@ export async function runCheck(input: {
   history: HistoryPoint[];
   lastAlerted: Map<string, number>;
   fetchImpl?: FetchLike;
+  /** Piloto híbrido: as datas próximas também vão a outro provedor, até `allowance` buscas. */
+  near?: { provider: PriceProvider; apiKey: string; allowance: number } | null;
+  nearSkipped?: string | null;
 }): Promise<CheckResult> {
   const m = input.monitor;
   const targets = expandRule(m.rule, {
     today: input.today,
     horizonWeeks: m.horizon_weeks,
     holidays: input.holidays,
+  }).slice(0, MAX_TARGET_DATES);
+  const query = (dates: string[]) => ({
+    origin: m.origin,
+    destination: m.destination,
+    dates,
+    directOnly: !m.allow_connections,
+    originTimeZone: input.originTimeZone,
   });
-  const result = await input.provider.search(
-    {
-      origin: m.origin,
-      destination: m.destination,
-      dates: targets.map((t) => t.date),
-      directOnly: !m.allow_connections,
-      originTimeZone: input.originTimeZone,
-    },
+  const main = await input.provider.search(
+    query(targets.map((t) => t.date)),
     input.apiKey,
     input.fetchImpl,
   );
+
+  let result = main;
+  let near: NearStats | null = null;
+  let nearSkipped = input.nearSkipped ?? null;
+  const nearAll = input.near ? nearTargets(targets, input.today) : [];
+  const nearPick = input.near ? pickNearDates(nearAll, input.near.allowance) : [];
+  if (nearAll.length && !nearPick.length && !nearSkipped) nearSkipped = "cota do mês";
+  if (input.near && nearPick.length) {
+    try {
+      const extra = await input.near.provider.search(
+        query(nearPick.map((t) => t.date)),
+        input.near.apiKey,
+        input.fetchImpl,
+      );
+      result = mergeResults(main, extra);
+      near = nearStats({
+        provider: input.near.provider.id,
+        targets: nearPick,
+        nearOffers: extra.offers,
+        mainOffers: main.offers,
+        requests: extra.requests,
+        origin: m.origin,
+        destination: m.destination,
+      });
+    } catch (e) {
+      // O piloto nunca derruba a checagem principal.
+      nearSkipped = e instanceof ProviderAuthError ? "chave recusada" : "falha na consulta";
+    }
+  }
 
   const brl = result.offers.filter((o) => o.currency === "BRL");
   const matched = filterOffers(brl, m, targets);
@@ -132,6 +177,8 @@ export async function runCheck(input: {
       failed: result.failedDates.length,
       min_price_cents: cheapest?.priceCents ?? null,
       min_near_holiday: cheapest ? nearHoliday.has(cheapest.date) : false,
+      near,
+      near_skipped: nearSkipped,
     },
   };
 }

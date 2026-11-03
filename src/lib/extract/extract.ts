@@ -3,6 +3,9 @@ import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { serverEnv } from "@/lib/env";
 import { extractionSchema, validationProblems, type Extraction } from "./schema";
+import { cleanText } from "./text";
+
+export { cleanText };
 
 export type ExtractInput =
   | { kind: "text"; text: string }
@@ -27,24 +30,21 @@ Regras:
 - Se o ano não aparecer, deduza pelo contexto (datas futuras próximas). Registre dúvidas em warnings, em português.
 - Ignore propaganda e texto sem relação com a viagem.`;
 
-/** Remove marcação de HTML colado para economizar tokens. */
-export function cleanText(input: string): string {
-  return input
-    .replace(/<style[\s\S]*?<\/style>/gi, " ")
-    .replace(/<script[\s\S]*?<\/script>/gi, " ")
-    .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<\/(p|div|tr|li|h\d)>/gi, "\n")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;/g, " ")
-    .replace(/[ \t]+/g, " ")
-    .replace(/\n\s*\n+/g, "\n")
-    .trim()
-    .slice(0, 60_000);
+export interface ExtractOptions {
+  /** E-mail sem passagem é resposta válida (sem reforço com o modelo maior). */
+  allowEmpty?: boolean;
+  /** Data em que o e-mail foi recebido: base para deduzir o ano das datas. */
+  receivedOn?: string;
 }
 
-function content(input: ExtractInput): Anthropic.ContentBlockParam[] {
+function content(input: ExtractInput, opts: ExtractOptions = {}): Anthropic.ContentBlockParam[] {
   const today = new Date().toISOString().slice(0, 10);
-  const instruction = { type: "text" as const, text: `Hoje é ${today}. Extraia as passagens.` };
+  const instruction = {
+    type: "text" as const,
+    text: opts.receivedOn
+      ? `Este e-mail foi recebido em ${opts.receivedOn}. Extraia as passagens; se não houver nenhuma (propaganda, newsletter), devolva bookings vazio.`
+      : `Hoje é ${today}. Extraia as passagens.`,
+  };
   switch (input.kind) {
     case "text":
       return [{ type: "text", text: cleanText(input.text) }, instruction];
@@ -67,12 +67,17 @@ function content(input: ExtractInput): Anthropic.ContentBlockParam[] {
   }
 }
 
-async function run(client: Anthropic, model: string, input: ExtractInput): Promise<Extraction> {
+async function run(
+  client: Anthropic,
+  model: string,
+  input: ExtractInput,
+  opts: ExtractOptions = {},
+): Promise<Extraction> {
   const response = await client.messages.parse({
     model,
     max_tokens: 8000,
     system: SYSTEM,
-    messages: [{ role: "user", content: content(input) }],
+    messages: [{ role: "user", content: content(input, opts) }],
     output_config: { format: zodOutputFormat(extractionSchema), effort: "low" },
   });
   if (response.stop_reason === "refusal") throw new Error("O modelo recusou o conteúdo enviado.");
@@ -84,14 +89,20 @@ async function run(client: Anthropic, model: string, input: ExtractInput): Promi
  * Extrai com o modelo padrão (barato) e, se a validação falhar, tenta com o
  * modelo de reforço. Usa a chave de API do próprio usuário.
  */
-export async function extractBookings(apiKey: string, input: ExtractInput): Promise<ExtractResult> {
+export async function extractBookings(
+  apiKey: string,
+  input: ExtractInput,
+  opts: ExtractOptions = {},
+): Promise<ExtractResult> {
   const env = serverEnv();
   const client = new Anthropic({ apiKey, maxRetries: 1, timeout: 90_000 });
   try {
-    const first = await run(client, env.EXTRACTION_MODEL_DEFAULT, input);
+    const first = await run(client, env.EXTRACTION_MODEL_DEFAULT, input, opts);
+    if (opts.allowEmpty && first.bookings.length === 0)
+      return { ok: true, data: first, model: env.EXTRACTION_MODEL_DEFAULT };
     if (validationProblems(first).length === 0)
       return { ok: true, data: first, model: env.EXTRACTION_MODEL_DEFAULT };
-    const second = await run(client, env.EXTRACTION_MODEL_RETRY, input);
+    const second = await run(client, env.EXTRACTION_MODEL_RETRY, input, opts);
     return { ok: true, data: second, model: env.EXTRACTION_MODEL_RETRY };
   } catch (error) {
     if (error instanceof Anthropic.AuthenticationError) {

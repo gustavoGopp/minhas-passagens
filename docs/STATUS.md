@@ -202,3 +202,40 @@ Monitor internacional e conversão de moeda; WhatsApp; compra no app; raspagem d
 - Textos corrigidos: retenção dos originais (o campo de dias saiu do perfil), "e-mail encaminhado" na página inicial, README.
 - Migração `20261105000000_avisos_entrega.sql` (idempotente). Apaga os avisos antigos registrados sem nenhum canal, para serem reavaliados.
 - Testes: 182 no total.
+
+## Bloco 2a: conectar o Gmail (2026-11-03)
+
+- Integrações → **Gmail**: OAuth separado do login, escopo só de leitura (`gmail.readonly`), PKCE e cookie de estado assinado (`/api/gmail/start`, `/api/gmail/callback`). O refresh token fica em `user_integrations` (provider `gmail`) cifrado com **BYOK v2** (AES-256-GCM com AAD `user_id:provider`; chaves v1 antigas continuam legíveis e as novas já saem em v2).
+- `mail_accounts` (RLS: dono só lê): e-mail, `history_id`, status (`active`/`expired`), datas e último erro técnico. Sem corpo nem assunto de e-mail.
+- **Teste dos 8 dias:** o tick renova o acesso no máximo a cada 20 h. `invalid_grant` marca `expired` e gera o aviso "Reconecte o Gmail". O diagnóstico `gmail.sql` mostra status, dias desde a conexão e horas desde a última renovação OK.
+- "Desconectar" e "Apagar conta" revogam o acesso no Google. A exportação inclui `mail_accounts`.
+- Variáveis na Vercel: `GOOGLE_OAUTH_CLIENT_ID` e `GOOGLE_OAUTH_CLIENT_SECRET` (passo a passo no README, seção 5). Migração `20261106000000_gmail.sql`.
+
+## Bloco 1: piloto da SerpApi e agendador robusto (2026-11-03)
+
+- **Piloto híbrido** (`src/lib/prices/hybrid.ts`, puro e testado): com chave `serpapi` do usuário e monitor no Travelpayouts, as datas das próximas 2 semanas também vão ao Google Flights pela SerpApi. O Travelpayouts continua em todas as datas, para comparar nas mesmas datas. O menor preço dos dois alimenta observações e avisos.
+- **Cota grátis protegida:** teto de 240 buscas/mês (o plano grátis tem 250), contado em `price_checks.near_requests` e conferido no `account.json` da SerpApi (que não gasta busca). Sem cota, a checagem segue só no Travelpayouts com `near_skipped = 'cota do mês'`. Nunca passa para o plano pago.
+- `price_checks` ganhou `near_provider`, `near_dates`, `near_with_data`, `near_in_window`, `near_requests`, `near_tp_with_data`, `near_tp_in_window` e `near_skipped` (migração `20261107000000_piloto_serpapi.sql`). O `piloto-precos.sql` mostra a comparação, as buscas do mês e os motivos de pulo.
+- Tela **Preços → Piloto**: tabela Google Flights × Travelpayouts (datas com voo na janela, 7 dias) e "buscas da SerpApi neste mês: X de 240".
+- **Agendador:** avisos de preço e retenção rodam antes das checagens. Cada monitor é reservado antes de checar (`claimMonitor`; uma falha no meio volta a vencer em 30 min). Novas checagens param depois de 35 s do tick. No máximo 60 datas por checagem.
+
+## Bloco 2b: importar passagens do Gmail (2026-11-03)
+
+- **Passagens → Importar do Gmail** (`/app/passagens/importar`). A varredura anda em etapas curtas (`src/lib/mail/scan.ts`), pela tela (enquanto aberta) e pelo agendador (com o tempo que sobra no tick):
+  1. **listing:** duas consultas com `in:anywhere` e `includeSpamTrash=true` (por remetente e por termos, 5 anos), só os ids;
+  2. **filtering:** cabeçalhos (remetente, assunto, lista de e-mails), **sem IA**;
+  3. **awaiting_confirmation:** mostra quantos e-mails parecem passagens e a estimativa de custo (`src/lib/mail/cost.ts`) e **espera o dono confirmar**;
+  4. **processing:** baixa o corpo, aplica o pré-filtro por sinais (localizador, aeroporto, voo, valor) e só então chama o Haiku 5.5 com a chave do dono. Usa `allowEmpty` (propaganda não dispara o reforço com Sonnet) e a data do e-mail para deduzir o ano;
+  5. **review:** lista para revisão.
+- Cada e-mail é reservado antes da extração: duas chamadas ao mesmo tempo não pagam duas vezes. "Cancelar" vale na hora. Chave recusada ou sem crédito para a varredura com o motivo.
+- **Revisão em lote:** a deduplicação (`src/lib/mail/dedupe.ts`) é recalculada contra as passagens atuais. Classifica cada candidato em nova, remarcação (mesmo localizador, outro horário: troca só os trechos e mantém valores), cancelamento ou já cadastrada (vem desmarcada). Inclui o link "Abrir no Gmail".
+- **Dados:** `mail_scans`, `mail_messages` (só id, data, domínio do remetente, tipo e estado: **sem assunto nem corpo**) e `import_candidates` (rascunho até a decisão; apagado 30 dias depois). RLS só de leitura para o dono; tudo na exportação e na cascata. Migração `20261108000000_gmail_importacao.sql`.
+- Testes com um Supabase falso em memória (`src/test/fake-supabase.ts`) e Gmail, Google e Anthropic falsos: listagem sem duplicar, filtro sem IA, confirmação antes de gastar, só metadados no banco, extração única sob concorrência, cancelamento e chave recusada. Um bug achado assim: o pré-filtro gravava "skip", que o CHECK do banco recusaria.
+
+## Bloco 2c: sincronização contínua do Gmail (2026-11-03)
+
+- Na confirmação da primeira varredura, o dono marca (vem marcado) "ler sozinho os e-mails novos de viagem". Em Integrações → Gmail dá para ligar e desligar (`mail_accounts.auto_sync`).
+- A cada 30 min, o tick lê `history.list` desde o `history_id`, separa só os ids ainda não vistos e cria uma varredura `kind = 'sync'`. Ela usa o mesmo pré-filtro e a mesma extração, **sem pedir confirmação de novo** (o dono já autorizou), e o `history_id` avança. Com o histórico expirado (404), refaz a busca dos últimos 30 dias.
+- Quando a sincronização deixa candidatos pendentes, sai o aviso "Passagens novas no Gmail" (um por sincronização), que leva à tela de revisão.
+- `gmail.sql` passou a mostrar a leitura automática, os minutos desde a última sincronização e as contagens de varreduras, e-mails e candidatos.
+- Migração `20261109000000_gmail_sync.sql`.

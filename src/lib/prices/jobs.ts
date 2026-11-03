@@ -10,11 +10,21 @@ import { performCheck, type MonitorRow } from "./repo";
 /** Monitores por tick: cada checagem faz ~1 requisição por data-alvo. */
 export const MONITORS_PER_TICK = 5;
 
-/** Roda as checagens vencidas (next_check_at <= agora), em lote. */
+/** Se a checagem quebrar no meio, o monitor volta a ficar vencido depois disto. */
+export const CLAIM_MINUTES = 30;
+
+/**
+ * Roda as checagens vencidas (next_check_at <= agora), em lote. Cada monitor é
+ * reservado antes (update condicional), então dois ticks não checam o mesmo e uma
+ * falha no meio não o deixa vencido para sempre. Para de começar checagens novas
+ * quando `deadline` (epoch ms) passa, para o tick não estourar o tempo da função.
+ */
 export async function runDueMonitors(
   admin: SupabaseClient,
   now: string,
   limit = MONITORS_PER_TICK,
+  deadline = Number.POSITIVE_INFINITY,
+  clock: () => number = Date.now,
 ) {
   const { data, error } = await admin
     .from("price_monitors")
@@ -27,7 +37,7 @@ export async function runDueMonitors(
     .limit(limit);
   if (error) throw new Error(error.message);
   const monitors = (data ?? []) as unknown as MonitorRow[];
-  if (!monitors.length) return { checked: 0, failed: 0 };
+  if (!monitors.length) return { checked: 0, failed: 0, skipped: 0 };
 
   const userIds = [...new Set(monitors.map((m) => m.user_id))];
   const { data: profiles } = await admin.from("profiles").select("*").in("id", userIds);
@@ -35,7 +45,13 @@ export async function runDueMonitors(
 
   let checked = 0;
   let failed = 0;
+  let skipped = 0;
   for (const raw of monitors) {
+    if (clock() > deadline) {
+      skipped++;
+      continue; // fica para o próximo tick
+    }
+    if (!(await claimMonitor(admin, raw.id, now))) continue;
     const m: MonitorRow = {
       ...raw,
       origin: raw.origin.trim(),
@@ -52,7 +68,20 @@ export async function runDueMonitors(
       failed++;
     }
   }
-  return { checked, failed };
+  return { checked, failed, skipped };
+}
+
+/** Reserva o monitor: só quem conseguir mover next_check_at para a frente checa. */
+export async function claimMonitor(admin: SupabaseClient, id: string, now: string) {
+  const until = new Date(Date.parse(now) + CLAIM_MINUTES * 60_000).toISOString();
+  const { data, error } = await admin
+    .from("price_monitors")
+    .update({ next_check_at: until })
+    .eq("id", id)
+    .lte("next_check_at", now)
+    .select("id");
+  if (error) throw new Error(error.message);
+  return Boolean(data?.length);
 }
 
 export interface PendingPriceEvent {

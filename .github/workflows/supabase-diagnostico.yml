@@ -14,6 +14,12 @@ on:
       redirects:
         description: "Opcional: Redirect URLs separadas por vírgula, somadas às existentes"
         required: false
+      cadastro:
+        description: "Opcional: abrir ou fechar o cadastro de contas novas (em vez de diagnosticar)"
+        required: false
+        type: choice
+        default: manter
+        options: [manter, aberto, fechado]
 
 jobs:
   diagnostico:
@@ -32,8 +38,13 @@ jobs:
           SITE_URL: ${{ inputs.site_url }}
           REDIRECTS: ${{ inputs.redirects }}
         run: node scripts/supabase-auth-urls.mjs
+      - name: Abrir ou fechar o cadastro
+        if: ${{ inputs.cadastro == 'aberto' || inputs.cadastro == 'fechado' }}
+        env:
+          CADASTRO: ${{ inputs.cadastro }}
+        run: node scripts/supabase-auth-signup.mjs
       - name: Diagnóstico
-        if: ${{ inputs.site_url == '' }}
+        if: ${{ inputs.site_url == '' && inputs.cadastro != 'aberto' && inputs.cadastro != 'fechado' }}
         env:
           ALVO: ${{ inputs.alvo }}
         run: node scripts/supabase-diagnostico.mjs "$ALVO"
