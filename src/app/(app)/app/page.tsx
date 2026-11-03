@@ -13,7 +13,9 @@ import {
 import { checkinRule, checkinState } from "@/lib/trips/checkin";
 import { listCredits } from "@/lib/trips/credits-repo";
 import { spendByMonth } from "@/lib/trips/reports";
+import { OfflineSync } from "@/components/offline-sync";
 import { Card } from "@/components/ui";
+import { offlineSnapshot } from "@/lib/offline";
 import { listIntegrationsPublic } from "@/lib/integrations/repo";
 import { getMailAccount } from "@/lib/mail/accounts";
 import { onboardingSteps } from "@/lib/onboarding";
@@ -81,6 +83,7 @@ async function Trips() {
   const thisMonth = spendByMonth(bookings, credits).find((m) => m.month === now.slice(0, 7));
   const next = upcoming[0];
   const currentYear = Number(ctx.today.slice(0, 4));
+  const offline = offlineSnapshot(upcoming, byId, now);
 
   const nearNames = (f: (typeof flights)[number]) => [
     ...new Set(holidaysNearFlight(ctx.holidays, f).map((h) => h.name)),
@@ -90,6 +93,7 @@ async function Trips() {
   if (flights.length === 0) {
     return (
       <>
+        <OfflineSync snapshot={offline} />
         <section className="flex flex-col gap-3 rounded-xl border border-dashed border-zinc-300 p-5 text-sm text-zinc-600 dark:border-zinc-700 dark:text-zinc-400">
           <p>Nenhuma passagem ainda.</p>
           <p>
@@ -108,6 +112,7 @@ async function Trips() {
 
   return (
     <>
+      <OfflineSync snapshot={offline} />
       {toReview ? (
         <Link
           href="/app/conferir"

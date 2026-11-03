@@ -258,3 +258,11 @@ Monitor internacional e conversão de moeda; WhatsApp; compra no app; raspagem d
 - **"Comece por aqui"** (`src/lib/onboarding.ts`): Gmail, chave da Anthropic, avisos por e-mail, cidade de casa e monitor, marcados sozinhos. O cartão some quando tudo está feito.
 - **Gráfico de preços:** texto com ~12 px reais no celular, linha em anil e faixa verde "no alvo".
 - axe com 0 violações em todas as telas nos dois temas. Lighthouse das páginas públicas igual ao de antes (96–100).
+
+## Bloco 3, parte 3: abrir sem internet (2026-11-03)
+
+- Ao abrir Passagens com internet, o app guarda **só no aparelho** (localStorage, chave `mp_offline_v1`) os 5 próximos voos: rota, cidades, horário no fuso do aeroporto, companhia, voo e localizador. O nome do passageiro e os valores ficam de fora. Lógica pura em `src/lib/offline.ts`.
+- `public/sw.js` guarda só a página `/offline` e o ícone (nenhuma página com dados). Navegação vai sempre à rede primeiro; sem rede, abre `/offline`. Essa página é autossuficiente (HTML, CSS e script inline, sem React) e monta os dados com `textContent`.
+- "Sair" e "Apagar conta" apagam os voos guardados no aparelho. O service worker passa a ser registrado em Passagens (antes, só ao ligar o push).
+- Cabeçalhos do `sw.js` conforme o guia de PWA do Next (sem cache e com CSP própria). Ícone maskable com margem de segurança (`icon-maskable-512.png`).
+- Teste de ponta a ponta com Playwright: abre com rede → guarda 5 voos → sem rede, `/app` mostra o localizador → ao sair, os dados guardados somem. axe com 0 violações na página offline, nos dois temas.
