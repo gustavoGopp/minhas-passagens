@@ -21,6 +21,9 @@ export function friendlyAuthError(message: string): string {
   if (/unable to exchange external code/i.test(message)) {
     return "O Supabase não conseguiu validar o login com o Google. Confira se o Client ID e o Client Secret do Google cadastrados no Supabase são do mesmo cliente OAuth.";
   }
+  if (/signups? not allowed|signup_disabled|signups are disabled/i.test(message)) {
+    return "Cadastro fechado: o Minhas Passagens é de uso pessoal. Se você já tem conta, entre com o mesmo Google de sempre.";
+  }
   if (/database error saving new user/i.test(message)) {
     return "O banco recusou a criação do usuário. As migrações do Supabase precisam ser aplicadas.";
   }

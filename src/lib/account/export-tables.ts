@@ -22,4 +22,6 @@ export const EXTRA_EXPORT_COLUMNS = {
   notification_log: "*",
   push_subscriptions: "id, user_agent, created_at, last_seen_at",
   telegram_links: "chat_id, linked_at, updated_at",
+  mail_accounts:
+    "provider, email, status, connected_at, last_refresh_ok_at, last_error, updated_at",
 } as const;

@@ -1,11 +1,13 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { serverEnv } from "@/lib/env";
-import { decryptSecret, encryptSecret, keyHint } from "@/lib/crypto/byok";
+import { decryptSecret, encryptSecret, keyHint, secretContext } from "@/lib/crypto/byok";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const PROVIDERS = ["anthropic", "travelpayouts", "resend", "duffel", "serpapi"] as const;
 export type Provider = (typeof PROVIDERS)[number];
+/** Segredos guardados em user_integrations: chaves coladas e o acesso ao Gmail (OAuth). */
+export type SecretProvider = Provider | "gmail";
 
 /** Forma segura para a UI: nunca inclui a chave cifrada. */
 export interface IntegrationPublic {
@@ -38,7 +40,11 @@ export async function saveIntegration(
     {
       user_id: userId,
       provider,
-      encrypted_key: encryptSecret(plainKey, serverEnv().BYOK_MASTER_KEY),
+      encrypted_key: encryptSecret(
+        plainKey,
+        serverEnv().BYOK_MASTER_KEY,
+        secretContext(userId, provider),
+      ),
       key_hint: keyHint(plainKey),
       status: validated ? "active" : "invalid",
       validated_at: validated ? new Date().toISOString() : null,
@@ -48,7 +54,7 @@ export async function saveIntegration(
   if (error) throw new Error(`Falha ao salvar a chave: ${error.message}`);
 }
 
-export async function removeIntegration(userId: string, provider: Provider): Promise<void> {
+export async function removeIntegration(userId: string, provider: SecretProvider): Promise<void> {
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase
     .from("user_integrations")
@@ -62,14 +68,17 @@ export async function removeIntegration(userId: string, provider: Provider): Pro
  * Chave em claro para uso no servidor (extração, monitor de preços).
  * Devolve null se o usuário não configurou o provedor.
  */
-export async function getDecryptedKey(userId: string, provider: Provider): Promise<string | null> {
+export async function getDecryptedKey(
+  userId: string,
+  provider: SecretProvider,
+): Promise<string | null> {
   return getDecryptedKeyWith(await createSupabaseServerClient(), userId, provider);
 }
 
 /** Chaves de um provedor para todos os usuários (agendador, service role). */
 export async function listDecryptedKeys(
   client: SupabaseClient,
-  provider: Provider,
+  provider: SecretProvider,
 ): Promise<Map<string, string>> {
   const { data, error } = await client
     .from("user_integrations")
@@ -81,7 +90,11 @@ export async function listDecryptedKeys(
     try {
       out.set(
         r.user_id as string,
-        decryptSecret(r.encrypted_key as string, serverEnv().BYOK_MASTER_KEY),
+        decryptSecret(
+          r.encrypted_key as string,
+          serverEnv().BYOK_MASTER_KEY,
+          secretContext(r.user_id as string, provider),
+        ),
       );
     } catch {
       // chave corrompida: ignora este usuário
@@ -94,7 +107,7 @@ export async function listDecryptedKeys(
 export async function getDecryptedKeyWith(
   client: SupabaseClient,
   userId: string,
-  provider: Provider,
+  provider: SecretProvider,
 ): Promise<string | null> {
   const { data, error } = await client
     .from("user_integrations")
@@ -104,5 +117,35 @@ export async function getDecryptedKeyWith(
     .maybeSingle();
   if (error) throw new Error(`Falha ao ler a chave: ${error.message}`);
   if (!data) return null;
-  return decryptSecret(data.encrypted_key as string, serverEnv().BYOK_MASTER_KEY);
+  return decryptSecret(
+    data.encrypted_key as string,
+    serverEnv().BYOK_MASTER_KEY,
+    secretContext(userId, provider),
+  );
+}
+
+/** Grava um segredo com um cliente dado (ex.: token do Gmail, gravado no callback do OAuth). */
+export async function saveSecretWith(
+  client: SupabaseClient,
+  userId: string,
+  provider: SecretProvider,
+  plain: string,
+  hint: string,
+): Promise<void> {
+  const { error } = await client.from("user_integrations").upsert(
+    {
+      user_id: userId,
+      provider,
+      encrypted_key: encryptSecret(
+        plain,
+        serverEnv().BYOK_MASTER_KEY,
+        secretContext(userId, provider),
+      ),
+      key_hint: hint,
+      status: "active",
+      validated_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id,provider" },
+  );
+  if (error) throw new Error(`Falha ao salvar o acesso: ${error.message}`);
 }
