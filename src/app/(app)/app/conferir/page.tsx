@@ -3,11 +3,19 @@ import { Suspense } from "react";
 import { FlightLine } from "@/components/flight-line";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { airlineName } from "@/lib/trips/airlines";
-import type { BookingRow, FlightRow } from "@/lib/trips/draft";
+import type { BookingDraft, BookingRow, FlightRow } from "@/lib/trips/draft";
 import { listTrips } from "@/lib/trips/repo";
 import { reviewItems } from "@/lib/trips/review";
 import { formatBRL } from "@/lib/trips/summary";
-import { deleteRepeatedAction, fixYearAction, keepFlightDateAction } from "./actions";
+import { PendingButton } from "@/components/pending-button";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import {
+  deleteRepeatedAction,
+  fixYearAction,
+  keepFlightDateAction,
+  restoreAllDeletedAction,
+  restoreDeletedAction,
+} from "./actions";
 
 export const metadata = { title: "Conferir passagens" };
 
@@ -35,6 +43,9 @@ export default function ConferirPage() {
       </header>
       <Suspense fallback={<p className="text-sm text-zinc-600 dark:text-zinc-400">Carregando…</p>}>
         <Items />
+      </Suspense>
+      <Suspense fallback={null}>
+        <Deleted />
       </Suspense>
     </main>
   );
@@ -99,23 +110,27 @@ async function Items() {
                     <input type="hidden" name="booking" value={b.id} />
                     <input type="hidden" name="from" value={fromYear} />
                     <input type="hidden" name="to" value={item.suggestedYear} />
-                    <button type="submit" className={primary}>
+                    <PendingButton className={primary} pendingLabel="Mudando…">
                       Mudar o voo para {item.suggestedYear}
-                    </button>
+                    </PendingButton>
                   </form>
                 ) : null}
                 <form action={keepFlightDateAction}>
                   <input type="hidden" name="booking" value={b.id} />
                   <input type="hidden" name="day" value={item.flightDay} />
-                  <button type="submit" className={secondary}>
+                  <PendingButton className={secondary} pendingLabel="Ajustando…">
                     O voo está certo (ajustar a data da compra)
-                  </button>
+                  </PendingButton>
                 </form>
                 <form action={deleteRepeatedAction}>
                   <input type="hidden" name="booking" value={b.id} />
-                  <button type="submit" className={`${secondary} text-red-700 dark:text-red-300`}>
+                  <PendingButton
+                    className={`${secondary} text-red-700 dark:text-red-300`}
+                    pendingLabel="Apagando…"
+                    confirm="Apagar esta passagem? Dá para restaurar depois aqui mesmo."
+                  >
                     Não é minha: apagar
-                  </button>
+                  </PendingButton>
                 </form>
               </div>
             </li>
@@ -142,9 +157,13 @@ async function Items() {
                   <Summary b={b} flights={flightsOf(id)} />
                   <form action={deleteRepeatedAction}>
                     <input type="hidden" name="booking" value={id} />
-                    <button type="submit" className={`${secondary} text-red-700 dark:text-red-300`}>
+                    <PendingButton
+                      className={`${secondary} text-red-700 dark:text-red-300`}
+                      pendingLabel="Apagando…"
+                      confirm={`Apagar a cópia ${n + 1}? A outra continua.`}
+                    >
                       Apagar a cópia {n + 1}
-                    </button>
+                    </PendingButton>
                   </form>
                 </div>
               );
@@ -153,5 +172,63 @@ async function Items() {
         );
       })}
     </ol>
+  );
+}
+
+/** Passagens importadas que foram apagadas (rascunho guardado por 30 dias): restaurar. */
+async function Deleted() {
+  const user = await getCurrentUser();
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("import_candidates")
+    .select("id, draft, received_at")
+    .eq("user_id", user.id)
+    .eq("status", "imported")
+    .is("booking_id", null)
+    .order("received_at", { ascending: false });
+  if (!data?.length) return null;
+  return (
+    <section className="flex flex-col gap-3" aria-labelledby="apagadas">
+      <h2 id="apagadas" className="text-lg font-semibold">
+        Apagadas ({data.length})
+      </h2>
+      <p className="text-sm text-zinc-700 dark:text-zinc-300">
+        Passagens importadas do Gmail que foram apagadas. Restaure as que eram suas.
+      </p>
+      <form action={restoreAllDeletedAction}>
+        <PendingButton className={primary} pendingLabel="Restaurando…">
+          Restaurar todas ({data.length})
+        </PendingButton>
+      </form>
+      <ul className="flex flex-col divide-y divide-zinc-200 rounded-xl border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
+        {data.map((c) => {
+          const d = c.draft as BookingDraft;
+          const first = d.legs[0];
+          return (
+            <li key={c.id as string} className="flex items-center justify-between gap-3 px-4 py-3">
+              <div className="flex flex-col gap-0.5 text-sm">
+                <span className="font-medium">
+                  {d.legs.map((l) => `${l.origin} → ${l.destination}`).join(" · ")} ·{" "}
+                  {airlineName(d.airline)}
+                </span>
+                <span className="text-xs text-zinc-600 dark:text-zinc-400">
+                  {first
+                    ? `${br(first.departure_local.slice(0, 10))} ${first.departure_local.slice(11, 16)}`
+                    : ""}
+                  {d.locator ? ` · localizador ${d.locator}` : ""}
+                  {d.amount ? ` · R$ ${d.amount}` : ""}
+                </span>
+              </div>
+              <form action={restoreDeletedAction}>
+                <input type="hidden" name="candidate" value={c.id as string} />
+                <PendingButton className={secondary} pendingLabel="Restaurando…">
+                  Restaurar
+                </PendingButton>
+              </form>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }

@@ -88,3 +88,27 @@ export function draftWithYear(d: BookingDraft, fromYear: number, year: number): 
     })),
   };
 }
+
+/**
+ * Rascunho para restaurar uma passagem importada que foi apagada: a data da
+ * compra usa a do e-mail quando o rascunho guardou o dia da importação (valor
+ * padrão antigo) ou uma data depois do voo.
+ */
+export function restoredDraft(
+  d: BookingDraft,
+  receivedAt: string | null,
+  decidedAt: string | null,
+): BookingDraft {
+  const received = receivedAt?.slice(0, 10) ?? "";
+  const firstDay = d.legs.map((l) => l.departure_local.slice(0, 10)).sort()[0] ?? "";
+  const wrong =
+    !d.purchased_on ||
+    (decidedAt != null && d.purchased_on === decidedAt.slice(0, 10)) ||
+    (firstDay !== "" && d.purchased_on > firstDay);
+  return {
+    ...d,
+    id: undefined,
+    legs: d.legs.map((l) => ({ ...l, id: undefined })),
+    purchased_on: wrong && received ? received : d.purchased_on,
+  };
+}
