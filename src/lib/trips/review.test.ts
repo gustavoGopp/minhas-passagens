@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { emptyDraft, type BookingRow, type FlightRow } from "./draft";
-import { draftWithYear, reviewItems, shiftLocalYear } from "./review";
+import { draftWithYear, restoredDraft, reviewItems, shiftLocalYear } from "./review";
 
 const b = (id: string, o: Partial<BookingRow> = {}): BookingRow => ({
   id,
@@ -96,5 +96,31 @@ describe("tela Conferir", () => {
       departure_local: "2027-02-24T07:00",
       arrival_local: "2027-02-24T08:05",
     });
+  });
+});
+
+describe("restaurar passagem apagada", () => {
+  const leg = {
+    airline: "AD",
+    flight_number: "",
+    origin: "SDU",
+    destination: "CGH",
+    departure_local: "2026-11-16T06:05",
+    arrival_local: "",
+    passenger: "",
+    id: "f-velho",
+  };
+  it("data da compra do dia da importação vira a data do e-mail; ids saem (passagem nova)", () => {
+    const d = { ...emptyDraft(), id: "b-velho", purchased_on: "2026-11-03", legs: [leg] };
+    const r = restoredDraft(d, "2026-10-28T10:00:00.000Z", "2026-11-03T04:40:00.000Z");
+    expect(r.purchased_on).toBe("2026-10-28");
+    expect(r.id).toBeUndefined();
+    expect(r.legs[0].id).toBeUndefined();
+  });
+  it("data da compra real (do texto) fica como está", () => {
+    const d = { ...emptyDraft(), purchased_on: "2026-10-20", legs: [leg] };
+    expect(
+      restoredDraft(d, "2026-10-28T10:00:00.000Z", "2026-11-03T04:40:00.000Z").purchased_on,
+    ).toBe("2026-10-20");
   });
 });
