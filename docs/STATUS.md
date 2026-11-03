@@ -282,3 +282,15 @@ Monitor internacional e conversão de moeda; WhatsApp; compra no app; raspagem d
 - Diagnóstico `precos-links.sql`: observações dos últimos 7 dias por provedor e site do link (só contagens).
 - Prints com Supabase falso (servidor HTTP sobre `src/test/fake-supabase.ts`), celular e desktop, claro e escuro: axe sem violações.
 - Testes: 249 no total (11 novos em `buy-link.test.ts`).
+
+## Item 3a: diagnóstico das passagens antigas da Azul (2026-11-03)
+
+- Diagnóstico `gmail-anos.sql`: e-mails da conta do dono por domínio do remetente × ano × etapa, candidatos, passagens por companhia e ano, e varreduras. Só contagens; domínios pessoais viram "webmail" ou "outros". Testado num Postgres local com as migrações reais antes de rodar.
+- Resultado (run 41681089618):
+  - **todos os 210 e-mails listados são de 2026**: nenhum de 2021 a 2025, em nenhum remetente;
+  - a varredura completa terminou as 2 consultas, sem erro; nada é apagado de `mail_messages`;
+  - etapas: 127 barrados no cabeçalho (quase todos propaganda: `news.`, `mkt.`, `relacionamento.`), 46 em que a IA não achou passagem, 37 extraídos. Nenhum ficou parado no pré-filtro do corpo nem com erro;
+  - **Azul** (12 e-mails, todos de 2026): 6 extraídos (5 importados, 1 pendente), 3 em que a IA não achou passagem, 3 barrados no cabeçalho;
+  - o remetente real da Azul é `voeazul-news.com.br`, que **não está** em `TRAVEL_SENDERS` (lá está `voeazul.com.br`). Os e-mails da Azul só entraram pela 2ª consulta (por termos), e o filtro de cabeçalho não os reconhece como companhia;
+  - candidatos pendentes de revisão: 8 da LATAM, 1 da Azul e 2 de outros.
+- Conclusão: o filtro não barrou passagens antigas; a busca do Gmail não devolveu nada antes de 2026. Ou a caixa conectada não tem e-mails de viagem anteriores a 2026 (compras feitas com outro e-mail, ou e-mails apagados), ou os e-mails antigos estão fora das 2 consultas. Próximo passo depende do dono (ver a conversa do item 3a).
