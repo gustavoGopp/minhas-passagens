@@ -2,6 +2,8 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { holidaysAround, overridesFromRows } from "@/lib/holidays";
 import { listDecryptedKeys } from "@/lib/integrations/repo";
+import { gmailHealth } from "@/lib/mail/accounts";
+import { gmailExpiredEvent } from "@/lib/mail/status";
 import { getConfig, setConfig } from "@/lib/notify/config";
 import { outcomeOf, retryDecision, type AttemptState, type Channel } from "@/lib/notify/delivery";
 import { deliver, loadChannelConfig, type Recipient } from "@/lib/notify/dispatch";
@@ -31,6 +33,8 @@ export interface TickResult {
   userErrors: number;
   prices: { checked: number; failed: number; sent: number; deferred: number } | { error: string };
   retention: { observations: number; checks: number } | { error: string } | null;
+  /** Renovação diária do acesso ao Gmail (null se não há cliente OAuth configurado). */
+  gmail: { checked: number; expired: number; failed: number } | { error: string } | null;
   at: string;
 }
 
@@ -46,10 +50,15 @@ export async function runTick(
   const now = opts.now ?? new Date().toISOString();
   if (opts.recordTick !== false) await setConfig({ last_tick_at: now });
 
+  // Antes de ler os perfis: assim um acesso que acabou de expirar já gera o aviso neste tick.
+  const gmail: TickResult["gmail"] = await gmailHealth(admin, now).catch((e: Error) => ({
+    error: e.message,
+  }));
+
   const today = now.slice(0, 10);
   const since = new Date(Date.parse(now) - 2 * 86_400_000).toISOString();
 
-  const [profiles, links, subs, flights, credits, monitors, overrides] = await Promise.all([
+  const [profiles, links, subs, flights, credits, monitors, overrides, mail] = await Promise.all([
     admin.from("profiles").select("*"),
     admin.from("telegram_links").select("user_id, chat_id").not("chat_id", "is", null),
     admin.from("push_subscriptions").select("id, user_id, endpoint, p256dh, auth"),
@@ -73,7 +82,10 @@ export async function runTick(
       )
       .eq("active", true),
     admin.from("holiday_overrides").select("user_id, action, date, event_key, name, kind"),
+    admin.from("mail_accounts").select("user_id, status, connected_at").eq("status", "expired"),
   ]);
+  // mail_accounts fica de fora: se a tabela ainda não existir (deploy antes da migração),
+  // o tick segue sem o aviso do Gmail.
   for (const r of [profiles, links, subs, flights, credits, monitors, overrides]) {
     if (r.error) throw new Error(r.error.message);
   }
@@ -117,6 +129,12 @@ export async function runTick(
   );
   const subsBy = group(
     subs.data as { id: string; user_id: string; endpoint: string; p256dh: string; auth: string }[],
+  );
+  const expiredMailBy = new Map(
+    (mail.error ? [] : (mail.data ?? [])).map((m) => [
+      m.user_id as string,
+      { connected_at: m.connected_at as string },
+    ]),
   );
   const chatBy = new Map((links.data ?? []).map((l) => [l.user_id as string, Number(l.chat_id)]));
 
@@ -185,6 +203,8 @@ export async function runTick(
       } catch {
         // Feriados nunca derrubam os demais avisos.
       }
+      const expiredMail = expiredMailBy.get(userId);
+      if (expiredMail) events.push(gmailExpiredEvent(expiredMail, now));
       if (!events.length) continue;
       const r = await deliverNew(admin, userId, events, quietFor(p), recipientFor(p), cfg, now);
       sent += r.sent;
@@ -255,6 +275,7 @@ export async function runTick(
     userErrors,
     prices,
     retention: await dailyRetention(admin, now),
+    gmail,
     at: now,
   };
 }

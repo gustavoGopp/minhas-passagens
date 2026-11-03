@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { validateAnthropicKey } from "@/lib/integrations/anthropic";
+import { disconnectGmail } from "@/lib/mail/accounts";
 import { getProvider } from "@/lib/prices/providers";
 import { checkMonitorsSoon } from "@/lib/prices/repo";
 import { sendEmailDetailed } from "@/lib/notify/channels";
@@ -93,5 +94,12 @@ export async function removeApiKeyAction(formData: FormData) {
   const user = await getCurrentUser();
   const provider = z.enum(PROVIDERS).parse(formData.get("provider"));
   await removeIntegration(user.id, provider);
+  revalidatePath("/app/integracoes");
+}
+
+/** Desconecta o Gmail: revoga o acesso no Google e apaga o token e o estado. */
+export async function disconnectGmailAction() {
+  const user = await getCurrentUser();
+  await disconnectGmail(user.id);
   revalidatePath("/app/integracoes");
 }

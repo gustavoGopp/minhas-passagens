@@ -103,6 +103,19 @@ Cada pessoa cola as próprias chaves (Anthropic, API de preços) na tela de Inte
 
 Notificações, agendador e backup têm os passos em [`docs/STATUS.md`](docs/STATUS.md). Sem `CRON_SECRET`, o vigia diário (`/api/jobs/watchdog`) fica desligado e responde 503.
 
+### 5. Gmail: encontrar passagens no e-mail (opcional)
+
+O app lê o Gmail com permissão só de leitura (`gmail.readonly`), num passo separado do login. Para uso pessoal (menos de 100 usuários), o Google dispensa a verificação: aparece a tela de "app não verificado" e você segue em **Avançado → Acessar**.
+
+1. No mesmo projeto do Google Cloud do login, em **APIs e serviços → Biblioteca**, ative a **Gmail API**.
+2. Em **Google Auth Platform → Acesso a dados**, adicione o escopo `https://www.googleapis.com/auth/gmail.readonly`.
+3. Em **Público**, deixe o app **Em produção**. No status "Teste", o Google encerra o acesso a cada 7 dias.
+4. Em **Clientes**, no cliente Web do login, adicione o URI de redirecionamento `https://<seu-app>.vercel.app/api/gmail/callback` (e `http://localhost:3000/api/gmail/callback` para rodar localmente). Se o secret atual não estiver visível, crie um novo.
+5. Na Vercel, cadastre `GOOGLE_OAUTH_CLIENT_ID` e `GOOGLE_OAUTH_CLIENT_SECRET` e faça um deploy.
+6. No app, em **Mais → Integrações → Gmail**, clique em **Conectar o Gmail**.
+
+O acesso fica cifrado no banco (AES-256-GCM, preso ao seu usuário). "Desconectar" revoga no Google e apaga. Apagar a conta também revoga.
+
 ## Arquitetura em uma frase
 
 Next.js 16 (App Router, TypeScript, Tailwind) na Vercel; Supabase para login com Google, Postgres com Row Level Security e armazenamento; API da Anthropic para extrair passagens; Telegram, Web Push e Resend para avisos; agendamento com pg_cron. Detalhes, alternativas avaliadas e custos em [`docs/PESQUISA.md`](docs/PESQUISA.md).
