@@ -18,9 +18,15 @@ export function trendOf(checks: { checked_at: string; min_price_cents: number | 
 }
 
 /** Série para o gráfico: menor preço por checagem, em ordem cronológica. */
-export function chartSeries(checks: { checked_at: string; min_price_cents: number | null }[]) {
+export function chartSeries(
+  checks: { checked_at: string; min_price_cents: number | null; min_near_holiday?: boolean }[],
+) {
   return [...checks]
     .filter((c) => c.min_price_cents != null)
     .sort((a, b) => (a.checked_at < b.checked_at ? -1 : 1))
-    .map((c) => ({ at: c.checked_at, cents: c.min_price_cents as number }));
+    .map((c) => ({
+      at: c.checked_at,
+      cents: c.min_price_cents as number,
+      nearHoliday: Boolean(c.min_near_holiday),
+    }));
 }

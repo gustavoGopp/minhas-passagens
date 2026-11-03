@@ -389,10 +389,40 @@ describe("runCheck", () => {
       dates_matched: 2,
       requests: 6,
       min_price_cents: 39000,
+      min_near_holiday: false,
     });
     expect(r.observations.find((o) => o.flight_date === "2026-11-22")?.near_holiday).toBe(true);
     expect(r.observations.find((o) => o.flight_date === "2026-11-09")?.near_holiday).toBe(false);
     expect(r.alerts.map((a) => [a.date, a.signals])).toEqual([["2026-11-09", ["at_target"]]]);
+  });
+
+  it("marca quando o menor preço da checagem cai perto de feriado", async () => {
+    const fake: PriceProvider = {
+      id: "travelpayouts",
+      name: "fake",
+      validateKey: async () => ({ ok: true }),
+      search: async (s) => ({
+        offers: [
+          offer({ priceCents: 39000 }),
+          offer({ date: "2026-11-22", time: "18:00", priceCents: 31000 }),
+        ],
+        requests: s.dates.length,
+        failedDates: [],
+        datesWithData: ["2026-11-09", "2026-11-22"],
+      }),
+    };
+    const r = await runCheck({
+      monitor,
+      provider: fake,
+      apiKey: "x",
+      originTimeZone: "America/Sao_Paulo",
+      today: "2026-11-02",
+      now: "2026-11-02T10:00:00Z",
+      holidays,
+      history: [],
+      lastAlerted: new Map(),
+    });
+    expect(r.summary).toMatchObject({ min_price_cents: 31000, min_near_holiday: true });
   });
 });
 
@@ -429,12 +459,15 @@ describe("tendência", () => {
   it("compara as duas últimas checagens com preço", async () => {
     const { trendOf, chartSeries } = await import("./trend");
     const checks = [
-      { checked_at: "2026-11-01T10:00:00Z", min_price_cents: 50000 },
+      { checked_at: "2026-11-01T10:00:00Z", min_price_cents: 50000, min_near_holiday: true },
       { checked_at: "2026-11-03T10:00:00Z", min_price_cents: null },
       { checked_at: "2026-11-02T10:00:00Z", min_price_cents: 45000 },
     ];
     expect(trendOf(checks)).toMatchObject({ last: 45000, prev: 50000, direction: "down" });
-    expect(chartSeries(checks).map((p) => p.cents)).toEqual([50000, 45000]);
+    expect(chartSeries(checks).map((p) => [p.cents, p.nearHoliday])).toEqual([
+      [50000, true],
+      [45000, false],
+    ]);
     expect(trendOf([]).direction).toBeNull();
   });
 });

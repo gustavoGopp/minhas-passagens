@@ -6,5 +6,11 @@
       "main": true,
       "**": false
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/jobs/watchdog",
+      "schedule": "17 11 * * *"
+    }
+  ]
 }

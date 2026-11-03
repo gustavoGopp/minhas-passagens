@@ -1,7 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { airportTimeZone } from "@/lib/airports";
-import { getHolidays, type HolidayEvent, type HolidayKind } from "@/lib/holidays";
+import { holidaysAround, overridesFromRows, type HolidayEvent } from "@/lib/holidays";
 import { getDecryptedKeyWith } from "@/lib/integrations/repo";
 import { holidayPreferences, type Profile } from "@/lib/profiles/repo";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -22,6 +22,8 @@ export interface MonitorRow extends MonitorConfig {
   last_checked_at: string | null;
   last_error: string | null;
   created_at: string;
+  /** 1º dia do feriadão, nos monitores criados por "Monitorar este feriadão". */
+  long_weekend: string | null;
 }
 
 export interface CheckRow {
@@ -36,6 +38,7 @@ export interface CheckRow {
   requests: number;
   failed: number;
   min_price_cents: number | null;
+  min_near_holiday: boolean;
   error: string | null;
 }
 
@@ -53,9 +56,9 @@ export interface ObservationView {
 }
 
 const MONITOR_COLS =
-  "id, user_id, name, kind, origin, destination, rule, horizon_weeks, target_cents, margin_cents, margin_pct, airlines, allow_connections, max_duration_min, frequency, provider, active, next_check_at, last_checked_at, last_error, created_at";
+  "id, user_id, name, kind, origin, destination, rule, horizon_weeks, target_cents, margin_cents, margin_pct, airlines, allow_connections, max_duration_min, frequency, provider, active, next_check_at, last_checked_at, last_error, created_at, long_weekend";
 const CHECK_COLS =
-  "id, monitor_id, provider, checked_at, target_dates, dates_with_data, dates_in_window, dates_matched, requests, failed, min_price_cents, error";
+  "id, monitor_id, provider, checked_at, target_dates, dates_with_data, dates_in_window, dates_matched, requests, failed, min_price_cents, min_near_holiday, error";
 
 function toRow(r: Record<string, unknown>): MonitorRow {
   return {
@@ -67,6 +70,7 @@ function toRow(r: Record<string, unknown>): MonitorRow {
     margin_cents: r.margin_cents == null ? null : Number(r.margin_cents),
     margin_pct: r.margin_pct == null ? null : Number(r.margin_pct),
     airlines: (r.airlines as string[]) ?? [],
+    long_weekend: (r.long_weekend as string | null) ?? null,
   };
 }
 
@@ -113,6 +117,7 @@ export async function listChecks(
   return (data ?? []).map((c) => ({
     ...(c as CheckRow),
     min_price_cents: numOrNull(c.min_price_cents),
+    min_near_holiday: Boolean(c.min_near_holiday),
   }));
 }
 
@@ -148,6 +153,7 @@ export async function saveMonitor(
   input: MonitorInput,
   timeZone: string,
   id?: string,
+  extra: { long_weekend?: string } = {},
 ): Promise<string> {
   const supabase = await createSupabaseServerClient();
   const row = {
@@ -183,7 +189,11 @@ export async function saveMonitor(
   // Primeira checagem no próximo ciclo do agendador.
   const { data, error } = await supabase
     .from("price_monitors")
-    .insert({ ...row, next_check_at: new Date().toISOString() })
+    .insert({
+      ...row,
+      long_weekend: extra.long_weekend ?? null,
+      next_check_at: new Date().toISOString(),
+    })
     .select("id")
     .single();
   if (error) throw new Error(`Falha ao criar o monitor: ${error.message}`);
@@ -232,16 +242,7 @@ export async function holidaysFor(
     .from("holiday_overrides")
     .select("action, date, event_key, name, kind")
     .eq("user_id", userId);
-  const overrides = (data ?? []).map((o) => ({
-    action: o.action as "add" | "hide",
-    date: o.date as string,
-    key: (o.event_key as string | null) ?? null,
-    name: (o.name as string | null) ?? null,
-    kind: (o.kind as HolidayKind | null) ?? null,
-  }));
-  const prefs = holidayPreferences(profile);
-  const year = Number(today.slice(0, 4));
-  return [...getHolidays(year, prefs, overrides), ...getHolidays(year + 1, prefs, overrides)];
+  return holidaysAround(today, holidayPreferences(profile), overridesFromRows(data ?? []));
 }
 
 export type PerformResult =
@@ -350,6 +351,7 @@ export async function performCheck(
       requests: s.requests,
       failed: s.failed,
       min_price_cents: s.min_price_cents,
+      min_near_holiday: s.min_near_holiday,
       error: s.failed && s.failed === s.requests ? "Todas as consultas falharam." : null,
     })
     .select("id")
