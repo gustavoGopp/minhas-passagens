@@ -24,6 +24,8 @@ export interface ObservationRow {
   duration_min: number | null;
   found_at: string | null;
   near_holiday: boolean;
+  /** Link da oferta devolvido pela fonte (null: a tela usa a busca do Google Flights). */
+  booking_url: string | null;
 }
 
 export interface CheckSummary {
@@ -139,6 +141,7 @@ export async function runCheck(input: {
     duration_min: o.durationMin,
     found_at: o.foundAt,
     near_holiday: nearHoliday.has(o.date),
+    booking_url: o.bookingUrl ?? null,
   }));
 
   const best = new Map<string, Offer>([...perDate].map(([d, list]) => [d, list[0]]));

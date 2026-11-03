@@ -2,8 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { PriceChart } from "@/components/price-chart";
+import { button } from "@/components/ui";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { formatFlightDate, SIGNAL_LABEL, type Signal } from "@/lib/prices/alerts";
+import { buyUrlFor } from "@/lib/prices/buy-link";
 import { normalizeAirline } from "@/lib/prices/filter";
 import { getMonitor, listChecks, listObservations } from "@/lib/prices/repo";
 import { describeRule } from "@/lib/prices/rule";
@@ -60,6 +62,14 @@ async function Detail({ params }: { params: Promise<{ id: string }> }) {
   const bestByDate = new Map<string, (typeof obs)[number]>();
   for (const o of obs) if (!bestByDate.has(o.flight_date)) bestByDate.set(o.flight_date, o);
   const q = estimateQuota(lastOk?.target_dates ?? 0, m.frequency, m.provider);
+  const buyUrl = (o: (typeof obs)[number]) =>
+    buyUrlFor({
+      bookingUrl: o.booking_url,
+      origin: m.origin,
+      destination: m.destination,
+      date: o.flight_date,
+    });
+  const cheapest = [...bestByDate.values()].sort((a, b) => a.price_cents - b.price_cents)[0];
 
   return (
     <>
@@ -136,6 +146,26 @@ async function Detail({ params }: { params: Promise<{ id: string }> }) {
         ) : (
           <p className="text-sm text-zinc-600 dark:text-zinc-400">Ainda não houve checagem.</p>
         )}
+        {cheapest ? (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <p className="text-sm">
+              Mais barato:{" "}
+              <strong>
+                {formatFlightDate(cheapest.flight_date, cheapest.departs_local.slice(11, 16))}
+              </strong>{" "}
+              · <strong className="tabular-nums">{formatBRL(cheapest.price_cents)}</strong>
+            </p>
+            <a
+              href={buyUrl(cheapest)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={button.primary}
+            >
+              Ver onde comprar <span aria-hidden="true">↗</span>
+              <span className="sr-only"> (abre em nova aba)</span>
+            </a>
+          </div>
+        ) : null}
         {bestByDate.size ? (
           <table className="w-full text-sm">
             <thead>
@@ -158,6 +188,22 @@ async function Detail({ params }: { params: Promise<{ id: string }> }) {
                         feriado perto
                       </span>
                     ) : null}
+                    <a
+                      href={buyUrl(o)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-brand dark:text-brand-dark mt-0.5 block w-fit text-xs font-medium underline underline-offset-4"
+                    >
+                      Comprar <span aria-hidden="true">↗</span>
+                      <span className="sr-only">
+                        {" "}
+                        o voo de {formatFlightDate(
+                          o.flight_date,
+                          o.departs_local.slice(11, 16),
+                        )}{" "}
+                        (abre em nova aba)
+                      </span>
+                    </a>
                   </td>
                   <td className="py-2 text-zinc-600 dark:text-zinc-400">
                     {airlineName(normalizeAirline(o.airline))}{" "}

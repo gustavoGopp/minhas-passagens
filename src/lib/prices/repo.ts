@@ -55,6 +55,7 @@ export interface ObservationView {
   duration_min: number | null;
   near_holiday: boolean;
   observed_at: string;
+  booking_url: string | null;
 }
 
 const MONITOR_COLS =
@@ -129,20 +130,26 @@ export async function listObservations(
   checkId: string,
 ): Promise<ObservationView[]> {
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
-    .from("price_observations")
-    .select(
-      "check_id, flight_date, departs_local, airline, flight_number, price_cents, transfers, duration_min, near_holiday, observed_at",
-    )
-    .eq("user_id", userId)
-    .eq("monitor_id", monitorId)
-    .eq("check_id", checkId)
-    .order("flight_date")
-    .order("price_cents");
+  const cols =
+    "check_id, flight_date, departs_local, airline, flight_number, price_cents, transfers, duration_min, near_holiday, observed_at, booking_url";
+  const read = (c: string) =>
+    supabase
+      .from("price_observations")
+      .select(c)
+      .eq("user_id", userId)
+      .eq("monitor_id", monitorId)
+      .eq("check_id", checkId)
+      .order("flight_date")
+      .order("price_cents");
+  let { data, error } = await read(cols);
+  // Deploy antes da migração do link: lê sem a coluna.
+  if (error && /booking_url/.test(error.message))
+    ({ data, error } = await read(cols.replace(", booking_url", "")));
   if (error) throw new Error(`Falha ao ler observações: ${error.message}`);
-  return (data ?? []).map((o) => ({
-    ...(o as ObservationView),
+  return ((data ?? []) as unknown as ObservationView[]).map((o) => ({
+    ...o,
     price_cents: Number(o.price_cents),
+    booking_url: o.booking_url ?? null,
   }));
 }
 
@@ -376,7 +383,9 @@ export async function performCheck(
   const checkId = check.id as string;
 
   if (result.observations.length) {
-    await client.from("price_observations").insert(
+    await insertWithBookingUrl(
+      client,
+      "price_observations",
       result.observations.map((o) => ({
         ...o,
         monitor_id: monitor.id,
@@ -388,7 +397,9 @@ export async function performCheck(
     );
   }
   if (result.alerts.length) {
-    await client.from("price_alerts").insert(
+    await insertWithBookingUrl(
+      client,
+      "price_alerts",
       result.alerts.map((a) => ({
         monitor_id: monitor.id,
         user_id: monitor.user_id,
@@ -399,11 +410,32 @@ export async function performCheck(
         price_cents: a.offer.priceCents,
         signals: a.signals,
         created_at: now,
+        booking_url: a.offer.bookingUrl ?? null,
       })),
     );
   }
   await finish(s.failed && s.failed === s.requests ? "Todas as consultas falharam." : null);
   return { ok: true, result, checkId };
+}
+
+/**
+ * Insere com `booking_url`; se o deploy sair antes da migração do link (coluna
+ * ainda não existe), grava de novo sem ela em vez de perder as linhas.
+ */
+export async function insertWithBookingUrl(
+  client: SupabaseClient,
+  table: "price_observations" | "price_alerts",
+  rows: Record<string, unknown>[],
+) {
+  const { error } = await client.from(table).insert(rows);
+  if (error && /booking_url/.test(error.message)) {
+    return client
+      .from(table)
+      .insert(
+        rows.map((r) => Object.fromEntries(Object.entries(r).filter(([k]) => k !== "booking_url"))),
+      );
+  }
+  return { error };
 }
 
 /**

@@ -100,18 +100,19 @@ export async function pendingPriceEvents(
   now: string,
   timeZoneOf: (userId: string) => string,
 ): Promise<PendingPriceEvent[]> {
-  const { data, error } = await admin
-    .from("price_alerts")
-    .select(
-      "id, monitor_id, user_id, flight_date, departs_local, airline, flight_number, price_cents, signals, attempts, last_attempt_at, price_monitors(origin, destination)",
-    )
-    .is("sent_at", null)
-    .order("flight_date")
-    .limit(200);
+  const cols =
+    "id, monitor_id, user_id, flight_date, departs_local, airline, flight_number, price_cents, signals, attempts, last_attempt_at, booking_url, price_monitors(origin, destination)";
+  const read = (c: string) =>
+    admin.from("price_alerts").select(c).is("sent_at", null).order("flight_date").limit(200);
+  let { data, error } = await read(cols);
+  // Deploy antes da migração do link: lê sem a coluna (o aviso usa a busca do Google Flights).
+  if (error && /booking_url/.test(error.message))
+    ({ data, error } = await read(cols.replace(" booking_url,", "")));
   if (error) throw new Error(error.message);
+  const alertRows = (data ?? []) as unknown as Record<string, unknown>[];
 
-  const groups = new Map<string, NonNullable<typeof data>>();
-  for (const a of data ?? []) {
+  const groups = new Map<string, typeof alertRows>();
+  for (const a of alertRows) {
     const k = a.monitor_id as string;
     groups.set(k, [...(groups.get(k) ?? []), a]);
   }
@@ -140,6 +141,7 @@ export async function pendingPriceEvents(
         transfers: 0,
         durationMin: null,
         foundAt: null,
+        bookingUrl: (r.booking_url as string | null) ?? null,
       },
     }));
     const ids = rows.map((r) => r.id as string);

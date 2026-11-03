@@ -40,18 +40,30 @@ self.addEventListener("push", (event) => {
   } catch {
     if (event.data) data.body = event.data.text();
   }
+  // Aviso de preço: botão "Ver onde comprar" (aparece no Android; no iPhone, o
+  // toque abre o monitor, que tem o mesmo botão).
+  const buyUrl =
+    typeof data.buyUrl === "string" && /^https:\/\//.test(data.buyUrl) ? data.buyUrl : null;
   event.waitUntil(
     self.registration.showNotification(data.title, {
       body: data.body,
       icon: "/icons/icon-192.png",
       badge: "/icons/icon-192.png",
-      data: { url: data.url },
+      data: { url: data.url, buyUrl },
+      ...(buyUrl
+        ? { actions: [{ action: "buy", title: data.buyLabel || "Ver onde comprar" }] }
+        : {}),
     }),
   );
 });
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
+  const buyUrl = event.notification.data?.buyUrl;
+  if (event.action === "buy" && buyUrl) {
+    event.waitUntil(self.clients.openWindow(buyUrl));
+    return;
+  }
   const url = new URL(event.notification.data?.url ?? "/app", self.location.origin).href;
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {

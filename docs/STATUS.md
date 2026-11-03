@@ -2,7 +2,7 @@
 
 > Leia este arquivo no início de toda sessão. Ele é a memória do projeto: decisões, o que está pronto, próximos passos e as respostas da entrevista. Atualize-o ao fim de cada marco.
 
-Última atualização: 2026-11-03 (revisão completa em `docs/REVISAO-2026-11.md`; Bloco 0 da revisão pronto)
+Última atualização: 2026-11-03 (item 1 da nova lista: "Ver onde comprar")
 
 ## Estado atual
 
@@ -27,7 +27,8 @@
 3. Dono: registrar as passagens já compradas (em 03/11 o banco tinha 0 passagens) e confirmar de quem é a 2ª conta criada em 03/11.
 4. Claude: acompanhar o piloto até 09/11 com `piloto-precos.sql`. Leitura de 02/11: na janela de horário só 31,3% (CGH→SDU) e 0% (SDU→CGH). Desde o Bloco 0, erros do Travelpayouts contam como falha e não como "sem preço". Próximo bloco sugerido: piloto grátis da SerpApi (ver revisão, seção 6.6).
 5. Dono: desativar no Google Cloud o secret antigo `****dmcf`.
-6. Próximos blocos da revisão (escolha do dono): 1 fonte de preços, 2 importação do Gmail, 3 visual, 4 robustez, 5 testes, 6 abrir para outros.
+6. Claude: depois do merge do "Ver onde comprar" e de um dia de checagens, rodar `precos-links.sql` para confirmar com dados reais quantos preços vêm com link da fonte (as documentações da SerpApi e do Travelpayouts não abrem na rede da sessão).
+7. Próximos blocos da revisão (escolha do dono): 1 fonte de preços, 2 importação do Gmail, 3 visual, 4 robustez, 5 testes, 6 abrir para outros.
 
 ## Histórico de incidentes
 
@@ -266,3 +267,18 @@ Monitor internacional e conversão de moeda; WhatsApp; compra no app; raspagem d
 - "Sair" e "Apagar conta" apagam os voos guardados no aparelho. O service worker passa a ser registrado em Passagens (antes, só ao ligar o push).
 - Cabeçalhos do `sw.js` conforme o guia de PWA do Next (sem cache e com CSP própria). Ícone maskable com margem de segurança (`icon-maskable-512.png`).
 - Teste de ponta a ponta com Playwright: abre com rede → guarda 5 voos → sem rede, `/app` mostra o localizador → ao sair, os dados guardados somem. axe com 0 violações na página offline, nos dois temas.
+
+## Item 1: "Ver onde comprar" (2026-11-03)
+
+- **Link da oferta** (`src/lib/prices/buy-link.ts`, puro e testado):
+  - SerpApi: `search_metadata.google_flights_url` (um por busca, ou seja, por data). O `booking_token` não é usado, porque gastaria outra busca da cota;
+  - Travelpayouts: o `link` relativo de `prices_for_dates` vira `https://www.aviasales.com` + link;
+  - sem link (Duffel, resposta sem o campo ou avisos antigos): busca do Google Flights com rota e data;
+  - `safeBuyUrl` só aceita `https` em google.com e aviasales.*, sem credenciais nem porta, com até 1.000 caracteres.
+- Migração `20261111000000_link_oferta.sql`: `booking_url` em `price_observations` e `price_alerts`, com CHECK (`https://`, até 1.000 caracteres). A RLS e a exportação (`*`) já cobrem a coluna. Se o deploy sair antes da migração, gravação e leitura caem para a versão sem a coluna.
+- **Tela do monitor:** cartão "Mais barato" com o botão "Ver onde comprar" e o link "Comprar ↗" em cada data. Tudo abre em nova aba (`noopener noreferrer`).
+- **Avisos:** o e-mail e o Telegram ganham "Ver onde comprar: link" e "Abrir no app: link" (os demais avisos ficam como antes). No push, o toque continua abrindo o monitor; no Android aparece também o botão "Ver onde comprar" (o iPhone não mostra botões na notificação).
+- O piloto (`hybrid.ts`) não mudou: o link é só um campo a mais na oferta.
+- Diagnóstico `precos-links.sql`: observações dos últimos 7 dias por provedor e site do link (só contagens).
+- Prints com Supabase falso (servidor HTTP sobre `src/test/fake-supabase.ts`), celular e desktop, claro e escuro: axe sem violações.
+- Testes: 249 no total (11 novos em `buy-link.test.ts`).

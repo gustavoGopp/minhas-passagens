@@ -12,6 +12,20 @@ export interface NotifyEvent {
   path: string;
   /** Ignora a janela silenciosa (lembrete de check-in de 24h). */
   urgent: boolean;
+  /** Link externo da oferta ("Ver onde comprar"), nos avisos de preço. */
+  buyUrl?: string;
+}
+
+/** Rótulo do link da oferta nos avisos (texto e ação do push). */
+export const BUY_LABEL = "Ver onde comprar";
+
+/**
+ * Texto dos canais de texto (e-mail, Telegram): corpo e link do app; nos avisos
+ * de preço, também o link da oferta, com rótulos para separar os dois.
+ */
+export function eventText(e: Pick<NotifyEvent, "body" | "buyUrl">, appLink: string): string {
+  if (!e.buyUrl) return `${e.body}\n\n${appLink}`;
+  return `${e.body}\n\n${BUY_LABEL}: ${e.buyUrl}\n\nAbrir no app: ${appLink}`;
 }
 
 /**
