@@ -21,7 +21,7 @@ export const metadata = { title: "Conferir passagens" };
 
 const card = "flex flex-col gap-3 rounded-xl border border-amber-300 p-4 dark:border-amber-800";
 const primary =
-  "rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white dark:bg-zinc-100 dark:text-zinc-900";
+  "rounded-xl bg-brand hover:bg-brand-strong px-4 py-2 text-sm font-medium text-white dark:bg-brand-dark dark:text-zinc-950";
 const secondary = "rounded-lg border border-zinc-300 px-4 py-2 text-sm dark:border-zinc-700";
 const br = (iso: string) => iso.split("-").reverse().join("/");
 
@@ -80,7 +80,7 @@ async function Items() {
 
   if (!items.length) {
     return (
-      <section className="flex flex-col gap-2 rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+      <section className="flex flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
         <h2 className="font-semibold">Tudo certo ✓</h2>
         <p className="text-sm text-zinc-700 dark:text-zinc-300">Nada para conferir agora.</p>
       </section>
@@ -200,7 +200,7 @@ async function Deleted() {
           Restaurar todas ({data.length})
         </PendingButton>
       </form>
-      <ul className="flex flex-col divide-y divide-zinc-200 rounded-xl border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
+      <ul className="flex flex-col divide-y divide-zinc-200 rounded-xl border border-zinc-200 bg-white dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-900">
         {data.map((c) => {
           const d = c.draft as BookingDraft;
           const first = d.legs[0];

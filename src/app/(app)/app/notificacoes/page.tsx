@@ -21,7 +21,8 @@ export default function NotificacoesPage() {
   );
 }
 
-const card = "flex flex-col gap-3 rounded-xl border border-zinc-200 p-4 dark:border-zinc-800";
+const card =
+  "flex flex-col gap-3 rounded-xl border border-zinc-200 p-4 dark:border-zinc-800 bg-white dark:bg-zinc-900";
 
 async function Settings() {
   const user = await getCurrentUser();
@@ -132,7 +133,7 @@ async function Settings() {
           <h2 className="text-sm font-semibold tracking-wide text-zinc-600 uppercase dark:text-zinc-400">
             Últimos avisos
           </h2>
-          <ul className="flex flex-col divide-y divide-zinc-200 rounded-xl border border-zinc-200 text-sm dark:divide-zinc-800 dark:border-zinc-800">
+          <ul className="flex flex-col divide-y divide-zinc-200 rounded-xl border border-zinc-200 bg-white text-sm dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-900">
             {log.map((l) => (
               <li key={`${l.sent_at}-${l.title}`} className="flex flex-col px-4 py-2">
                 <span>{l.title}</span>

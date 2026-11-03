@@ -72,7 +72,7 @@ async function Detail({ params }: { params: Promise<{ id: string }> }) {
           today={new Date().toISOString().slice(0, 10)}
           showBookingLink={false}
         />
-        <details className="rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
+        <details className="rounded-xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900">
           <summary className="cursor-pointer text-sm font-medium">
             Registrar reembolso ou crédito
           </summary>

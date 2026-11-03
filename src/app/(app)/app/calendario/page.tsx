@@ -171,13 +171,15 @@ async function Calendar({
                   aria-label={`${name} de ${year}${c.flights ? `, ${c.flights} voo(s)` : ""}`}
                   className={`flex flex-col items-center rounded-lg px-1 py-1.5 ${
                     active
-                      ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+                      ? "bg-brand hover:bg-brand-strong dark:bg-brand-dark text-white dark:text-zinc-950"
                       : "border border-zinc-200 dark:border-zinc-800"
                   }`}
                 >
                   <span className="font-medium">{name.slice(0, 3)}</span>
                   <span className="flex h-2 items-center gap-0.5" aria-hidden>
-                    {c.flights ? <span className="h-1.5 w-1.5 rounded-full bg-sky-600" /> : null}
+                    {c.flights ? (
+                      <span className="bg-brand dark:bg-brand-dark h-1.5 w-1.5 rounded-full" />
+                    ) : null}
                     {c.holidays ? <span className="h-1.5 w-1.5 rounded-full bg-red-600" /> : null}
                   </span>
                 </Link>
@@ -213,7 +215,11 @@ async function Calendar({
           aria-label="Legenda"
         >
           <li className="flex items-center gap-1">
-            <span className="inline-block h-3 w-3 rounded-full bg-sky-700" aria-hidden /> Seu voo
+            <span
+              className="bg-brand dark:bg-brand-dark inline-block h-3 w-3 rounded-full"
+              aria-hidden
+            />{" "}
+            Seu voo
           </li>
           <li className="flex items-center gap-1">
             <span className="inline-block h-3 w-3 rounded-full bg-red-600" aria-hidden /> Feriado
@@ -240,7 +246,7 @@ async function Calendar({
           Seus voos em {monthTitle}
         </h2>
         {monthFlights.length ? (
-          <ul className="flex flex-col divide-y divide-zinc-200 rounded-xl border border-sky-200 bg-sky-50/50 dark:divide-zinc-800 dark:border-sky-900 dark:bg-sky-950/30">
+          <ul className="border-brand/20 bg-brand-soft/60 dark:border-brand-dark/30 dark:bg-brand-dark-soft flex flex-col divide-y divide-zinc-200 rounded-xl border dark:divide-zinc-800">
             {monthFlights.map((f) => (
               <li key={f.id}>
                 <Link
@@ -277,7 +283,7 @@ async function Calendar({
           </Link>
         </p>
         {monthEvents.length ? (
-          <ul className="flex flex-col divide-y divide-zinc-200 rounded-xl border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
+          <ul className="flex flex-col divide-y divide-zinc-200 rounded-xl border border-zinc-200 bg-white dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-900">
             {monthEvents.map((e) => (
               <HolidayRow
                 key={`${e.key}-${e.date}`}
@@ -294,7 +300,7 @@ async function Calendar({
 
       {year === currentYear ? <LongWeekends items={ctx.longWeekends} /> : null}
 
-      <section className="flex flex-col gap-3 rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+      <section className="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
         <h2 className="font-semibold">Adicionar feriado</h2>
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
           Para feriados da sua cidade que não estão na lista, ou datas que importam para você.
@@ -386,7 +392,7 @@ function MonthGrid({
                     aria-label={label}
                     className={`mx-auto flex h-11 w-full max-w-12 flex-col items-center justify-center rounded-lg text-sm tabular-nums ${
                       m?.flight
-                        ? "bg-sky-700 font-semibold text-white"
+                        ? "bg-brand dark:bg-brand-dark font-semibold text-white dark:text-zinc-950"
                         : m?.holiday
                           ? "bg-red-50 font-semibold text-red-800 dark:bg-red-950 dark:text-red-200"
                           : m?.optional

@@ -20,7 +20,11 @@ export function FlightLine({ f, big = false }: { f: FlightRow; big?: boolean }) 
       <span className={big ? "text-2xl font-semibold tracking-tight" : "text-sm font-medium"}>
         {f.origin} → {f.destination}
       </span>
-      <span className={big ? "text-base" : "text-xs text-zinc-600 dark:text-zinc-400"}>
+      <span
+        className={
+          big ? "text-base tabular-nums" : "text-xs text-zinc-600 tabular-nums dark:text-zinc-400"
+        }
+      >
         {formatInZone(f.departs_at, tz)}
         {arrTime ? ` · chega ${arrTime}` : ""}
       </span>

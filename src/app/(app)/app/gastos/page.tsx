@@ -35,7 +35,7 @@ function Table({ title, lines, note }: { title: string; lines: SpendLine[]; note
       <h2 className="text-sm font-semibold tracking-wide text-zinc-600 uppercase dark:text-zinc-400">
         {title}
       </h2>
-      <ul className="flex flex-col divide-y divide-zinc-200 rounded-xl border border-zinc-200 text-sm dark:divide-zinc-800 dark:border-zinc-800">
+      <ul className="flex flex-col divide-y divide-zinc-200 rounded-xl border border-zinc-200 bg-white text-sm dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-900">
         {lines.map((l) => (
           <li key={l.label} className="flex items-center justify-between gap-3 px-4 py-2">
             <span>
@@ -120,7 +120,7 @@ async function Reports() {
           <h2 className="text-sm font-semibold tracking-wide text-zinc-600 uppercase dark:text-zinc-400">
             Preço médio por trecho
           </h2>
-          <ul className="flex flex-col divide-y divide-zinc-200 rounded-xl border border-zinc-200 text-sm dark:divide-zinc-800 dark:border-zinc-800">
+          <ul className="flex flex-col divide-y divide-zinc-200 rounded-xl border border-zinc-200 bg-white text-sm dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-900">
             {routes.map((r) => (
               <li key={r.route} className="flex justify-between px-4 py-2">
                 <span>

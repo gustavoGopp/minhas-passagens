@@ -51,7 +51,7 @@ export function NewBookingFlow({ hasKey }: { hasKey: boolean }) {
             type="button"
             aria-selected={mode === m}
             onClick={() => setMode(m)}
-            className={`rounded-md px-2 py-2 ${mode === m ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900" : ""}`}
+            className={`rounded-md px-2 py-2 ${mode === m ? "bg-brand hover:bg-brand-strong dark:bg-brand-dark text-white dark:text-zinc-950" : ""}`}
           >
             {m === "texto" ? "Colar texto" : m === "print" ? "Print/PDF" : "Manual"}
           </button>
@@ -79,7 +79,7 @@ export function NewBookingFlow({ hasKey }: { hasKey: boolean }) {
           />
           <button
             disabled={busy}
-            className="rounded-lg bg-zinc-900 px-4 py-3 text-sm font-medium text-white disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900"
+            className="bg-brand hover:bg-brand-strong dark:bg-brand-dark rounded-xl px-4 py-3 text-sm font-medium text-white disabled:opacity-60 dark:text-zinc-950"
           >
             {busy ? "Lendo…" : "Ler com IA"}
           </button>
@@ -108,7 +108,7 @@ export function NewBookingFlow({ hasKey }: { hasKey: boolean }) {
           />
           <button
             disabled={busy}
-            className="rounded-lg bg-zinc-900 px-4 py-3 text-sm font-medium text-white disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900"
+            className="bg-brand hover:bg-brand-strong dark:bg-brand-dark rounded-xl px-4 py-3 text-sm font-medium text-white disabled:opacity-60 dark:text-zinc-950"
           >
             {busy ? "Lendo…" : "Ler com IA"}
           </button>

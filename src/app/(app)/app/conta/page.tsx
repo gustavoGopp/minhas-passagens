@@ -12,7 +12,7 @@ export default function ContaPage() {
       <Suspense fallback={null}>
         <AccountSummary />
       </Suspense>
-      <nav className="flex flex-col divide-y divide-zinc-200 rounded-xl border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
+      <nav className="flex flex-col divide-y divide-zinc-200 rounded-xl border border-zinc-200 bg-white dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-900">
         <Link className="px-4 py-3 text-sm" href="/app/notificacoes">
           Notificações
         </Link>

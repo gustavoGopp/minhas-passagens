@@ -3,7 +3,8 @@ import { getCurrentUser } from "@/lib/auth/current-user";
 import { getMailAccount, googleClient } from "@/lib/mail/accounts";
 import { disconnectGmailAction, toggleAutoSyncAction } from "./actions";
 
-const card = "flex flex-col gap-3 rounded-xl border border-zinc-200 p-4 dark:border-zinc-800";
+const card =
+  "flex flex-col gap-3 rounded-xl border border-zinc-200 p-4 dark:border-zinc-800 bg-white dark:bg-zinc-900";
 
 /** Mensagens da volta do consentimento do Google (?gmail=...). */
 const RESULT: Record<string, { ok: boolean; text: string }> = {
@@ -111,7 +112,7 @@ export async function GmailCard({ searchParams }: { searchParams: Promise<{ gmai
             // Link comum (não prefetch): a rota redireciona para o Google.
             <a
               href="/api/gmail/start"
-              className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white dark:bg-zinc-100 dark:text-zinc-900"
+              className="bg-brand hover:bg-brand-strong dark:bg-brand-dark rounded-xl px-4 py-2 text-sm font-medium text-white dark:text-zinc-950"
             >
               {account ? "Reconectar o Gmail" : "Conectar o Gmail"}
             </a>

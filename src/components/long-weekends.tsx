@@ -14,7 +14,7 @@ export function LongWeekends({ items }: { items: LongWeekendItem[] }) {
         Próximos feriadões
       </h2>
       {items.length ? (
-        <ul className="flex flex-col divide-y divide-zinc-200 rounded-xl border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
+        <ul className="flex flex-col divide-y divide-zinc-200 rounded-xl border border-zinc-200 bg-white dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-900">
           {items.map(({ lw, monitors }) => {
             const bridge = bridgeSuggestion(lw);
             return (
@@ -41,7 +41,7 @@ export function LongWeekends({ items }: { items: LongWeekendItem[] }) {
                       <input type="hidden" name="start" value={lw.start} />
                       <button
                         type="submit"
-                        className="rounded-lg bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white dark:bg-zinc-100 dark:text-zinc-900"
+                        className="bg-brand hover:bg-brand-strong dark:bg-brand-dark rounded-xl px-3 py-1.5 text-xs font-medium text-white dark:text-zinc-950"
                       >
                         Monitorar este feriadão
                       </button>

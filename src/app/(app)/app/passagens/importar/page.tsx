@@ -24,9 +24,10 @@ export const metadata = { title: "Importar do Gmail" };
 // As ações desta tela avançam a varredura por até ~40 s por chamada.
 export const maxDuration = 60;
 
-const card = "flex flex-col gap-3 rounded-xl border border-zinc-200 p-4 dark:border-zinc-800";
+const card =
+  "flex flex-col gap-3 rounded-xl border border-zinc-200 p-4 dark:border-zinc-800 bg-white dark:bg-zinc-900";
 const primary =
-  "self-start rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white dark:bg-zinc-100 dark:text-zinc-900";
+  "self-start rounded-xl bg-brand hover:bg-brand-strong px-4 py-2 text-sm font-medium text-white dark:bg-brand-dark dark:text-zinc-950";
 
 export default function ImportarPage() {
   return (

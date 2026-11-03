@@ -15,7 +15,7 @@ export default function NotFound() {
       <div className="flex flex-wrap gap-3">
         <Link
           href="/app"
-          className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white dark:bg-zinc-100 dark:text-zinc-900"
+          className="bg-brand hover:bg-brand-strong dark:bg-brand-dark rounded-xl px-4 py-2 text-sm font-medium text-white dark:text-zinc-950"
         >
           Ir para Passagens
         </Link>

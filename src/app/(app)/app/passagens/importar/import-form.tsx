@@ -28,7 +28,7 @@ export function ImportForm({ items }: { items: CandidateView[] }) {
   );
   return (
     <form action={action} className="flex flex-col gap-3">
-      <ul className="flex flex-col divide-y divide-zinc-200 rounded-xl border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
+      <ul className="flex flex-col divide-y divide-zinc-200 rounded-xl border border-zinc-200 bg-white dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-900">
         {items.map((c) => (
           <li key={c.id} className="flex items-start gap-3 px-4 py-3">
             <input
@@ -78,7 +78,7 @@ export function ImportForm({ items }: { items: CandidateView[] }) {
       <button
         type="submit"
         disabled={pending}
-        className="self-start rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900"
+        className="bg-brand hover:bg-brand-strong dark:bg-brand-dark self-start rounded-xl px-4 py-2 text-sm font-medium text-white disabled:opacity-60 dark:text-zinc-950"
       >
         {pending ? "Importando…" : "Importar marcadas"}
       </button>

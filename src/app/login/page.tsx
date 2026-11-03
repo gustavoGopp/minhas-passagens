@@ -53,7 +53,7 @@ async function LoginForm({
       )}
       <button
         type="submit"
-        className="rounded-lg bg-zinc-900 px-4 py-3 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+        className="bg-brand hover:bg-brand-strong dark:bg-brand-dark rounded-xl px-4 py-3 text-sm font-medium text-white hover:bg-zinc-700 dark:text-zinc-950 dark:hover:bg-zinc-300"
       >
         Entrar com Google
       </button>
