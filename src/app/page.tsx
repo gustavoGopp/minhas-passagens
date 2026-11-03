@@ -58,7 +58,10 @@ export default function Home() {
         >
           repositório no GitHub
         </a>
-        .
+        .{" "}
+        <Link className="underline underline-offset-4" href="/privacidade">
+          Política de Privacidade
+        </Link>
       </footer>
     </main>
   );
