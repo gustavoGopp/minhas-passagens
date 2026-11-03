@@ -3,10 +3,16 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { holidaysAround, overridesFromRows } from "@/lib/holidays";
 import { listDecryptedKeys } from "@/lib/integrations/repo";
 import { getConfig, setConfig } from "@/lib/notify/config";
+import { outcomeOf, retryDecision, type AttemptState, type Channel } from "@/lib/notify/delivery";
 import { deliver, loadChannelConfig, type Recipient } from "@/lib/notify/dispatch";
 import { dueEvents, isQuietHours, type NotifyEvent } from "@/lib/notify/events";
 import { holidayEvents, type HolidayMonitor } from "@/lib/notify/holiday-events";
-import { markPriceAlertsSent, pendingPriceEvents, runDueMonitors } from "@/lib/prices/jobs";
+import {
+  markPriceAlertsFailed,
+  markPriceAlertsSent,
+  pendingPriceEvents,
+  runDueMonitors,
+} from "@/lib/prices/jobs";
 import type { MonitorRule } from "@/lib/prices/types";
 import { holidayPreferences, type Profile } from "@/lib/profiles/repo";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -19,6 +25,10 @@ export interface TickResult {
   ok: true;
   sent: number;
   deferred: number;
+  /** Avisos cujos canais falharam (serão tentados de novo). */
+  failed: number;
+  /** Usuários pulados por erro neste tick (os demais seguem). */
+  userErrors: number;
   prices: { checked: number; failed: number; sent: number; deferred: number } | { error: string };
   retention: { observations: number; checks: number } | { error: string } | null;
   at: string;
@@ -139,40 +149,49 @@ export async function runTick(
     };
   };
 
+  let failed = 0;
+  let userErrors = 0;
   for (const p of profileRows) {
-    const userId = p.id;
-    const tz = p.timezone || "America/Sao_Paulo";
-    const userFlights = flightsBy.get(userId) ?? [];
-    const userBookings = bookingsBy.get(userId) ?? [];
-    const events: NotifyEvent[] = dueEvents({
-      bookings: userBookings,
-      flights: userFlights,
-      credits: creditsBy.get(userId) ?? [],
-      now,
-    });
+    // Cada usuário é isolado: um perfil com dado inválido ou um canal fora do ar
+    // não impede os avisos dos demais.
     try {
-      const localToday = utcToLocal(now, tz).slice(0, 10);
-      events.push(
-        ...holidayEvents({
-          bookings: userBookings,
-          flights: userFlights,
-          monitors: monitorsBy.get(userId) ?? [],
-          holidays: holidaysAround(
-            localToday,
-            holidayPreferences(p),
-            overridesFromRows(overridesBy.get(userId) ?? []),
-          ),
-          today: localToday,
-          now,
-        }),
-      );
+      const userId = p.id;
+      const tz = p.timezone || "America/Sao_Paulo";
+      const userFlights = flightsBy.get(userId) ?? [];
+      const userBookings = bookingsBy.get(userId) ?? [];
+      const events: NotifyEvent[] = dueEvents({
+        bookings: userBookings,
+        flights: userFlights,
+        credits: creditsBy.get(userId) ?? [],
+        now,
+      });
+      try {
+        const localToday = utcToLocal(now, tz).slice(0, 10);
+        events.push(
+          ...holidayEvents({
+            bookings: userBookings,
+            flights: userFlights,
+            monitors: monitorsBy.get(userId) ?? [],
+            holidays: holidaysAround(
+              localToday,
+              holidayPreferences(p),
+              overridesFromRows(overridesBy.get(userId) ?? []),
+            ),
+            today: localToday,
+            now,
+          }),
+        );
+      } catch {
+        // Feriados nunca derrubam os demais avisos.
+      }
+      if (!events.length) continue;
+      const r = await deliverNew(admin, userId, events, quietFor(p), recipientFor(p), cfg, now);
+      sent += r.sent;
+      deferred += r.deferred;
+      failed += r.failed;
     } catch {
-      // Feriados nunca derrubam os demais avisos.
+      userErrors++;
     }
-    if (!events.length) continue;
-    const r = await deliverNew(admin, userId, events, quietFor(p), recipientFor(p), cfg);
-    sent += r.sent;
-    deferred += r.deferred;
   }
 
   // Monitor de preços: checagens vencidas e avisos pendentes. Falhas aqui não
@@ -188,38 +207,91 @@ export async function runTick(
       (id) => profileBy.get(id)?.timezone ?? "America/Sao_Paulo",
     );
     for (const pe of pending) {
-      const p = profileBy.get(pe.userId);
-      if (pe.expired || !p) {
-        await markPriceAlertsSent(admin, pe.alertIds, [], now);
-        continue;
+      try {
+        const p = profileBy.get(pe.userId);
+        if (pe.expired || !p) {
+          await markPriceAlertsSent(admin, pe.alertIds, [], now);
+          continue;
+        }
+        if (retryDecision(pe.attempt, now) !== "attempt") continue;
+        if (quietFor(p)) {
+          priceDeferred++;
+          continue;
+        }
+        const outcome = outcomeOf(await deliver(recipientFor(p), pe.event, cfg));
+        if (outcome.kind === "sent") {
+          await markPriceAlertsSent(admin, pe.alertIds, outcome.channels, now);
+          await recordAttempt(
+            admin,
+            pe.userId,
+            pe.event,
+            { status: "sent", channels: outcome.channels },
+            1,
+            now,
+          );
+          priceSent++;
+        } else if (outcome.kind === "no_channel") {
+          // Preço é perecível: sem canal, o aviso é resolvido (fica a marca "sem canal").
+          await markPriceAlertsFailed(admin, pe.alertIds, pe.attempt, "sem canal", now, true);
+        } else {
+          await markPriceAlertsFailed(admin, pe.alertIds, pe.attempt, outcome.error, now, false);
+          failed++;
+        }
+      } catch {
+        userErrors++;
       }
-      if (quietFor(p)) {
-        priceDeferred++;
-        continue;
-      }
-      const channels = await deliver(recipientFor(p), pe.event, cfg);
-      await markPriceAlertsSent(admin, pe.alertIds, channels, now);
-      await logSent(admin, pe.userId, pe.event, channels);
-      priceSent++;
     }
     prices = { ...run, sent: priceSent, deferred: priceDeferred };
   } catch (e) {
     prices = { error: (e as Error).message };
   }
 
-  return { ok: true, sent, deferred, prices, retention: await dailyRetention(admin, now), at: now };
+  return {
+    ok: true,
+    sent,
+    deferred,
+    failed,
+    userErrors,
+    prices,
+    retention: await dailyRetention(admin, now),
+    at: now,
+  };
 }
 
-async function logSent(admin: SupabaseClient, userId: string, e: NotifyEvent, channels: string[]) {
-  await admin
-    .from("notification_log")
-    .upsert(
-      { user_id: userId, event_key: e.key, title: e.title, channels },
-      { onConflict: "user_id,event_key", ignoreDuplicates: true },
-    );
+type Attempt = { status: "sent"; channels: Channel[] } | { status: "failed"; error: string };
+
+/** Registra a tentativa em notification_log (um registro por evento, atualizado a cada tentativa). */
+async function recordAttempt(
+  admin: SupabaseClient,
+  userId: string,
+  e: NotifyEvent,
+  a: Attempt,
+  attempts: number,
+  now: string,
+) {
+  const { error } = await admin.from("notification_log").upsert(
+    {
+      user_id: userId,
+      event_key: e.key,
+      title: e.title,
+      channels: a.status === "sent" ? a.channels : [],
+      status: a.status,
+      attempts,
+      last_error: a.status === "failed" ? a.error : null,
+      last_attempt_at: now,
+      sent_at: now,
+    },
+    { onConflict: "user_id,event_key" },
+  );
+  // Sem registro, o aviso sairia de novo no próximo tick: melhor falhar alto.
+  if (error) throw new Error(`notification_log: ${error.message}`);
 }
 
-/** Envia os avisos ainda não registrados em notification_log (um por evento). */
+/**
+ * Envia os avisos ainda não entregues (um por evento). Só registra como enviado
+ * se algum canal funcionou; sem canal configurado não registra nada (o aviso sai
+ * quando houver canal, se ainda valer); com falha, tenta de novo com espera crescente.
+ */
 async function deliverNew(
   admin: SupabaseClient,
   userId: string,
@@ -227,31 +299,67 @@ async function deliverNew(
   quiet: boolean,
   recipient: Recipient,
   cfg: Awaited<ReturnType<typeof loadChannelConfig>>,
+  now: string,
 ) {
-  const { data: logged } = await admin
+  const { data: logged, error } = await admin
     .from("notification_log")
-    .select("event_key")
+    .select("event_key, status, attempts, last_attempt_at")
     .eq("user_id", userId)
     .in(
       "event_key",
       events.map((e) => e.key),
     );
-  const done = new Set((logged ?? []).map((l) => l.event_key as string));
+  // Sem saber o que já foi enviado, não envia nada (evita repetir tudo).
+  if (error) throw new Error(`notification_log: ${error.message}`);
+  const prev = new Map(
+    (logged ?? []).map((l) => [
+      l.event_key as string,
+      {
+        status: l.status as AttemptState["status"],
+        attempts: Number(l.attempts),
+        last_attempt_at: (l.last_attempt_at as string | null) ?? null,
+      },
+    ]),
+  );
   let sent = 0;
   let deferred = 0;
+  let failed = 0;
+  const seen = new Set<string>();
   for (const e of events) {
-    if (done.has(e.key)) continue;
-    done.add(e.key);
+    if (seen.has(e.key)) continue;
+    seen.add(e.key);
+    const before = prev.get(e.key);
+    if (retryDecision(before, now) !== "attempt") continue;
     if (quiet && !e.urgent) {
       deferred++;
       continue; // tenta de novo depois da janela silenciosa
     }
-    const channels = await deliver(recipient, e, cfg);
-    // Registra mesmo sem canal configurado, para não acumular avisos antigos.
-    await logSent(admin, userId, e, channels);
-    sent++;
+    const outcome = outcomeOf(await deliver(recipient, e, cfg));
+    if (outcome.kind === "no_channel") continue;
+    const attempts = (before?.attempts ?? 0) + 1;
+    if (outcome.kind === "sent") {
+      await recordAttempt(
+        admin,
+        userId,
+        e,
+        { status: "sent", channels: outcome.channels },
+        attempts,
+        now,
+      );
+      sent++;
+    } else {
+      await recordAttempt(
+        admin,
+        userId,
+        e,
+        { status: "failed", error: outcome.error },
+        attempts,
+        now,
+      );
+      failed++;
+    }
   }
-  return { sent, deferred };
+  return { sent, deferred, failed };
 }
 
 /**

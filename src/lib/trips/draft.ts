@@ -6,6 +6,8 @@ import { isLocalDateTime, localToUtc, utcToLocal } from "./time";
 
 /** Estado do formulário de passagem (strings, como digitado). */
 export interface LegDraft {
+  /** Id do trecho já salvo (edição); trechos novos não têm. */
+  id?: string;
   airline: string;
   flight_number: string;
   origin: string;
@@ -142,6 +144,7 @@ export function draftFromRows(b: BookingRow, flights: FlightRow[]): BookingDraft
     legs: [...flights]
       .sort((x, y) => x.departs_at.localeCompare(y.departs_at))
       .map((f) => ({
+        id: f.id,
         airline: f.airline,
         flight_number: f.flight_number ?? "",
         origin: f.origin,
@@ -162,6 +165,7 @@ const iata = z
   .refine((s) => /^[A-Z]{3}$/.test(s), "Use o código de 3 letras do aeroporto (ex.: SDU)");
 
 const legSchema = z.object({
+  id: z.uuid().optional(),
   airline: z.string().trim().min(1).max(10),
   flight_number: z.string().trim().max(10),
   origin: iata,
@@ -208,6 +212,7 @@ export function rowsFromDraft(d: z.infer<typeof draftSchema>) {
     notes: d.notes || null,
   };
   const flights = d.legs.map((l) => ({
+    id: l.id,
     airline: l.airline,
     flight_number: l.flight_number || null,
     origin: l.origin,
@@ -219,4 +224,54 @@ export function rowsFromDraft(d: z.infer<typeof draftSchema>) {
     passenger: l.passenger || null,
   }));
   return { booking, flights };
+}
+
+type FlightInput = ReturnType<typeof rowsFromDraft>["flights"][number];
+type FlightFields = Omit<FlightInput, "id">;
+
+export interface LegPlan {
+  update: {
+    id: string;
+    fields: FlightFields & { checkin_done?: false; ignore_missing_leg?: false };
+  }[];
+  insert: FlightFields[];
+  remove: string[];
+}
+
+/**
+ * Edição de passagem sem recriar trechos: mantém o id (e os avisos já enviados)
+ * de cada trecho que continua no formulário, preserva "check-in feito" e
+ * "cheguei por outro meio", e só os zera quando o voo muda (remarcação).
+ * Ids desconhecidos viram trechos novos.
+ */
+export function planLegChanges(
+  existing: Pick<FlightRow, "id" | "departs_at" | "flight_number" | "origin">[],
+  next: FlightInput[],
+): LegPlan {
+  const byId = new Map(existing.map((f) => [f.id, f]));
+  const kept = new Set<string>();
+  const plan: LegPlan = { update: [], insert: [], remove: [] };
+  for (const { id, ...fields } of next) {
+    const old = id ? byId.get(id) : undefined;
+    if (!old || kept.has(old.id)) {
+      plan.insert.push(fields);
+      continue;
+    }
+    kept.add(old.id);
+    const sameTime = Date.parse(old.departs_at) === Date.parse(fields.departs_at);
+    const moved =
+      !sameTime ||
+      (old.flight_number ?? null) !== fields.flight_number ||
+      old.origin !== fields.origin;
+    plan.update.push({
+      id: old.id,
+      fields: {
+        ...fields,
+        ...(moved ? { checkin_done: false } : {}),
+        ...(old.origin !== fields.origin ? { ignore_missing_leg: false } : {}),
+      },
+    });
+  }
+  plan.remove = existing.filter((f) => !kept.has(f.id)).map((f) => f.id);
+  return plan;
 }

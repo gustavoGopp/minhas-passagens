@@ -114,17 +114,10 @@ export function ProfileForm({
           />
         </label>
       </div>
-      <label className={labelClass}>
-        Guardar e-mails e prints originais por (dias)
-        <input
-          className={inputClass}
-          type="number"
-          min={0}
-          max={365}
-          name="original_retention_days"
-          defaultValue={profile.original_retention_days}
-        />
-      </label>
+      <p className="text-sm text-zinc-600 dark:text-zinc-400">
+        O texto, print ou PDF que você envia para ler com IA não fica guardado: vai só para a
+        extração, com a sua chave da Anthropic, e é descartado. Ficam só os dados da passagem.
+      </p>
       {state.error ? (
         <p role="alert" className="text-sm text-red-700 dark:text-red-300">
           {state.error}

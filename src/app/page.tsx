@@ -3,7 +3,7 @@ import Link from "next/link";
 const features = [
   {
     title: "Minhas passagens",
-    text: "Registre compras por e-mail encaminhado, texto colado, print ou manualmente. Próximo voo em destaque e avisos de check-in, conflito, trecho faltando e compra duplicada.",
+    text: "Registre compras colando o e-mail de confirmação, enviando um print ou PDF, ou à mão. Próximo voo em destaque e avisos de check-in, conflito, trecho faltando e compra duplicada.",
   },
   {
     title: "Monitor de preços",

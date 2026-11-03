@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { getConfig } from "@/lib/notify/config";
+import { MAX_ATTEMPTS } from "@/lib/notify/delivery";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { savePrefsAction, telegramUnlinkAction } from "./actions";
 import { PushToggle } from "./push-toggle";
@@ -38,7 +39,7 @@ async function Settings() {
       .maybeSingle(),
     supabase
       .from("notification_log")
-      .select("title, channels, sent_at")
+      .select("title, channels, sent_at, status, attempts")
       .eq("user_id", user.id)
       .order("sent_at", { ascending: false })
       .limit(10),
@@ -140,9 +141,11 @@ async function Settings() {
                     timeZone: "America/Sao_Paulo",
                   }).format(new Date(l.sent_at))}{" "}
                   ·{" "}
-                  {(l.channels as string[]).length
-                    ? (l.channels as string[]).join(", ")
-                    : "nenhum canal ativo"}
+                  {l.status === "failed"
+                    ? Number(l.attempts) >= MAX_ATTEMPTS
+                      ? `não entregue (${l.attempts} tentativas)`
+                      : `falhou, tentando de novo (${l.attempts}ª tentativa)`
+                    : (l.channels as string[]).join(", ")}
                 </span>
               </li>
             ))}

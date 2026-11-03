@@ -6,12 +6,18 @@ export async function sendTelegram(
   chatId: number | string,
   text: string,
 ): Promise<boolean> {
-  const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ chat_id: chatId, text, disable_web_page_preview: true }),
-  });
-  return res.ok;
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ chat_id: chatId, text, disable_web_page_preview: true }),
+      signal: AbortSignal.timeout(10_000),
+    });
+    return res.ok;
+  } catch {
+    // Rede fora ou tempo esgotado: o aviso é tentado de novo depois.
+    return false;
+  }
 }
 
 export interface PushSub {
@@ -31,7 +37,7 @@ export async function sendPush(
     await webpush.sendNotification(
       { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
       JSON.stringify(payload),
-      { vapidDetails: vapid, TTL: 6 * 3600 },
+      { vapidDetails: vapid, TTL: 6 * 3600, timeout: 10_000 },
     );
     return "ok";
   } catch (e) {

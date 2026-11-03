@@ -8,7 +8,7 @@ Organize as passagens aéreas que você comprou, acompanhe preços de rotas que 
 
 Três funcionalidades, pensadas para quem viaja com frequência (o caso de origem é a ponte aérea Rio–São Paulo semanal):
 
-1. **Minhas passagens.** Registre compras por e-mail encaminhado, texto colado, print ou cadastro manual. O app extrai voo, localizador, horários e valor com a API da Anthropic e pede sua revisão. Mostra o próximo voo em destaque e avisa sobre check-in, conflito de horário, trecho faltando, compra duplicada, cancelamentos, reembolsos e créditos. Gastos por mês, companhia, canal de compra e rota.
+1. **Minhas passagens.** Registre compras colando o e-mail de confirmação, enviando print/PDF ou cadastrando à mão. O app extrai voo, localizador, horários e valor com a API da Anthropic e pede sua revisão. Mostra o próximo voo em destaque e avisa sobre check-in, conflito de horário, trecho faltando, compra duplicada, cancelamentos, reembolsos e créditos. Gastos por mês, companhia, canal de compra e rota.
 2. **Monitor de preços.** Defina rotas, período (regra recorrente como "toda segunda até 8h", datas fixas, janelas flexíveis ou feriado prolongado) e preço-alvo. O sistema consulta periodicamente uma API de preços e avisa por Telegram, push ou e-mail quando o preço atinge ou se aproxima do alvo. Histórico por rota.
 3. **Feriados.** Nacionais (fixos e móveis), estaduais e municipais selecionáveis, e religiosos (judaicos, com início ao pôr do sol). O app destaca feriados perto de viagens e de datas monitoradas e sugere emendas.
 
@@ -20,7 +20,7 @@ Três funcionalidades, pensadas para quem viaja com frequência (o caso de orige
 4. Em **Calendário**, veja os feriados do ano, oculte os que não importam e adicione os da sua cidade.
 5. Em **Passagens → + Nova**, cole o e-mail de confirmação, envie um print/PDF ou preencha à mão; confira e salve. O próximo voo aparece em destaque.
 6. Em **Mais → Notificações**, conecte o Telegram e/ou ative o push no celular (no iPhone, primeiro adicione o app à Tela de Início).
-7. O monitor de preços chega nos próximos marcos (veja `docs/STATUS.md`).
+7. Em **Preços**, crie os monitores (há um atalho para a ponte aérea semanal) e cole em **Mais → Integrações** a chave da fonte de preços. Os avisos chegam pelos canais de Notificações.
 
 ## Como rodar localmente
 
@@ -80,13 +80,14 @@ O projeto roda inteiro em planos gratuitos. Cada passo abaixo leva poucos minuto
 1. Faça um fork deste repositório e importe-o em https://vercel.com (plano Hobby). O build é detectado automaticamente.
 2. Em **Settings → Environment Variables**, cadastre:
 
-| Variável                        | Valor                                           |
-| ------------------------------- | ----------------------------------------------- |
-| `NEXT_PUBLIC_APP_URL`           | Opcional. O login usa a URL real de cada acesso |
-| `NEXT_PUBLIC_SUPABASE_URL`      | URL do projeto Supabase                         |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | chave pública do Supabase                       |
-| `SUPABASE_SERVICE_ROLE_KEY`     | chave secreta do Supabase (só servidor)         |
-| `BYOK_MASTER_KEY`               | 32 bytes em base64; gere com o comando abaixo   |
+| Variável                        | Valor                                             |
+| ------------------------------- | ------------------------------------------------- |
+| `NEXT_PUBLIC_APP_URL`           | Opcional. O login usa a URL real de cada acesso   |
+| `NEXT_PUBLIC_SUPABASE_URL`      | URL do projeto Supabase                           |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | chave pública do Supabase                         |
+| `SUPABASE_SERVICE_ROLE_KEY`     | chave secreta do Supabase (só servidor)           |
+| `BYOK_MASTER_KEY`               | 32 bytes em base64; gere com o comando abaixo     |
+| `CRON_SECRET`                   | Segredo do vigia diário; gere com o mesmo comando |
 
 ```bash
 openssl rand -base64 32
@@ -100,7 +101,7 @@ Guarde a `BYOK_MASTER_KEY` com cuidado: ela cifra as chaves de API de todos os u
 
 Cada pessoa cola as próprias chaves (Anthropic, API de preços) na tela de Integrações. Elas ficam cifradas no banco com AES-256-GCM e nunca vão ao navegador. O uso é cobrado na conta de quem forneceu a chave.
 
-Os marcos seguintes (notificações, monitor de preços e e-mail de entrada) terão seus próprios passos documentados aqui conforme forem entregues.
+Notificações, agendador e backup têm os passos em [`docs/STATUS.md`](docs/STATUS.md). Sem `CRON_SECRET`, o vigia diário (`/api/jobs/watchdog`) fica desligado e responde 503.
 
 ## Arquitetura em uma frase
 
@@ -110,7 +111,7 @@ Next.js 16 (App Router, TypeScript, Tailwind) na Vercel; Supabase para login com
 
 - Nenhum segredo no repositório. `.env.example` só lista nomes.
 - Dados de cada usuário isolados por Row Level Security.
-- E-mails e prints originais são apagados 30 dias após a extração; ficam só os dados estruturados.
+- O texto, print ou PDF enviado para extração não é guardado: vai só para a API da Anthropic, com a chave de quem enviou, e é descartado. Ficam só os dados estruturados da passagem.
 - Você pode exportar e apagar sua conta a qualquer momento.
 
 ## Créditos de dados

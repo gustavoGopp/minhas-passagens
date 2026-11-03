@@ -41,10 +41,20 @@ describe("dueEvents", () => {
   });
 
   it("primeiro aviso quando abre (48h Gol), segundo nas últimas 24h", () => {
-    expect(run("2026-11-08T22:00:00.000Z").map((e) => e.key)).toEqual(["checkin-open:f1"]);
+    expect(run("2026-11-08T22:00:00.000Z").map((e) => e.key)).toEqual([
+      "checkin-open:f1:2026-11-10T21:00:00.000Z",
+    ]);
     const last = run("2026-11-10T00:00:00.000Z");
-    expect(last.map((e) => [e.key, e.urgent])).toEqual([["checkin-24h:f1", true]]);
+    expect(last.map((e) => [e.key, e.urgent])).toEqual([
+      ["checkin-24h:f1:2026-11-10T21:00:00.000Z", true],
+    ]);
     expect(last[0].body).toContain("voegol.com.br");
+  });
+
+  it("remarcação (novo horário) gera aviso novo; o mesmo horário mantém a chave", () => {
+    const moved = { ...f, departs_at: "2026-11-11T21:00:00.000Z" };
+    const a = run("2026-11-09T22:30:00.000Z", moved).map((e) => e.key);
+    expect(a).toEqual(["checkin-open:f1:2026-11-11T21:00:00.000Z"]);
   });
 
   it("não avisa se o check-in já foi feito", () => {

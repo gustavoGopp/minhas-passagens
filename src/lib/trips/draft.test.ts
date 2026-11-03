@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   draftFromExtraction,
   draftFromRows,
+  planLegChanges,
   draftSchema,
   emptyDraft,
   rowsFromDraft,
@@ -115,5 +116,64 @@ describe("rascunho de passagem", () => {
     );
     expect(d.amount).toBe("300,00");
     expect(d.legs[0].departure_local).toBe("2026-11-12T18:00");
+  });
+});
+
+describe("planLegChanges (editar sem recriar trechos)", () => {
+  const old = [
+    { id: "f1", departs_at: "2026-11-09T09:20:00.000Z", flight_number: "LA3901", origin: "SDU" },
+    { id: "f2", departs_at: "2026-11-12T21:30:00.000Z", flight_number: "LA3920", origin: "CGH" },
+  ];
+  const leg = (o: Partial<Parameters<typeof planLegChanges>[1][number]>) => ({
+    id: undefined as string | undefined,
+    airline: "LA",
+    flight_number: "LA3901",
+    origin: "SDU",
+    destination: "CGH",
+    departs_at: "2026-11-09T09:20:00.000Z",
+    arrives_at: null,
+    passenger: null,
+    ...o,
+  });
+
+  it("mudar só a observação mantém ids e não zera o check-in", () => {
+    const plan = planLegChanges(old, [
+      leg({ id: "f1" }),
+      leg({
+        id: "f2",
+        flight_number: "LA3920",
+        origin: "CGH",
+        destination: "SDU",
+        departs_at: "2026-11-12T21:30:00Z",
+      }),
+    ]);
+    expect(plan.insert).toEqual([]);
+    expect(plan.remove).toEqual([]);
+    expect(plan.update.map((u) => u.id)).toEqual(["f1", "f2"]);
+    expect(plan.update.every((u) => !("checkin_done" in u.fields))).toBe(true);
+  });
+
+  it("remarcação zera o check-in; trocar a origem zera também 'cheguei por outro meio'", () => {
+    const plan = planLegChanges(old, [
+      leg({ id: "f1", departs_at: "2026-11-10T09:20:00.000Z" }),
+      leg({ id: "f2", origin: "GRU", flight_number: "LA3920", departs_at: old[1].departs_at }),
+    ]);
+    expect(plan.update[0].fields).toMatchObject({ checkin_done: false });
+    expect("ignore_missing_leg" in plan.update[0].fields).toBe(false);
+    expect(plan.update[1].fields).toMatchObject({ checkin_done: false, ignore_missing_leg: false });
+  });
+
+  it("trecho novo é inserido, trecho tirado é apagado e id estranho vira novo", () => {
+    const plan = planLegChanges(old, [leg({ id: "f1" }), leg({ id: "outro" }), leg({})]);
+    expect(plan.update.map((u) => u.id)).toEqual(["f1"]);
+    expect(plan.insert).toHaveLength(2);
+    expect(plan.insert.every((f) => !("id" in f))).toBe(true);
+    expect(plan.remove).toEqual(["f2"]);
+  });
+
+  it("o mesmo id repetido no formulário não atualiza duas vezes", () => {
+    const plan = planLegChanges(old, [leg({ id: "f1" }), leg({ id: "f1" })]);
+    expect(plan.update).toHaveLength(1);
+    expect(plan.insert).toHaveLength(1);
   });
 });
