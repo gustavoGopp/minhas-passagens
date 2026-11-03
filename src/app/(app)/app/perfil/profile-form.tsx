@@ -91,7 +91,7 @@ export function ProfileForm({
             </option>
           ))}
         </select>
-        <span className="text-xs font-normal text-zinc-500 dark:text-zinc-400">
+        <span className="text-xs font-normal text-zinc-600 dark:text-zinc-400">
           Sua cidade não está na lista? Cadastre os feriados dela no Calendário.
         </span>
       </label>

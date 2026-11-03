@@ -13,16 +13,29 @@ export function AddHolidayForm({ defaultDate }: { defaultDate: string }) {
   return (
     <form action={action} className="flex flex-col gap-2">
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-[auto_1fr]">
-        <input className={inputClass} type="date" name="date" defaultValue={defaultDate} required />
+        <input
+          className={inputClass}
+          type="date"
+          name="date"
+          aria-label="Data do feriado"
+          defaultValue={defaultDate}
+          required
+        />
         <input
           className={inputClass}
           name="name"
+          aria-label="Nome do feriado"
           placeholder="Nome (ex.: Aniversário de Niterói)"
           required
         />
       </div>
       <div className="flex gap-2">
-        <select className={`${inputClass} flex-1`} name="kind" defaultValue="holiday">
+        <select
+          className={`${inputClass} flex-1`}
+          name="kind"
+          aria-label="Tipo"
+          defaultValue="holiday"
+        >
           <option value="holiday">Feriado</option>
           <option value="optional">Ponto facultativo</option>
           <option value="observance">Só uma data</option>

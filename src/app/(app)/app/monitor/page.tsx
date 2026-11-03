@@ -27,7 +27,7 @@ export default function MonitorPage() {
           Novo
         </Link>
       </header>
-      <Suspense fallback={<p className="text-sm text-zinc-500">Carregando…</p>}>
+      <Suspense fallback={<p className="text-sm text-zinc-600 dark:text-zinc-400">Carregando…</p>}>
         <Monitors />
       </Suspense>
     </main>
@@ -107,7 +107,7 @@ async function Monitors() {
                       {t.last != null ? formatBRL(t.last) : "—"}
                       {t.direction ? (
                         <span
-                          className="ml-1 text-sm text-zinc-500"
+                          className="ml-1 text-sm text-zinc-600 dark:text-zinc-400"
                           aria-label={
                             t.direction === "down"
                               ? "caiu"
@@ -121,10 +121,10 @@ async function Monitors() {
                       ) : null}
                     </span>
                   </div>
-                  <span className="text-xs text-zinc-500">
+                  <span className="text-xs text-zinc-600 dark:text-zinc-400">
                     {m.origin} → {m.destination} · {describeRule(m.rule)}
                   </span>
-                  <span className="text-xs text-zinc-500">
+                  <span className="text-xs text-zinc-600 dark:text-zinc-400">
                     Alvo {formatBRL(m.target_cents)} · {FREQUENCY_LABEL[m.frequency]} ·{" "}
                     {targets.length} datas · ≈ {q.perMonth} req/mês
                   </span>
@@ -137,12 +137,12 @@ async function Monitors() {
           })}
         </ul>
       ) : (
-        <p className="text-sm text-zinc-500">Nenhum monitor ainda.</p>
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">Nenhum monitor ainda.</p>
       )}
 
       <section className="flex flex-col gap-3 rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
         <h2 className="font-semibold">Atalho: ponte aérea semanal</h2>
-        <p className="text-xs text-zinc-500">
+        <p className="text-xs text-zinc-600 dark:text-zinc-400">
           Cria dois monitores: SDU → CGH (segunda até 8h ou domingo a partir de 12h) e CGH → SDU
           (quinta a partir de 18h ou sexta até 13h), Azul, Gol e LATAM, só voos diretos, 8 semanas,
           checagem diária às 7h.
@@ -150,7 +150,7 @@ async function Monitors() {
         <PonteAereaForm />
       </section>
 
-      <p className="text-xs text-zinc-500">
+      <p className="text-xs text-zinc-600 dark:text-zinc-400">
         <Link href="/app/monitor/piloto" className="underline underline-offset-4">
           Piloto de cobertura do Travelpayouts
         </Link>

@@ -12,7 +12,7 @@ export const metadata = { title: "Editar monitor" };
 export default function EditarMonitorPage({ params }: { params: Promise<{ id: string }> }) {
   return (
     <main className="flex flex-col gap-6">
-      <Suspense fallback={<p className="text-sm text-zinc-500">Carregando…</p>}>
+      <Suspense fallback={<p className="text-sm text-zinc-600 dark:text-zinc-400">Carregando…</p>}>
         <Edit params={params} />
       </Suspense>
     </main>
@@ -35,7 +35,7 @@ async function Edit({ params }: { params: Promise<{ id: string }> }) {
     <>
       <Link
         href={`/app/monitor/${id}`}
-        className="text-sm text-zinc-500 underline underline-offset-4"
+        className="text-sm text-zinc-600 underline underline-offset-4 dark:text-zinc-400"
       >
         ← Monitor
       </Link>

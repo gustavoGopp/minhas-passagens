@@ -21,7 +21,7 @@ export default function GastosPage() {
   return (
     <main className="flex flex-col gap-6">
       <h1 className="text-2xl font-semibold tracking-tight">Gastos</h1>
-      <Suspense fallback={<p className="text-sm text-zinc-500">Carregando…</p>}>
+      <Suspense fallback={<p className="text-sm text-zinc-600 dark:text-zinc-400">Carregando…</p>}>
         <Reports />
       </Suspense>
     </main>
@@ -32,17 +32,20 @@ function Table({ title, lines, note }: { title: string; lines: SpendLine[]; note
   if (!lines.length) return null;
   return (
     <section className="flex flex-col gap-2">
-      <h2 className="text-sm font-semibold tracking-wide text-zinc-500 uppercase">{title}</h2>
+      <h2 className="text-sm font-semibold tracking-wide text-zinc-600 uppercase dark:text-zinc-400">
+        {title}
+      </h2>
       <ul className="flex flex-col divide-y divide-zinc-200 rounded-xl border border-zinc-200 text-sm dark:divide-zinc-800 dark:border-zinc-800">
         {lines.map((l) => (
           <li key={l.label} className="flex items-center justify-between gap-3 px-4 py-2">
             <span>
-              {l.label} <span className="text-xs text-zinc-500">({l.count})</span>
+              {l.label}{" "}
+              <span className="text-xs text-zinc-600 dark:text-zinc-400">({l.count})</span>
             </span>
             <span className="text-right tabular-nums">
               {formatBRL(l.cents)}
               {l.miles ? (
-                <span className="block text-xs text-zinc-500">
+                <span className="block text-xs text-zinc-600 dark:text-zinc-400">
                   {l.miles.toLocaleString("pt-BR")} milhas
                 </span>
               ) : null}
@@ -50,7 +53,7 @@ function Table({ title, lines, note }: { title: string; lines: SpendLine[]; note
           </li>
         ))}
       </ul>
-      {note ? <p className="text-xs text-zinc-500">{note}</p> : null}
+      {note ? <p className="text-xs text-zinc-600 dark:text-zinc-400">{note}</p> : null}
     </section>
   );
 }
@@ -62,17 +65,21 @@ async function Reports() {
     listCredits(user.id),
   ]);
   if (!bookings.length)
-    return <p className="text-sm text-zinc-500">Cadastre passagens para ver os gastos.</p>;
+    return (
+      <p className="text-sm text-zinc-600 dark:text-zinc-400">
+        Cadastre passagens para ver os gastos.
+      </p>
+    );
   const months = spendByMonth(bookings, credits).slice(0, 12);
   const routes = averageByRoute(bookings, flights);
   return (
     <>
       <section className="flex flex-col gap-2">
-        <h2 className="text-sm font-semibold tracking-wide text-zinc-500 uppercase">
+        <h2 className="text-sm font-semibold tracking-wide text-zinc-600 uppercase dark:text-zinc-400">
           Por mês da compra
         </h2>
         <table className="w-full text-sm">
-          <thead className="text-xs text-zinc-500">
+          <thead className="text-xs text-zinc-600 dark:text-zinc-400">
             <tr>
               <th className="py-1 text-left font-normal">Mês</th>
               <th className="py-1 text-right font-normal">Pago</th>
@@ -87,7 +94,7 @@ async function Reports() {
                 <td className="py-2 text-right">
                   {formatBRL(m.cents)}
                   {m.miles ? (
-                    <span className="block text-xs text-zinc-500">
+                    <span className="block text-xs text-zinc-600 dark:text-zinc-400">
                       {m.miles.toLocaleString("pt-BR")} mi
                     </span>
                   ) : null}
@@ -100,7 +107,7 @@ async function Reports() {
             ))}
           </tbody>
         </table>
-        <p className="text-xs text-zinc-500">
+        <p className="text-xs text-zinc-600 dark:text-zinc-400">
           Inclui passagens canceladas (o dinheiro saiu); reembolsos entram no mês em que foram
           recebidos.
         </p>
@@ -110,20 +117,21 @@ async function Reports() {
       <Table title="Pessoal x trabalho" lines={spendByTag(bookings)} />
       {routes.length ? (
         <section className="flex flex-col gap-2">
-          <h2 className="text-sm font-semibold tracking-wide text-zinc-500 uppercase">
+          <h2 className="text-sm font-semibold tracking-wide text-zinc-600 uppercase dark:text-zinc-400">
             Preço médio por trecho
           </h2>
           <ul className="flex flex-col divide-y divide-zinc-200 rounded-xl border border-zinc-200 text-sm dark:divide-zinc-800 dark:border-zinc-800">
             {routes.map((r) => (
               <li key={r.route} className="flex justify-between px-4 py-2">
                 <span>
-                  {r.route} <span className="text-xs text-zinc-500">({r.legs})</span>
+                  {r.route}{" "}
+                  <span className="text-xs text-zinc-600 dark:text-zinc-400">({r.legs})</span>
                 </span>
                 <span className="tabular-nums">{formatBRL(r.avgCents)}</span>
               </li>
             ))}
           </ul>
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs text-zinc-600 dark:text-zinc-400">
             Valor da reserva dividido igualmente entre os trechos; emissões com milhas ficam de
             fora.
           </p>

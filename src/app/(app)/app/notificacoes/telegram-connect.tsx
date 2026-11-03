@@ -26,7 +26,7 @@ export function TelegramConnect() {
         </form>
       )}
       {state.url ? (
-        <p className="text-xs text-zinc-500">
+        <p className="text-xs text-zinc-600 dark:text-zinc-400">
           O link vale por 15 minutos. Depois de tocar em Iniciar, recarregue esta página.
         </p>
       ) : null}

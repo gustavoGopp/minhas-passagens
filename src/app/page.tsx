@@ -19,7 +19,7 @@ export default function Home() {
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-10 px-4 py-12 sm:py-20">
       <header className="flex flex-col gap-3">
-        <p className="text-sm font-medium tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
+        <p className="text-sm font-medium tracking-wide text-zinc-600 uppercase dark:text-zinc-400">
           Em construção
         </p>
         <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Minhas Passagens</h1>
@@ -50,7 +50,7 @@ export default function Home() {
         </Link>
       </p>
 
-      <footer className="text-sm text-zinc-500 dark:text-zinc-400">
+      <footer className="text-sm text-zinc-600 dark:text-zinc-400">
         Acompanhe o andamento no{" "}
         <a
           className="font-medium text-zinc-900 underline underline-offset-4 dark:text-zinc-100"

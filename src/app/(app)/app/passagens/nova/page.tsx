@@ -9,7 +9,7 @@ export default function NovaPassagemPage() {
   return (
     <main className="flex flex-col gap-4">
       <h1 className="text-2xl font-semibold tracking-tight">Nova passagem</h1>
-      <Suspense fallback={<p className="text-sm text-zinc-500">Carregando…</p>}>
+      <Suspense fallback={<p className="text-sm text-zinc-600 dark:text-zinc-400">Carregando…</p>}>
         <Flow />
       </Suspense>
     </main>

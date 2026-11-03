@@ -20,7 +20,7 @@ export function IntegrationCard({
     ? current.status === "active"
       ? { label: `Ativa ${current.key_hint}`, cls: "text-green-700 dark:text-green-300" }
       : { label: `Precisa validar ${current.key_hint}`, cls: "text-amber-700 dark:text-amber-300" }
-    : { label: "Não configurada", cls: "text-zinc-500 dark:text-zinc-400" };
+    : { label: "Não configurada", cls: "text-zinc-600 dark:text-zinc-400" };
 
   return (
     <article className="flex flex-col gap-3 rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
@@ -33,7 +33,7 @@ export function IntegrationCard({
           {status.label}
         </span>
       </div>
-      <p className="text-xs leading-5 text-zinc-500 dark:text-zinc-400">
+      <p className="text-xs leading-5 text-zinc-600 dark:text-zinc-400">
         {info.help}{" "}
         <a
           className="underline underline-offset-2"
@@ -79,7 +79,7 @@ export function IntegrationCard({
           <input type="hidden" name="provider" value={provider} />
           <button
             type="submit"
-            className="text-xs text-zinc-500 underline underline-offset-2 dark:text-zinc-400"
+            className="text-xs text-zinc-600 underline underline-offset-2 dark:text-zinc-400"
           >
             Remover chave
           </button>

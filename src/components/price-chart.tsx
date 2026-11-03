@@ -15,7 +15,9 @@ export function PriceChart({
 }) {
   if (points.length < 2) {
     return (
-      <p className="text-sm text-zinc-500">O gráfico aparece depois de duas checagens com preço.</p>
+      <p className="text-sm text-zinc-600 dark:text-zinc-400">
+        O gráfico aparece depois de duas checagens com preço.
+      </p>
     );
   }
   const W = 600;

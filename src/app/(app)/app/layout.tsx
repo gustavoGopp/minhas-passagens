@@ -10,7 +10,11 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         <AppNav />
       </Suspense>
       <div className="mx-auto w-full max-w-2xl flex-1 px-4 pt-6 pb-24 sm:pb-10">
-        <Suspense fallback={<p className="text-sm text-zinc-500">Carregando sua conta…</p>}>
+        <Suspense
+          fallback={
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">Carregando sua conta…</p>
+          }
+        >
           <UserGate>{children}</UserGate>
         </Suspense>
       </div>
