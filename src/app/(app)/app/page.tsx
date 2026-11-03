@@ -13,6 +13,7 @@ import {
 import { checkinRule, checkinState } from "@/lib/trips/checkin";
 import { listCredits } from "@/lib/trips/credits-repo";
 import { spendByMonth } from "@/lib/trips/reports";
+import { reviewItems } from "@/lib/trips/review";
 import { computeAlerts, type TripAlert } from "@/lib/trips/rules";
 import { formatInZone } from "@/lib/trips/time";
 import { airportTimeZone } from "@/lib/airports";
@@ -63,6 +64,7 @@ async function Trips() {
     homeCity: ctx.profile?.home_city ?? null,
   });
   const byId = new Map(bookings.map((b) => [b.id, b]));
+  const toReview = reviewItems({ bookings, flights, now }).length;
   const upcoming = upcomingFlights(flights, byId, now);
   const past = pastFlights(flights, now).slice(0, 10);
   const thisMonth = spendByMonth(bookings, credits).find((m) => m.month === now.slice(0, 7));
@@ -95,7 +97,21 @@ async function Trips() {
 
   return (
     <>
-      {alerts.length ? <Alerts alerts={alerts} /> : null}
+      {toReview ? (
+        <Link
+          href="/app/conferir"
+          className="flex items-center justify-between gap-3 rounded-xl bg-amber-100 px-4 py-3 text-sm font-medium text-amber-950 dark:bg-amber-900 dark:text-amber-50"
+        >
+          <span>
+            {toReview} {toReview === 1 ? "passagem para conferir" : "passagens para conferir"} (data
+            ou repetida)
+          </span>
+          <span className="underline underline-offset-4">Conferir agora →</span>
+        </Link>
+      ) : null}
+      {alerts.filter((a) => a.type !== "check_date").length ? (
+        <Alerts alerts={alerts.filter((a) => a.type !== "check_date")} />
+      ) : null}
       {next ? (
         <section className="flex flex-col gap-3 rounded-2xl bg-zinc-900 p-5 text-white dark:bg-zinc-100 dark:text-zinc-900">
           <div className="flex items-center justify-between text-xs tracking-wide uppercase opacity-80">
