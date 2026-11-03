@@ -67,6 +67,40 @@ export async function listMessageIds(
   return { ids: msgs.map((m) => m.id), nextPageToken: (j.nextPageToken as string) ?? null };
 }
 
+/**
+ * E-mails adicionados desde `startHistoryId` (sincronização incremental).
+ * Lança GmailError(404) quando o id é antigo demais: aí refaz a busca recente.
+ */
+export async function listHistory(
+  token: string,
+  startHistoryId: string,
+  pageToken: string | null,
+  f: FetchLike = fetch,
+): Promise<{ ids: string[]; nextPageToken: string | null; historyId: string | null }> {
+  const p = new URLSearchParams({
+    startHistoryId,
+    historyTypes: "messageAdded",
+    maxResults: "500",
+  });
+  if (pageToken) p.set("pageToken", pageToken);
+  const j = await get(`/history?${p}`, token, f);
+  const ids = new Set<string>();
+  for (const h of (j.history as
+    { messagesAdded?: { message?: { id?: string } }[] }[] | undefined) ?? []) {
+    for (const a of h.messagesAdded ?? []) if (a.message?.id) ids.add(a.message.id);
+  }
+  return {
+    ids: [...ids],
+    nextPageToken: (j.nextPageToken as string) ?? null,
+    historyId: (j.historyId as string) ?? null,
+  };
+}
+
+/** Busca recente (quando o histórico expirou): as mesmas consultas, só os últimos dias. */
+export function recentQueries(days = 30): string[] {
+  return scanQueries().map((q) => q.replace(/newer_than:\d+y/, `newer_than:${days}d`));
+}
+
 interface Part {
   mimeType?: string;
   filename?: string;

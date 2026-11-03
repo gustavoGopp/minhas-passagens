@@ -7,6 +7,7 @@ import { disconnectGmail } from "@/lib/mail/accounts";
 import { getProvider } from "@/lib/prices/providers";
 import { checkMonitorsSoon } from "@/lib/prices/repo";
 import { sendEmailDetailed } from "@/lib/notify/channels";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   PROVIDERS,
@@ -94,6 +95,16 @@ export async function removeApiKeyAction(formData: FormData) {
   const user = await getCurrentUser();
   const provider = z.enum(PROVIDERS).parse(formData.get("provider"));
   await removeIntegration(user.id, provider);
+  revalidatePath("/app/integracoes");
+}
+
+/** Liga ou desliga a leitura automática dos e-mails novos (sincronização). */
+export async function toggleAutoSyncAction(formData: FormData) {
+  const user = await getCurrentUser();
+  await createSupabaseAdminClient()
+    .from("mail_accounts")
+    .update({ auto_sync: formData.get("value") === "on" })
+    .eq("user_id", user.id);
   revalidatePath("/app/integracoes");
 }
 

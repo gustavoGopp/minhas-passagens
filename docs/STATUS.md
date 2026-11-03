@@ -231,3 +231,11 @@ Monitor internacional e conversão de moeda; WhatsApp; compra no app; raspagem d
 - **Revisão em lote:** a deduplicação (`src/lib/mail/dedupe.ts`) é recalculada contra as passagens atuais. Classifica cada candidato em nova, remarcação (mesmo localizador, outro horário: troca só os trechos e mantém valores), cancelamento ou já cadastrada (vem desmarcada). Inclui o link "Abrir no Gmail".
 - **Dados:** `mail_scans`, `mail_messages` (só id, data, domínio do remetente, tipo e estado: **sem assunto nem corpo**) e `import_candidates` (rascunho até a decisão; apagado 30 dias depois). RLS só de leitura para o dono; tudo na exportação e na cascata. Migração `20261108000000_gmail_importacao.sql`.
 - Testes com um Supabase falso em memória (`src/test/fake-supabase.ts`) e Gmail, Google e Anthropic falsos: listagem sem duplicar, filtro sem IA, confirmação antes de gastar, só metadados no banco, extração única sob concorrência, cancelamento e chave recusada. Um bug achado assim: o pré-filtro gravava "skip", que o CHECK do banco recusaria.
+
+## Bloco 2c: sincronização contínua do Gmail (2026-11-03)
+
+- Na confirmação da primeira varredura, o dono marca (vem marcado) "ler sozinho os e-mails novos de viagem". Em Integrações → Gmail dá para ligar e desligar (`mail_accounts.auto_sync`).
+- A cada 30 min, o tick lê `history.list` desde o `history_id`, separa só os ids ainda não vistos e cria uma varredura `kind = 'sync'`. Ela usa o mesmo pré-filtro e a mesma extração, **sem pedir confirmação de novo** (o dono já autorizou), e o `history_id` avança. Com o histórico expirado (404), refaz a busca dos últimos 30 dias.
+- Quando a sincronização deixa candidatos pendentes, sai o aviso "Passagens novas no Gmail" (um por sincronização), que leva à tela de revisão.
+- `gmail.sql` passou a mostrar a leitura automática, os minutos desde a última sincronização e as contagens de varreduras, e-mails e candidatos.
+- Migração `20261109000000_gmail_sync.sql`.

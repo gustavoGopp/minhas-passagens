@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { getMailAccount, googleClient } from "@/lib/mail/accounts";
-import { disconnectGmailAction } from "./actions";
+import { disconnectGmailAction, toggleAutoSyncAction } from "./actions";
 
 const card = "flex flex-col gap-3 rounded-xl border border-zinc-200 p-4 dark:border-zinc-800";
 
@@ -87,6 +87,22 @@ export async function GmailCard({ searchParams }: { searchParams: Promise<{ gmai
             ? ` · acesso confirmado em ${fmt(account.last_refresh_ok_at)}`
             : ""}
         </p>
+      ) : null}
+
+      {account?.status === "active" ? (
+        <form action={toggleAutoSyncAction} className="flex flex-wrap items-center gap-2 text-sm">
+          <input type="hidden" name="value" value={account.auto_sync ? "off" : "on"} />
+          <span className="text-zinc-700 dark:text-zinc-300">
+            Leitura automática dos e-mails novos:{" "}
+            <strong>{account.auto_sync ? "ligada (a cada 30 min)" : "desligada"}</strong>
+            {account.auto_sync && account.last_sync_at
+              ? ` · última em ${fmt(account.last_sync_at)}`
+              : ""}
+          </span>
+          <button type="submit" className="underline underline-offset-4">
+            {account.auto_sync ? "Desligar" : "Ligar"}
+          </button>
+        </form>
       ) : null}
 
       <div className="flex flex-wrap items-center gap-3">

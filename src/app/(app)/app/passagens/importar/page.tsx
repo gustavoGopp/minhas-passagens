@@ -158,7 +158,14 @@ async function ImportState() {
             da Anthropic. Propaganda e newsletters já ficaram de fora, sem custo.
           </p>
           <div className="flex flex-wrap items-center gap-3">
-            <form action={confirmScanAction}>
+            <form action={confirmScanAction} className="flex flex-col gap-3">
+              <label className="flex items-start gap-2 text-sm text-zinc-700 dark:text-zinc-300">
+                <input type="checkbox" name="auto_sync" defaultChecked className="mt-1" />
+                <span>
+                  Depois, ler sozinho os e-mails novos de viagem (a cada 30 min, centavos por mês na
+                  sua chave). Dá para desligar em Integrações.
+                </span>
+              </label>
               <button type="submit" className={primary} disabled={!hasAnthropic}>
                 Confirmar e ler com IA
               </button>

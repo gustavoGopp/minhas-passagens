@@ -3,7 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { holidaysAround, overridesFromRows } from "@/lib/holidays";
 import { listDecryptedKeys } from "@/lib/integrations/repo";
 import { gmailHealth } from "@/lib/mail/accounts";
-import { advanceRunningScans } from "@/lib/mail/scan";
+import { advanceRunningScans, syncAccounts, syncFoundEvent } from "@/lib/mail/scan";
 import { gmailExpiredEvent } from "@/lib/mail/status";
 import { getConfig, setConfig } from "@/lib/notify/config";
 import { outcomeOf, retryDecision, type AttemptState, type Channel } from "@/lib/notify/delivery";
@@ -39,6 +39,8 @@ export interface TickResult {
   retention: { observations: number; checks: number } | { error: string } | null;
   /** Varreduras do Gmail avançadas neste tick (com o tempo que sobrou). */
   mailScans: { advanced: number } | { error: string };
+  /** Sincronização contínua do Gmail (contas lidas e e-mails novos na fila). */
+  mailSync: { synced: number; found: number } | { error: string };
   /** Renovação diária do acesso ao Gmail (null se não há cliente OAuth configurado). */
   gmail: { checked: number; expired: number; failed: number } | { error: string } | null;
   at: string;
@@ -142,6 +144,9 @@ export async function runTick(
   const subsBy = group(
     subs.data as { id: string; user_id: string; endpoint: string; p256dh: string; auth: string }[],
   );
+  const syncFoundBy = await syncFoundEvents(admin, now).catch(
+    () => new Map<string, NotifyEvent[]>(),
+  );
   const expiredMailBy = new Map(
     (mail.error ? [] : (mail.data ?? [])).map((m) => [
       m.user_id as string,
@@ -217,6 +222,7 @@ export async function runTick(
       }
       const expiredMail = expiredMailBy.get(userId);
       if (expiredMail) events.push(gmailExpiredEvent(expiredMail, now));
+      events.push(...(syncFoundBy.get(userId) ?? []));
       if (!events.length) continue;
       const r = await deliverNew(admin, userId, events, quietFor(p), recipientFor(p), cfg, now);
       sent += r.sent;
@@ -281,6 +287,11 @@ export async function runTick(
     prices = { error: (e as Error).message };
   }
 
+  const mailSync: TickResult["mailSync"] = await syncAccounts(
+    admin,
+    now,
+    startedAt + MAIL_BUDGET_MS,
+  ).catch((e: Error) => ({ error: e.message }));
   const mailScans: TickResult["mailScans"] = await advanceRunningScans(
     admin,
     startedAt + MAIL_BUDGET_MS,
@@ -295,6 +306,7 @@ export async function runTick(
     prices,
     retention,
     mailScans,
+    mailSync,
     gmail,
     at: now,
   };
@@ -443,4 +455,33 @@ async function dailyRetention(
   } catch (e) {
     return { error: (e as Error).message };
   }
+}
+
+/**
+ * Avisos "Passagens novas no Gmail": sincronizações concluídas nos últimos 2 dias
+ * que deixaram candidatos pendentes (um aviso por sincronização).
+ */
+async function syncFoundEvents(admin: SupabaseClient, now: string) {
+  const since = new Date(Date.parse(now) - 2 * 86_400_000).toISOString();
+  const out = new Map<string, NotifyEvent[]>();
+  const { data: scans, error } = await admin
+    .from("mail_scans")
+    .select("id, user_id, created_at")
+    .eq("kind", "sync")
+    .eq("status", "review")
+    .gte("finished_at", since)
+    .limit(50);
+  if (error) return out;
+  for (const sc of scans ?? []) {
+    const { data } = await admin
+      .from("import_candidates")
+      .select("id")
+      .eq("user_id", sc.user_id)
+      .eq("status", "pending")
+      .gte("created_at", sc.created_at);
+    if (!data?.length) continue;
+    const userId = sc.user_id as string;
+    out.set(userId, [...(out.get(userId) ?? []), syncFoundEvent(sc.id as string, data.length)]);
+  }
+  return out;
 }
