@@ -25,6 +25,8 @@ export interface LongWeekend {
   start: string;
   end: string;
   names: string[];
+  /** Dias úteis do bloco que viram folga por emenda (ex.: segunda antes de feriado na terça). */
+  bridges: string[];
 }
 
 /** Dia que conta como folga para montar feriado prolongado. */
@@ -64,13 +66,110 @@ export function longWeekends(holidays: HolidayEvent[], from: string, to: string)
     while (isOff(addDays(d, 1))) d = addDays(d, 1);
     const end = d;
     const blockNames: string[] = [];
-    for (let x = start; x <= end; x = addDays(x, 1)) blockNames.push(...(names.get(x) ?? []));
+    const bridges: string[] = [];
+    for (let x = start; x <= end; x = addDays(x, 1)) {
+      blockNames.push(...(names.get(x) ?? []));
+      if (!names.has(x) && weekday(x) !== 0 && weekday(x) !== 6) bridges.push(x);
+    }
     if (diffDays(start, end) >= 2 && blockNames.length && end >= from && start <= to) {
-      result.push({ start, end, names: [...new Set(blockNames)] });
+      result.push({ start, end, names: [...new Set(blockNames)], bridges });
     }
     d = addDays(end, 1);
   }
   return result;
+}
+
+/** Feriadões que começam depois de hoje e dentro das próximas `weeks` semanas. */
+export function upcomingLongWeekends(
+  holidays: HolidayEvent[],
+  today: string,
+  weeks = 8,
+): LongWeekend[] {
+  const last = addDays(today, weeks * 7);
+  return longWeekends(holidays, addDays(today, 1), last).filter(
+    (lw) => lw.start > today && lw.start <= last,
+  );
+}
+
+/** Dias corridos de folga do feriadão. */
+export function longWeekendDays(lw: LongWeekend): number {
+  return diffDays(lw.start, lw.end) + 1;
+}
+
+/** "sex 20/11 a dom 22/11". */
+export function describeLongWeekend(lw: LongWeekend): string {
+  const d = (iso: string) => `${WEEKDAYS_PT[weekday(iso)].slice(0, 3)} ${fmt(iso)}`;
+  return `${d(lw.start)} a ${d(lw.end)}`;
+}
+
+/** Sugestão de emenda em texto, ou null se o feriadão não pede dia útil de folga. */
+export function bridgeSuggestion(lw: LongWeekend): string | null {
+  if (!lw.bridges.length) return null;
+  const days = lw.bridges.map((b) => `${WEEKDAYS_PT[weekday(b)]} ${fmt(b)}`).join(" e ");
+  return `Emende ${days} e folgue ${longWeekendDays(lw)} dias seguidos.`;
+}
+
+export interface LongWeekendLeg {
+  leg: "outbound" | "return";
+  name: string;
+  origin: string;
+  destination: string;
+  rule: Extract<MonitorRule, { kind: "dates" }>;
+}
+
+function slotOf(
+  rule: { slots: readonly { weekday: number; from: string; to: string }[] },
+  wd: number,
+) {
+  const s = rule.slots.find((x) => x.weekday === wd);
+  if (!s) throw new Error(`Janela da ponte aérea sem o dia ${wd}`);
+  return { from: s.from, to: s.to };
+}
+
+/**
+ * Monitores de ida e volta de um feriadão com as janelas da ponte aérea:
+ * ida SP → RJ na véspera à noite (janela de quinta) ou no 1º dia de manhã (janela de sexta);
+ * volta RJ → SP no último dia à tarde (janela de domingo) ou no dia seguinte cedo (janela de segunda).
+ */
+export function longWeekendPlan(lw: LongWeekend): LongWeekendLeg[] {
+  const go = PONTE_AEREA.spRio;
+  const back = PONTE_AEREA.rioSp;
+  const eve = addDays(lw.start, -1);
+  const after = addDays(lw.end, 1);
+  const label = `Feriadão ${fmt(lw.start)}`;
+  return [
+    {
+      leg: "outbound",
+      name: `${label} · ida`,
+      origin: go.origin,
+      destination: go.destination,
+      rule: {
+        kind: "dates",
+        ranges: [
+          { start: eve, end: eve, ...slotOf(go.rule, 4) },
+          { start: lw.start, end: lw.start, ...slotOf(go.rule, 5) },
+        ],
+      },
+    },
+    {
+      leg: "return",
+      name: `${label} · volta`,
+      origin: back.origin,
+      destination: back.destination,
+      rule: {
+        kind: "dates",
+        ranges: [
+          { start: lw.end, end: lw.end, ...slotOf(back.rule, 0) },
+          { start: after, end: after, ...slotOf(back.rule, 1) },
+        ],
+      },
+    },
+  ];
+}
+
+/** Horizonte (semanas) que cobre até o dia seguinte ao fim do feriadão. */
+export function horizonFor(lw: LongWeekend, today: string): number {
+  return Math.min(52, Math.max(1, Math.ceil(diffDays(today, addDays(lw.end, 1)) / 7)));
 }
 
 /**
