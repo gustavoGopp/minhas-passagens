@@ -2,9 +2,9 @@
 -- Gmail. Só a conta do dono (usuário mais antigo) e só contagens: domínio do
 -- remetente × ano × etapa do pré-filtro, candidatos da importação, passagens por
 -- companhia e ano, e a situação das varreduras.
--- Privacidade (os logs do Actions são públicos): o domínio só aparece pelo nome
--- quando é de companhia, agência ou programa de milhas; webmail vira "webmail" e
--- os demais "outros". Sem assunto, corpo, localizador, ids ou texto de erro.
+-- Privacidade (os logs do Actions são públicos): só aparece o nome de empresas de
+-- uma lista fechada (companhias, agências grandes, programas de milhas); webmail
+-- vira "webmail" e todo o resto "outros". Sem assunto, corpo, localizador, ids ou texto de erro.
 with dono as (
   select id from auth.users order by created_at limit 1
 ),
@@ -14,8 +14,10 @@ msgs as (
       when m.sender_domain is null then '(sem domínio)'
       when m.sender_domain ~* '(^|\.)(gmail|googlemail|hotmail|outlook|live|msn|yahoo|icloud|me|uol|bol|terra|ig)\.com(\.br)?$'
         then 'webmail'
-      when m.sender_domain ~* '(azul|voegol|latam|smiles|milhas|decolar|zupper|viajanet|submarino|livelo|cvc|booking\.com|expedia|hurb|kayak|skyscanner|passagens|viagens|copaair|aerolineas|avianca|flytap|amadeus|sabre|esferas|iupp)'
-        then lower(m.sender_domain)
+      -- Lista fechada: só o nome da empresa conhecida aparece, nunca o domínio. Um
+      -- agente de viagens pequeno ou qualquer outro remetente vira "outros".
+      when lower(m.sender_domain) ~ '(^|\.)(azul|voeazul|tudoazul|voegol|gol|smiles|latam|latamairlines|latampass|decolar|zupper|viajanet|submarinoviagens|123milhas|maxmilhas|livelo|esfera|iupp|cvc|booking|expedia|hurb|kayak|skyscanner|copaair|aerolineas|avianca|flytap|tap)\.(com|com\.br|net|aero|pt)$'
+        then (regexp_match(lower(m.sender_domain), '(^|\.)(azul|voeazul|tudoazul|voegol|gol|smiles|latam|latamairlines|latampass|decolar|zupper|viajanet|submarinoviagens|123milhas|maxmilhas|livelo|esfera|iupp|cvc|booking|expedia|hurb|kayak|skyscanner|copaair|aerolineas|avianca|flytap|tap)\.(com|com\.br|net|aero|pt)$'))[2]
       else 'outros'
     end as dominio,
     coalesce(extract(year from m.received_at at time zone 'America/Sao_Paulo')::int::text, '(sem data)') as ano,

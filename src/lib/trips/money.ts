@@ -39,3 +39,24 @@ export function parseMoney(text: string): MoneyResult {
   const cents = Number(whole.replace(/\./g, "")) * 100 + Number(decimals.padEnd(2, "0"));
   return Number.isSafeInteger(cents) ? { ok: true, cents } : invalid;
 }
+
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  R$: "BRL",
+  US$: "USD",
+  U$S: "USD",
+  U$: "USD",
+  "€": "EUR",
+  "£": "GBP",
+};
+
+/**
+ * Código ISO da moeda a partir do que a extração devolveu. Vazio ou ausente
+ * vale real (compra feita no Brasil). Símbolos comuns são traduzidos. O que
+ * não der para entender devolve "" e nunca vira real: o dono escolhe.
+ */
+export function currencyCode(input: string | null | undefined): string {
+  const up = (input ?? "").trim().toUpperCase();
+  if (up === "") return "BRL";
+  if (/^[A-Z]{3}$/.test(up)) return up;
+  return CURRENCY_SYMBOLS[up] ?? "";
+}

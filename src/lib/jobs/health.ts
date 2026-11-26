@@ -100,6 +100,49 @@ export function latestBackupAt(response: unknown): string | null {
   return latest == null ? null : new Date(latest).toISOString();
 }
 
+export type BackupCheck =
+  | { status: "desconhecido" }
+  | { status: "em dia"; last: string }
+  | { status: "atrasado"; last: string | null };
+
+/**
+ * Lê a resposta do GitHub. Sem a lista de cópias (limite de uso, erro,
+ * repositório privado) o resultado é "desconhecido": não dá para afirmar que
+ * não existe cópia, então isso nunca gera o alerta de backup atrasado.
+ */
+export function backupCheck(response: unknown, nowIso: string): BackupCheck {
+  if (!Array.isArray((response as { artifacts?: unknown } | null)?.artifacts)) {
+    return { status: "desconhecido" };
+  }
+  const last = latestBackupAt(response);
+  if (last && !isBackupStale(last, nowIso)) return { status: "em dia", last };
+  return { status: "atrasado", last };
+}
+
+/** Dias seguidos sem conseguir conferir o backup antes de avisar o dono. */
+export const BACKUP_UNKNOWN_DAYS = 3;
+
+/** Faz mais de BACKUP_UNKNOWN_DAYS que a conferência não dá certo (null = começa a contar agora). */
+export function backupCheckOverdue(
+  lastChecked: string | null | undefined,
+  nowIso: string,
+): boolean {
+  const m = minutesSince(lastChecked, nowIso);
+  return m != null && m > BACKUP_UNKNOWN_DAYS * 24 * 60;
+}
+
+/** Texto do e-mail quando o vigia não consegue conferir o backup há dias. */
+export function unknownBackupEmail(repo: string) {
+  return {
+    subject: "Minhas Passagens: não consegui conferir o backup",
+    text: [
+      `Há mais de ${BACKUP_UNKNOWN_DAYS} dias não consegui conferir no GitHub se o backup semanal está sendo feito.`,
+      "Pode ser só uma falha de acesso, mas vale olhar:",
+      `https://github.com/${repo}/actions/workflows/supabase-backup.yml`,
+    ].join("\n"),
+  };
+}
+
 /** Backup atrasado: nenhuma cópia, ou a mais recente passou do limite de dias. */
 export function isBackupStale(
   lastBackup: string | null | undefined,

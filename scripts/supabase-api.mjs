@@ -1,9 +1,12 @@
 // Cliente mínimo da Management API do Supabase, usado pelos workflows do GitHub Actions.
-// Requer SUPABASE_ACCESS_TOKEN (segredo dos ambientes producao-rotina e producao-risco
-// do GitHub, restritos à main) e SUPABASE_PROJECT_REF.
+// Requer SUPABASE_ACCESS_TOKEN (nos workflows vem do segredo PROD_SUPABASE_ACCESS_TOKEN,
+// que só existe nos ambientes producao-rotina e producao-risco do GitHub, restritos à
+// main) e SUPABASE_PROJECT_REF.
 //
 // ATENÇÃO: o repositório é público e os logs do Actions também. Nada que saia
 // daqui pode conter dados pessoais (e-mails, nomes, tokens, chaves).
+
+import { detalheSeguro } from "./supabase-diagnostico-lib.mjs";
 
 const API = "https://api.supabase.com/v1";
 
@@ -12,7 +15,7 @@ export function config() {
   const ref = process.env.SUPABASE_PROJECT_REF;
   if (!token)
     throw new Error(
-      "Falta SUPABASE_ACCESS_TOKEN. Ele fica nos ambientes do GitHub e só chega a execuções a partir da main.",
+      "Falta a credencial do Supabase. Ela fica no segredo PROD_SUPABASE_ACCESS_TOKEN dos ambientes producao-rotina e producao-risco do GitHub e só chega a execuções a partir da main.",
     );
   if (!ref) throw new Error("Defina SUPABASE_PROJECT_REF.");
   return { token, ref };
@@ -26,7 +29,8 @@ async function call(method, path, body) {
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   const text = await res.text();
-  if (!res.ok) throw new Error(`${method} ${path} → ${res.status}: ${text.slice(0, 500)}`);
+  // O detalhe do erro vai para um log público: passa pela trava de dado pessoal.
+  if (!res.ok) throw new Error(`${method} ${path} → ${res.status}: ${detalheSeguro(text)}`);
   return text ? JSON.parse(text) : null;
 }
 

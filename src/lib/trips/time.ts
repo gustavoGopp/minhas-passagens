@@ -66,6 +66,15 @@ export function localToUtc(local: string, timeZone: string): string {
   return new Date(guess).toISOString();
 }
 
+/**
+ * A hora local existe nesse fuso? Na entrada do horário de verão o relógio pula
+ * uma hora (em Nova York, 02:30 de 14/03/2027 não existe).
+ */
+export function existsInZone(local: string, timeZone: string): boolean {
+  if (localDateTimeProblem(local)) return false;
+  return utcToLocal(localToUtc(local, timeZone), timeZone) === local;
+}
+
 /** Instante UTC → "YYYY-MM-DDTHH:mm" no fuso informado (para preencher formulários). */
 export function utcToLocal(iso: string, timeZone: string): string {
   const ms = Date.parse(iso);

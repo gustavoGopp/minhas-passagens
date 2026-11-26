@@ -26,12 +26,16 @@ select json_build_object(
     from pg_class c join pg_namespace n on n.oid = c.relnamespace
     where n.nspname = 'public' and c.relkind in ('r', 'p') and not c.relrowsecurity
   ),
-  'grants_anon_authenticated', (
+  'acesso_por_papel', (
     select json_agg(g order by g.tabela) from (
-      select table_name as tabela, grantee, string_agg(privilege_type, ',' order by privilege_type) as privilegios
-      from information_schema.role_table_grants
-      where table_schema = 'public' and grantee in ('anon', 'authenticated')
-      group by table_name, grantee
+      select c.relname as tabela,
+        has_table_privilege('anon', c.oid, 'select') as visitante_le,
+        has_table_privilege('authenticated', c.oid, 'select') as logado_le,
+        has_table_privilege('authenticated', c.oid, 'insert') as logado_insere,
+        has_table_privilege('authenticated', c.oid, 'update') as logado_altera,
+        has_table_privilege('authenticated', c.oid, 'delete') as logado_apaga
+      from pg_class c join pg_namespace n on n.oid = c.relnamespace
+      where n.nspname = 'public' and c.relkind in ('r', 'p')
     ) g
   ),
   'storage_buckets', (

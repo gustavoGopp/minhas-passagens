@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { airportTimeZone, isKnownAirport, listAirports } from "@/lib/airports";
-import type { ExtractedBooking } from "@/lib/extract/schema";
+import { validationProblems, type ExtractedBooking } from "@/lib/extract/schema";
 import {
   draftFromExtraction,
   draftSchema,
@@ -12,7 +12,7 @@ import {
   type BookingRow,
 } from "./draft";
 import { averageByRoute, otherCurrencyTotals, spendByMonth } from "./reports";
-import { formatMoney } from "./summary";
+import { formatMoney, monthlySpend } from "./summary";
 
 // Regras aprovadas pelo dono em 26/11/2026 ("avisar e pedir conferência").
 // Origem: auditoria A2.3 (voo internacional era gravado com fuso de São Paulo e
@@ -68,7 +68,7 @@ describe("aeroportos estrangeiros", () => {
     expect(r.success).toBe(false);
     if (!r.success) {
       expect(r.error.issues[0].message).toBe(
-        "Não conheço o aeroporto KEF. Informe os horários no horário de Brasília e marque “Conferi os horários”.",
+        "Não conheço o aeroporto KEF. Informe os horários de KEF no horário de Brasília e marque “Conferi os horários”.",
       );
     }
     const conferido = draftSchema.safeParse({ ...fora, confirm_unknown_airports: true });
@@ -137,11 +137,48 @@ describe("valor em outra moeda", () => {
     expect(booking.amount_cents).toBe(50000);
   });
 
-  it("sem moeda informada, ou com código estranho, vale real", () => {
+  it("sem moeda informada vale real; rascunho antigo sem o campo também", () => {
     expect(draftFromExtraction({ ...extraido, currency: null }, "text").currency).toBe("BRL");
-    expect(draftFromExtraction({ ...extraido, currency: "dólares" }, "text").currency).toBe("BRL");
     const antigo = draftSchema.safeParse({ ...rascunho({}), currency: undefined });
     expect(antigo.success && antigo.data.currency).toBe("BRL");
+  });
+
+  // Revisão de 26/11: moeda fora do padrão virava real em silêncio.
+  it("entende os símbolos comuns de moeda", () => {
+    const moeda = (c: string) => draftFromExtraction({ ...extraido, currency: c }, "text").currency;
+    expect(moeda("US$")).toBe("USD");
+    expect(moeda("u$s")).toBe("USD");
+    expect(moeda("€")).toBe("EUR");
+    expect(moeda("£")).toBe("GBP");
+    expect(moeda("R$")).toBe("BRL");
+    expect(moeda(" eur ")).toBe("EUR");
+  });
+
+  it("moeda que não dá para entender nunca vira real: fica para o dono escolher", () => {
+    const d = draftFromExtraction({ ...extraido, currency: "dólares" }, "text");
+    expect(d.currency).toBe("");
+    const r = draftSchema.safeParse(d);
+    expect(r.success).toBe(false);
+    if (!r.success) expect(r.error.issues[0].message).toBe("Escolha a moeda do valor");
+    expect(
+      validationProblems({ warnings: [], bookings: [{ ...extraido, currency: "dólares" }] }),
+    ).toContain("moeda não reconhecida");
+    expect(validationProblems({ warnings: [], bookings: [extraido] })).toEqual([]);
+  });
+
+  it("milhas contam mesmo quando a taxa foi paga em outra moeda", () => {
+    const emissao = linha({
+      id: "m",
+      channel: "miles",
+      amount_cents: null,
+      miles: 50000,
+      taxes_cents: 8000,
+      currency: "USD",
+    });
+    const mes = spendByMonth([linha({ id: "a", amount_cents: 30000 }), emissao])[0];
+    expect(mes.cents).toBe(30000);
+    expect(mes.miles).toBe(50000);
+    expect(monthlySpend([emissao])[0]).toEqual({ month: "2026-11", cents: 0, miles: 50000 });
   });
 
   it("não entra na soma em reais e aparece numa linha à parte", () => {

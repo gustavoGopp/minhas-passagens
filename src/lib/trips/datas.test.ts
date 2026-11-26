@@ -122,6 +122,52 @@ describe("datas e trechos da passagem", () => {
     ).toBe("A chegada está antes da partida");
   });
 
+  // Revisão de 26/11: com a chegada preenchida, uma partida inválida lançava
+  // exceção em vez de devolver a mensagem.
+  it("partida inválida com chegada preenchida: recusa com mensagem, sem quebrar", () => {
+    expect(mensagem(rascunho({}, { departure_local: "2026-02-31T10:00" }))).toBe(
+      "Esta data não existe",
+    );
+    expect(mensagem(rascunho({}, { departure_local: "" }))).toBe("Informe data e hora de partida");
+    expect(mensagem(rascunho({}, { arrival_local: "2026-11-10T25:99" }))).toBe("Hora inválida");
+  });
+
+  it("recusa hora que não existe no aeroporto por causa do horário de verão", () => {
+    // Em Nova York, em 14/03/2027 o relógio pula de 02:00 para 03:00.
+    expect(
+      mensagem(
+        rascunho(
+          { purchased_on: "2027-01-10" },
+          {
+            origin: "JFK",
+            destination: "GRU",
+            departure_local: "2027-03-14T02:30",
+            arrival_local: "",
+          },
+        ),
+      ),
+    ).toBe("Esta hora não existe nesse aeroporto (mudança de horário de verão)");
+    expect(
+      mensagem(
+        rascunho(
+          { purchased_on: "2027-01-10" },
+          {
+            origin: "JFK",
+            destination: "GRU",
+            departure_local: "2027-03-14T03:30",
+            arrival_local: "",
+          },
+        ),
+      ),
+    ).toBeNull();
+  });
+
+  it("a data de compra padrão é o dia de hoje em Brasília, não em UTC", () => {
+    // 22h de 10/06 em Brasília já é 11/06 em UTC.
+    expect(emptyDraft("2026-06-11T01:00:00.000Z").purchased_on).toBe("2026-06-10");
+    expect(emptyDraft("2026-06-11T04:00:00.000Z").purchased_on).toBe("2026-06-11");
+  });
+
   it("aponta compra depois do voo (o formulário recusa; a importação manda para Conferir)", () => {
     expect(purchaseAfterFlight(rascunho({ purchased_on: "2026-12-01" }))).toBe(true);
     expect(purchaseAfterFlight(rascunho({ purchased_on: "2026-11-10" }))).toBe(false);

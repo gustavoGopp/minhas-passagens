@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  backupCheck,
+  backupCheckOverdue,
   dailyDue,
   intervalElapsed,
   isBackupStale,
@@ -9,6 +11,7 @@ import {
   retentionCutoffs,
   staleBackupEmail,
   staleTickEmail,
+  unknownBackupEmail,
 } from "./health";
 
 const now = "2026-11-03T12:00:00.000Z";
@@ -76,8 +79,30 @@ describe("vigia do backup", () => {
     ]);
     expect(latestBackupAt(resposta)).toBe("2026-10-25T06:29:00.000Z");
     expect(latestBackupAt(artefatos([]))).toBeNull();
-    expect(latestBackupAt({ message: "API rate limit exceeded" })).toBeNull();
-    expect(latestBackupAt(null)).toBeNull();
+  });
+
+  // Revisão de 26/11: resposta sem a lista (limite de uso, erro) virava
+  // "não há nenhuma cópia" e mandaria um alerta falso.
+  it("resposta sem a lista de cópias é 'não consegui conferir', não 'sem cópia'", () => {
+    expect(backupCheck({ message: "API rate limit exceeded" }, now)).toEqual({
+      status: "desconhecido",
+    });
+    expect(backupCheck(null, now)).toEqual({ status: "desconhecido" });
+    expect(backupCheck(artefatos([]), now)).toEqual({ status: "atrasado", last: null });
+    expect(backupCheck(artefatos([{ created_at: "2026-11-01T06:31:00Z" }]), now)).toEqual({
+      status: "em dia",
+      last: "2026-11-01T06:31:00.000Z",
+    });
+    expect(backupCheck(artefatos([{ created_at: "2026-10-20T06:31:00Z" }]), now).status).toBe(
+      "atrasado",
+    );
+  });
+
+  it("avisa quando passa 3 dias sem conseguir conferir o backup", () => {
+    expect(backupCheckOverdue("2026-11-02T12:00:00.000Z", now)).toBe(false); // conferiu ontem
+    expect(backupCheckOverdue("2026-10-30T11:00:00.000Z", now)).toBe(true); // há mais de 3 dias
+    expect(backupCheckOverdue(null, now)).toBe(false); // nunca conferiu: começa a contar agora
+    expect(unknownBackupEmail("dono/repo").text).toContain("não consegui conferir");
   });
 
   it("considera atrasado sem cópia ou com a última há mais de 8 dias", () => {

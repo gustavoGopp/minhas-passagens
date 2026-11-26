@@ -51,10 +51,11 @@ export interface MonthSpend {
 export function monthlySpend(bookings: BookingLike[]): MonthSpend[] {
   const map = new Map<string, MonthSpend>();
   for (const b of bookings) {
-    if (b.status === "cancelled" || !b.purchased_on || b.currency !== "BRL") continue;
+    if (b.status === "cancelled" || !b.purchased_on) continue;
+    if (b.currency !== "BRL" && !b.miles) continue;
     const month = b.purchased_on.slice(0, 7);
     const cur = map.get(month) ?? { month, cents: 0, miles: 0 };
-    cur.cents += (b.amount_cents ?? 0) + (b.taxes_cents ?? 0);
+    if (b.currency === "BRL") cur.cents += (b.amount_cents ?? 0) + (b.taxes_cents ?? 0);
     cur.miles += b.miles ?? 0;
     map.set(month, cur);
   }

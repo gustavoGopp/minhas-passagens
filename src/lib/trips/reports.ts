@@ -14,10 +14,11 @@ const cashOf = (b: BookingRow) => (b.amount_cents ?? 0) + (b.taxes_cents ?? 0);
 function group(bookings: BookingRow[], keyOf: (b: BookingRow) => string): SpendLine[] {
   const map = new Map<string, SpendLine>();
   for (const b of bookings) {
-    if (b.status === "cancelled" || b.currency !== "BRL") continue;
+    // Dinheiro só em reais; milhas contam sempre (a taxa pode ter sido paga em outra moeda).
+    if (b.status === "cancelled" || (b.currency !== "BRL" && !b.miles)) continue;
     const label = keyOf(b);
     const cur = map.get(label) ?? { label, cents: 0, miles: 0, count: 0 };
-    cur.cents += cashOf(b);
+    cur.cents += b.currency === "BRL" ? cashOf(b) : 0;
     cur.miles += b.miles ?? 0;
     cur.count += 1;
     map.set(label, cur);
@@ -70,10 +71,10 @@ export function spendByMonth(bookings: BookingRow[], credits: CreditRow[] = []):
     return cur;
   };
   for (const b of bookings) {
-    if (!b.purchased_on || b.currency !== "BRL") continue;
+    if (!b.purchased_on || (b.currency !== "BRL" && !b.miles)) continue;
     // Canceladas continuam no mês da compra: o dinheiro saiu; o reembolso entra separado.
     const m = get(b.purchased_on.slice(0, 7));
-    m.cents += cashOf(b);
+    m.cents += b.currency === "BRL" ? cashOf(b) : 0;
     m.miles += b.miles ?? 0;
   }
   for (const c of credits) {

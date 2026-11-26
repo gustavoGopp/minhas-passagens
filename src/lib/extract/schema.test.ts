@@ -72,6 +72,32 @@ describe("validação da extração", () => {
     expect(validationProblems(antes)).toEqual(["chegada antes da partida"]);
   });
 
+  // Revisão de 26/11.
+  it("não compara horários quando não sabe o fuso de um dos aeroportos", () => {
+    const voo = structuredClone(ok);
+    Object.assign(voo.bookings[0].flights[0], {
+      origin_iata: "LAX",
+      destination_iata: "SEA",
+      departure_local: "2026-11-09T20:00",
+      arrival_local: "2026-11-09T22:50",
+    });
+    expect(validationProblems(voo)).toEqual([]);
+    const cruzaData = structuredClone(ok);
+    Object.assign(cruzaData.bookings[0].flights[0], {
+      origin_iata: "SYD",
+      destination_iata: "HNL",
+      departure_local: "2026-11-09T21:00",
+      arrival_local: "2026-11-09T10:00",
+    });
+    expect(validationProblems(cruzaData)).toEqual([]);
+  });
+
+  it("aponta compra depois do voo (quase sempre é o ano lido errado)", () => {
+    const bad = structuredClone(ok);
+    bad.bookings[0].purchased_on = "2026-12-01";
+    expect(validationProblems(bad)).toEqual(["compra depois do voo"]);
+  });
+
   it("aponta valor, taxa ou milhas negativos", () => {
     const bad = structuredClone(ok);
     bad.bookings[0].total_amount = -50;

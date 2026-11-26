@@ -16,7 +16,9 @@ export type ConfigKey =
   | "watchdog_alert_at"
   | "watchdog_run_at"
   // Último e-mail de backup atrasado (um por intervalo de alerta).
-  | "backup_alert_at";
+  | "backup_alert_at"
+  // Última vez em que o vigia conseguiu conferir o backup no GitHub.
+  | "backup_checked_at";
 
 /** Lê chaves internas de public.app_config (só o service role tem acesso). */
 export async function getConfig<K extends ConfigKey>(

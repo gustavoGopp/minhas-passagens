@@ -35,7 +35,12 @@ export function BookingForm({
   const set = <K extends keyof BookingDraft>(k: K, v: BookingDraft[K]) =>
     setD((p) => ({ ...p, [k]: v }));
   const setLeg = (i: number, patch: Partial<LegDraft>) =>
-    setD((p) => ({ ...p, legs: p.legs.map((l, j) => (j === i ? { ...l, ...patch } : l)) }));
+    setD((p) => ({
+      ...p,
+      legs: p.legs.map((l, j) => (j === i ? { ...l, ...patch } : l)),
+      // Trocou aeroporto ou horário: a conferência anterior deixa de valer.
+      confirm_unknown_airports: false,
+    }));
   const isMiles = d.channel === "miles";
   const currency = d.currency ?? "BRL";
   const unknown = unknownAirports(d);
@@ -46,7 +51,8 @@ export function BookingForm({
       aria-label="Moeda"
       onChange={(e) => set("currency", e.target.value)}
     >
-      {[...new Set([...CURRENCIES, currency])].map((c) => (
+      {currency === "" ? <option value="">moeda?</option> : null}
+      {[...new Set([...CURRENCIES, currency])].filter(Boolean).map((c) => (
         <option key={c} value={c}>
           {c === "BRL" ? "R$" : c}
         </option>
@@ -300,7 +306,11 @@ export function BookingForm({
         />
       </label>
 
-      {currency !== "BRL" ? (
+      {currency === "" ? (
+        <p className="text-sm text-amber-800 dark:text-amber-200">
+          Não consegui identificar a moeda do valor. Escolha a moeda ao lado dele.
+        </p>
+      ) : currency !== "BRL" ? (
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
           Valor em {currency}: fica guardado nessa moeda e não entra na soma de gastos em reais.
         </p>
@@ -308,8 +318,9 @@ export function BookingForm({
       {unknown.length ? (
         <div className="flex flex-col gap-2 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100">
           <p>
-            Não conheço o aeroporto {unknown.join(", ")}. Informe os horários desta passagem no
-            horário de Brasília.
+            Não conheço o aeroporto {unknown.join(", ")}. Informe os horários de{" "}
+            {unknown.join(", ")} no horário de Brasília. Os demais aeroportos continuam no horário
+            local de cada um.
           </p>
           <label className="flex items-center gap-2 font-medium">
             <input

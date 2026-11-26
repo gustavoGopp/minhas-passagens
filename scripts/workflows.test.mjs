@@ -14,7 +14,19 @@ const workflows = readdirSync(dir)
     return { arquivo: f, texto, yaml: parse(texto) };
   });
 
-const SEGREDOS_DE_PRODUCAO = ["SUPABASE_ACCESS_TOKEN", "BACKUP_PASSPHRASE", "TELEGRAM_BOT_TOKEN"];
+// Os segredos de produção têm nomes que só existem nos ambientes do GitHub
+// (PROD_...). Assim, sem o ambiente configurado o job falha em vez de rodar
+// com um segredo geral do repositório, e nenhum branch consegue lê-los.
+const SEGREDOS_DE_PRODUCAO = [
+  "PROD_SUPABASE_ACCESS_TOKEN",
+  "PROD_BACKUP_PASSPHRASE",
+  "PROD_TELEGRAM_BOT_TOKEN",
+];
+const SEGREDOS_GERAIS_ANTIGOS = [
+  "SUPABASE_ACCESS_TOKEN",
+  "BACKUP_PASSPHRASE",
+  "TELEGRAM_BOT_TOKEN",
+];
 const AMBIENTES = ["producao-rotina", "producao-risco"];
 // Tudo o que grava em produção fora do fluxo normal espera a aprovação do dono.
 const SO_COM_APROVACAO = ["supabase-restore.yml", "supabase-setup-jobs.yml", "supabase-auth.yml"];
@@ -24,7 +36,17 @@ describe("workflows do GitHub", () => {
     expect(workflows.length).toBeGreaterThanOrEqual(6);
   });
 
-  it("todo job que usa credencial de produção roda num ambiente restrito à main", () => {
+  it("nenhum workflow lê os segredos gerais antigos do repositório", () => {
+    const usos = [];
+    for (const w of workflows) {
+      for (const s of SEGREDOS_GERAIS_ANTIGOS) {
+        if (new RegExp(`secrets\\.${s}\\b`).test(w.texto)) usos.push(`${w.arquivo}: ${s}`);
+      }
+    }
+    expect(usos).toEqual([]);
+  });
+
+  it("todo job que usa credencial de produção declara um dos dois ambientes", () => {
     const semAmbiente = [];
     for (const w of workflows) {
       for (const [nome, job] of Object.entries(w.yaml.jobs)) {

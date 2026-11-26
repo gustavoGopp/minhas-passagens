@@ -4,13 +4,15 @@ import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { addCredit, deleteCredit, setCreditRemaining } from "@/lib/trips/credits-repo";
 import { parseMoney } from "@/lib/trips/money";
+import { getTrip } from "@/lib/trips/repo";
+import { isRealDate } from "@/lib/trips/time";
 
 export interface CreditFormState {
   ok?: boolean;
   error?: string;
 }
 
-const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida");
+const date = z.string().refine(isRealDate, "Data inválida");
 
 function refresh(bookingId?: string | null) {
   revalidatePath("/app");
@@ -49,13 +51,16 @@ export async function addCreditAction(
   const cents = amount.cents;
   if (cents == null || cents === 0) return { error: "Informe o valor." };
   const d = parsed.data;
+  // Reembolso ou crédito de uma passagem em outra moeda fica nessa moeda, para
+  // não ser descontado dos gastos em reais.
+  const linked = d.booking_id ? await getTrip(user.id, d.booking_id) : null;
   await addCredit(user.id, {
     kind: d.kind,
     booking_id: d.booking_id || null,
     provider: d.provider || null,
     amount_cents: cents,
     remaining_cents: d.kind === "credit" ? cents : null,
-    currency: "BRL",
+    currency: linked?.booking.currency ?? "BRL",
     issued_on: d.issued_on,
     expires_on: d.kind === "credit" && d.expires_on ? d.expires_on : null,
     notes: d.notes || null,

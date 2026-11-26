@@ -2,13 +2,14 @@ import { NextResponse, type NextRequest } from "next/server";
 import {
   ALERT_EVERY_HOURS,
   BACKUP_ARTIFACT,
-  isBackupStale,
+  backupCheck,
+  backupCheckOverdue,
   isTickStale,
-  latestBackupAt,
   minutesSince,
   RECONCILE_EVERY_MINUTES,
   staleBackupEmail,
   staleTickEmail,
+  unknownBackupEmail,
 } from "@/lib/jobs/health";
 import { runTick } from "@/lib/jobs/tick";
 import { getDecryptedKeyWith } from "@/lib/integrations/repo";
@@ -40,10 +41,9 @@ export async function GET(request: NextRequest) {
 
   const now = new Date().toISOString();
   const cfg = await getConfig(["last_tick_at", "app_url"]);
-  const backup = await checkBackup(now);
   const minutes = minutesSince(cfg.last_tick_at, now);
   if (!isTickStale(cfg.last_tick_at, now)) {
-    return NextResponse.json({ ok: true, stale: false, minutes, backup });
+    return NextResponse.json({ ok: true, stale: false, minutes, backup: await checkBackup(now) });
   }
 
   let reconciled = false;
@@ -64,6 +64,9 @@ export async function GET(request: NextRequest) {
     staleTickEmail(cfg.last_tick_at ?? null, now, appUrl),
   );
 
+  // O backup é conferido por último: nada aqui pode atrasar ou derrubar o
+  // ciclo de reconciliação e o alerta de agendador parado.
+  const backup = await checkBackup(now);
   return NextResponse.json({ ok: true, stale: true, minutes, reconciled, emailed, backup });
 }
 
@@ -99,25 +102,46 @@ async function alertOwner(
 /**
  * Confere no GitHub (API pública, sem credencial) quando foi feita a última
  * cópia de backup. O repositório vem de BACKUP_GITHUB_REPO ("dono/repo") ou das
- * variáveis de sistema da Vercel. Falha de rede não gera alerta: só "desconhecido".
+ * variáveis de sistema da Vercel. Nunca lança: qualquer falha vira um status.
+ * Sem conseguir conferir por alguns dias seguidos, avisa o dono.
  */
 async function checkBackup(now: string) {
-  const owner = process.env.VERCEL_GIT_REPO_OWNER;
-  const slug = process.env.VERCEL_GIT_REPO_SLUG;
-  const repo = process.env.BACKUP_GITHUB_REPO ?? (owner && slug ? `${owner}/${slug}` : null);
-  if (!repo || !/^[\w.-]+\/[\w.-]+$/.test(repo)) return { status: "sem repositório" as const };
-  let last: string | null;
   try {
-    const res = await fetch(
-      `https://api.github.com/repos/${repo}/actions/artifacts?name=${BACKUP_ARTIFACT}&per_page=20`,
-      { headers: { accept: "application/vnd.github+json" }, signal: AbortSignal.timeout(8_000) },
+    const owner = process.env.VERCEL_GIT_REPO_OWNER;
+    const slug = process.env.VERCEL_GIT_REPO_SLUG;
+    const repo = process.env.BACKUP_GITHUB_REPO || (owner && slug ? `${owner}/${slug}` : "");
+    if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) return { status: "sem repositório" as const };
+    let body: unknown = null;
+    try {
+      const res = await fetch(
+        `https://api.github.com/repos/${repo}/actions/artifacts?name=${BACKUP_ARTIFACT}&per_page=20`,
+        { headers: { accept: "application/vnd.github+json" }, signal: AbortSignal.timeout(8_000) },
+      );
+      if (res.ok) body = await res.json();
+    } catch {
+      // rede ou tempo esgotado: fica como "desconhecido"
+    }
+    const result = backupCheck(body, now);
+    if (result.status === "desconhecido") {
+      const { backup_checked_at: lastChecked } = await getConfig(["backup_checked_at"]);
+      if (!lastChecked) await setConfig({ backup_checked_at: now });
+      else if (backupCheckOverdue(lastChecked, now)) {
+        return {
+          ...result,
+          emailed: await alertOwner("backup_alert_at", now, unknownBackupEmail(repo)),
+        };
+      }
+      return result;
+    }
+    await setConfig({ backup_checked_at: now });
+    if (result.status === "em dia") return result;
+    const emailed = await alertOwner(
+      "backup_alert_at",
+      now,
+      staleBackupEmail(result.last, now, repo),
     );
-    if (!res.ok) return { status: "desconhecido" as const };
-    last = latestBackupAt(await res.json());
+    return { ...result, emailed };
   } catch {
-    return { status: "desconhecido" as const };
+    return { status: "erro" as const };
   }
-  if (!isBackupStale(last, now)) return { status: "em dia" as const, last };
-  const emailed = await alertOwner("backup_alert_at", now, staleBackupEmail(last, now, repo));
-  return { status: "atrasado" as const, last, emailed };
 }

@@ -2,7 +2,12 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth/current-user";
-import { draftFromRows, draftSchema, rowsFromDraft, type BookingDraft } from "@/lib/trips/draft";
+import {
+  draftFromRows,
+  savedDraftSchema,
+  rowsFromDraft,
+  type BookingDraft,
+} from "@/lib/trips/draft";
 import { createTrip, deleteTrip, getTrip, updateTrip } from "@/lib/trips/repo";
 import { draftWithYear, restoredDraft } from "@/lib/trips/review";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -32,7 +37,8 @@ export async function fixYearAction(formData: FormData) {
   const trip = await getTrip(user.id, booking);
   if (!trip) return;
   const draft = draftWithYear(draftFromRows(trip.booking, trip.flights), from, to);
-  await updateTrip(user.id, booking, rowsFromDraft(draftSchema.parse(draft)));
+  // Passagem já gravada: só o ano muda; as regras de coerência não se aplicam aqui.
+  await updateTrip(user.id, booking, rowsFromDraft(savedDraftSchema.parse(draft)));
   refresh();
 }
 
@@ -72,7 +78,8 @@ async function restoreOne(userId: string, candidateId: string): Promise<boolean>
     .is("booking_id", null)
     .maybeSingle();
   if (!c) return false; // já restaurada (clique repetido) ou não é desta conta
-  const parsed = draftSchema.safeParse(
+  // Já tinha sido importada antes de ser apagada: volta como estava.
+  const parsed = savedDraftSchema.safeParse(
     restoredDraft(
       c.draft as BookingDraft,
       c.received_at as string | null,
