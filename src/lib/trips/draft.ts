@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { airportTimeZone } from "@/lib/airports";
+import { airportTimeZone, isKnownAirport } from "@/lib/airports";
 import type { ExtractedBooking } from "@/lib/extract/schema";
 import { parseMoney } from "./money";
 import { isRealDate, localDateTimeProblem, localToUtc, utcToLocal } from "./time";
@@ -24,6 +24,8 @@ export interface BookingDraft {
   seller: string;
   channel: "airline" | "agency" | "miles" | "corporate";
   amount: string;
+  /** Moeda do valor (código ISO de 3 letras). Só BRL entra nas somas de gastos. */
+  currency?: string;
   miles: string;
   taxes: string;
   purchased_on: string;
@@ -31,6 +33,11 @@ export interface BookingDraft {
   status: "active" | "cancelled" | "rebooked";
   source: "manual" | "text" | "image" | "email";
   notes: string;
+  /**
+   * "Conferi os horários": exigido quando algum aeroporto não está nas listas
+   * do app. Nesse caso os horários valem como horário de Brasília.
+   */
+  confirm_unknown_airports?: boolean;
   legs: LegDraft[];
 }
 
@@ -55,6 +62,7 @@ export function emptyDraft(): BookingDraft {
     seller: "",
     channel: "airline",
     amount: "",
+    currency: "BRL",
     miles: "",
     taxes: "",
     purchased_on: new Date().toISOString().slice(0, 10),
@@ -68,6 +76,12 @@ export function emptyDraft(): BookingDraft {
 
 const money = (n: number | null) => (n == null ? "" : n.toFixed(2).replace(".", ","));
 
+/** Código ISO de 3 letras em maiúsculas; qualquer outra coisa vira BRL. */
+const currencyCode = (c: string | null | undefined) => {
+  const up = (c ?? "").trim().toUpperCase();
+  return /^[A-Z]{3}$/.test(up) ? up : "BRL";
+};
+
 export function draftFromExtraction(
   b: ExtractedBooking,
   source: "text" | "image" | "email",
@@ -80,6 +94,7 @@ export function draftFromExtraction(
     seller: b.seller ?? "",
     channel: b.channel,
     amount: money(b.total_amount),
+    currency: currencyCode(b.currency),
     miles: b.miles == null ? "" : String(Math.round(b.miles)),
     taxes: money(b.taxes_amount),
     purchased_on: b.purchased_on ?? fallbackPurchasedOn ?? new Date().toISOString().slice(0, 10),
@@ -141,6 +156,7 @@ export function draftFromRows(b: BookingRow, flights: FlightRow[]): BookingDraft
     seller: b.seller ?? "",
     channel: b.channel,
     amount: cents(b.amount_cents),
+    currency: currencyCode(b.currency),
     miles: b.miles == null ? "" : String(b.miles),
     taxes: cents(b.taxes_cents),
     purchased_on: b.purchased_on ?? "",
@@ -216,6 +232,10 @@ const draftFields = z.object({
   seller: z.string().trim().max(80),
   channel: z.enum(["airline", "agency", "miles", "corporate"]),
   amount: moneyField,
+  currency: z
+    .string()
+    .regex(/^[A-Z]{3}$/, "Moeda inválida")
+    .default("BRL"),
   miles: z.string().regex(/^\d*$/, "Milhas: só números"),
   taxes: moneyField,
   purchased_on: z.string().refine((v) => v === "" || isRealDate(v), "Data da compra inválida"),
@@ -223,6 +243,7 @@ const draftFields = z.object({
   status: z.enum(["active", "cancelled", "rebooked"]),
   source: z.enum(["manual", "text", "image", "email"]),
   notes: z.string().max(2000),
+  confirm_unknown_airports: z.boolean().optional(),
   legs: z.array(legSchema).min(1, "Inclua pelo menos um trecho"),
 });
 
@@ -232,6 +253,15 @@ const draftFields = z.object({
  * no fuso de cada aeroporto).
  */
 export const draftSchema = draftFields.superRefine((d, ctx) => {
+  const unknown = unknownAirports(d);
+  if (unknown.length && !d.confirm_unknown_airports) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["confirm_unknown_airports"],
+      message: `Não conheço o aeroporto ${unknown.join(", ")}. Informe os horários no horário de Brasília e marque “Conferi os horários”.`,
+    });
+    return;
+  }
   d.legs.forEach((l, i) => {
     if (l.origin === l.destination) {
       ctx.addIssue({
@@ -253,6 +283,12 @@ export const draftSchema = draftFields.superRefine((d, ctx) => {
     }
   });
 });
+
+/** Aeroportos do rascunho cujo fuso o app não conhece (sem repetição, na ordem em que aparecem). */
+export function unknownAirports(d: { legs: Pick<LegDraft, "origin" | "destination">[] }): string[] {
+  const codes = d.legs.flatMap((l) => [l.origin, l.destination]).map((c) => c.trim().toUpperCase());
+  return [...new Set(codes)].filter((c) => /^[A-Z]{3}$/.test(c) && !isKnownAirport(c));
+}
 
 /**
  * Compra com data depois do primeiro voo. O formulário recusa; a importação em
@@ -276,7 +312,7 @@ export function rowsFromDraft(d: z.infer<typeof draftSchema>) {
     seller: d.seller || null,
     channel: d.channel,
     amount_cents: centsOf(d.amount),
-    currency: "BRL",
+    currency: d.currency,
     miles: d.miles ? Number(d.miles) : null,
     taxes_cents: centsOf(d.taxes),
     purchased_on: d.purchased_on || null,

@@ -5,7 +5,7 @@ import { getCurrentUser } from "@/lib/auth/current-user";
 import { airlineName, CHANNELS } from "@/lib/trips/airlines";
 import { draftFromRows } from "@/lib/trips/draft";
 import { getTrip } from "@/lib/trips/repo";
-import { formatBRL } from "@/lib/trips/summary";
+import { formatMoney } from "@/lib/trips/summary";
 import { deleteBookingAction, setStatusAction } from "../actions";
 import { BookingForm } from "../booking-form";
 import { CreditForm } from "../../creditos/credit-form";
@@ -40,9 +40,9 @@ async function Detail({ params }: { params: Promise<{ id: string }> }) {
   const { booking: b } = trip;
   const price =
     b.channel === "miles"
-      ? `${(b.miles ?? 0).toLocaleString("pt-BR")} milhas + ${formatBRL(b.taxes_cents ?? 0)}`
+      ? `${(b.miles ?? 0).toLocaleString("pt-BR")} milhas + ${formatMoney(b.taxes_cents ?? 0, b.currency)}`
       : b.amount_cents != null
-        ? formatBRL(b.amount_cents)
+        ? formatMoney(b.amount_cents, b.currency)
         : "Valor não informado";
 
   return (

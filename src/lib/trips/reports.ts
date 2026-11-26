@@ -25,6 +25,28 @@ function group(bookings: BookingRow[], keyOf: (b: BookingRow) => string): SpendL
   return [...map.values()].sort((a, b) => b.cents - a.cents);
 }
 
+export interface CurrencyLine {
+  currency: string;
+  cents: number;
+  count: number;
+}
+
+/**
+ * Passagens pagas em outra moeda, que ficam fora de todas as somas em reais.
+ * A tela de Gastos mostra uma linha à parte com elas.
+ */
+export function otherCurrencyTotals(bookings: BookingRow[]): CurrencyLine[] {
+  const map = new Map<string, CurrencyLine>();
+  for (const b of bookings) {
+    if (b.status === "cancelled" || b.currency === "BRL") continue;
+    const cur = map.get(b.currency) ?? { currency: b.currency, cents: 0, count: 0 };
+    cur.cents += cashOf(b);
+    cur.count += 1;
+    map.set(b.currency, cur);
+  }
+  return [...map.values()].sort((a, b) => a.currency.localeCompare(b.currency));
+}
+
 export const spendByAirline = (b: BookingRow[]) => group(b, (x) => airlineName(x.airline));
 export const spendByChannel = (b: BookingRow[]) =>
   group(b, (x) => CHANNELS.find((c) => c.code === x.channel)?.name ?? x.channel);
@@ -78,6 +100,8 @@ export function averageByRoute(bookings: BookingRow[], flights: FlightRow[]): Ro
   const acc = new Map<string, { sum: number; legs: number }>();
   for (const b of bookings) {
     if (b.status === "cancelled" || b.channel === "miles" || b.amount_cents == null) continue;
+    // Só reais: a média de uma rota não mistura moedas.
+    if (b.currency !== "BRL") continue;
     const legs = byBooking.get(b.id) ?? [];
     if (!legs.length) continue;
     const share = b.amount_cents / legs.length;

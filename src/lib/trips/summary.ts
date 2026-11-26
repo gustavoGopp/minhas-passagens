@@ -65,6 +65,21 @@ export function formatBRL(cents: number): string {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
 }
 
+/** Valor na moeda em que foi pago: reais como "R$ 1.234,56"; as demais com o código ("USD 500,00"). */
+export function formatMoney(cents: number, currency: string): string {
+  if (currency === "BRL") return formatBRL(cents);
+  try {
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency,
+      currencyDisplay: "code",
+    }).format(cents / 100);
+  } catch {
+    // Código que o navegador não reconhece como moeda.
+    return `${currency} ${(cents / 100).toFixed(2).replace(".", ",")}`;
+  }
+}
+
 /**
  * Agrupa trechos pelo ano local da partida, mantendo a ordem. A tela mostra o
  * ano como título quando há mais de um ano, ou quando não é o ano atual.
