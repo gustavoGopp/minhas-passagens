@@ -36,6 +36,9 @@ select json_build_object(
   'trechos_com_chegada_antes_da_partida', (
     select count(*) from public.flights f where f.arrives_at is not null and f.arrives_at <= f.departs_at
   ),
+  'correcao_do_fuso_dos_estrangeiros', (
+    select value from public.app_config where key = 'fuso_estrangeiros_corrigido'
+  ),
   'passagens', (select count(*) from public.bookings),
   'passagens_com_valor_menor_que_10_reais', (
     select count(*) from public.bookings b where b.amount_cents between 1 and 999

@@ -75,3 +75,31 @@ describe("aeroportos estrangeiros", () => {
     expect(lista("estrangeiros")).toEqual(estrangeiros.map((a) => a.iata).sort());
   });
 });
+
+describe("migração de correção do fuso dos aeroportos estrangeiros", () => {
+  const sql = readFileSync(
+    path.join(
+      import.meta.dirname,
+      "../../../supabase/migrations/20261127000000_fuso_aeroportos_estrangeiros.sql",
+    ),
+    "utf8",
+  );
+
+  it("usa exatamente a lista de aeroportos e fusos de airports-intl.json", () => {
+    const naMigracao = [...sql.matchAll(/\('([A-Z]{3})', '([\w/]+)'\)/g)]
+      .map((m) => `${m[1]} ${m[2]}`)
+      .sort();
+    const naLista = (foreignJson as { iata: string; tz: string }[])
+      .map((a) => `${a.iata} ${a.tz}`)
+      .sort();
+    expect(naMigracao).toEqual(naLista);
+  });
+
+  it("roda uma vez só: confere e grava a marca na mesma transação", () => {
+    expect(sql).toMatch(/^do \$\$/m);
+    expect(sql).toContain(
+      "if exists (select 1 from public.app_config where key = 'fuso_estrangeiros_corrigido')",
+    );
+    expect(sql).toContain("insert into public.app_config (key, value)");
+  });
+});
