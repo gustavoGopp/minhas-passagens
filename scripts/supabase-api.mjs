@@ -1,5 +1,6 @@
 // Cliente mínimo da Management API do Supabase, usado pelos workflows do GitHub Actions.
-// Requer SUPABASE_ACCESS_TOKEN (segredo do repositório) e SUPABASE_PROJECT_REF.
+// Requer SUPABASE_ACCESS_TOKEN (segredo dos ambientes producao-rotina e producao-risco
+// do GitHub, restritos à main) e SUPABASE_PROJECT_REF.
 //
 // ATENÇÃO: o repositório é público e os logs do Actions também. Nada que saia
 // daqui pode conter dados pessoais (e-mails, nomes, tokens, chaves).
@@ -9,7 +10,9 @@ const API = "https://api.supabase.com/v1";
 export function config() {
   const token = process.env.SUPABASE_ACCESS_TOKEN;
   const ref = process.env.SUPABASE_PROJECT_REF;
-  if (!token) throw new Error("Defina o segredo SUPABASE_ACCESS_TOKEN no repositório.");
+  if (!token) throw new Error(
+      "Falta SUPABASE_ACCESS_TOKEN. Ele fica nos ambientes do GitHub e só chega a execuções a partir da main.",
+    );
   if (!ref) throw new Error("Defina SUPABASE_PROJECT_REF.");
   return { token, ref };
 }
@@ -30,6 +33,15 @@ async function call(method, path, body) {
 export async function query(sql) {
   const { ref } = config();
   return call("POST", `/projects/${ref}/database/query`, { query: sql });
+}
+
+/**
+ * Executa SQL em modo somente leitura: a própria API recusa qualquer comando
+ * que grave. É o que o diagnóstico usa.
+ */
+export async function queryReadOnly(sql) {
+  const { ref } = config();
+  return call("POST", `/projects/${ref}/database/query`, { query: sql, read_only: true });
 }
 
 export async function getAuthConfig() {

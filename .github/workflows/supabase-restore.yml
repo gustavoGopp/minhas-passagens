@@ -29,6 +29,8 @@ permissions:
 jobs:
   restore:
     runs-on: ubuntu-latest
+    # Só a partir da main e só depois de o dono aprovar a execução no GitHub.
+    environment: producao-risco
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || 'gbvwzwpuzlaftinfcxkc' }}

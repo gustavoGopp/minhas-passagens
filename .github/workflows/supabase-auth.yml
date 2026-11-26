@@ -1,0 +1,52 @@
+# Ajustes de login em produção: Site URL, Redirect URLs e abrir ou fechar o
+# cadastro. Roda no ambiente producao-risco: só a partir da main e só depois
+# de o dono aprovar a execução no GitHub.
+name: Supabase — ajustes de login
+
+on:
+  workflow_dispatch:
+    inputs:
+      site_url:
+        description: "Opcional: nova Site URL do Auth"
+        required: false
+      redirects:
+        description: "Opcional: Redirect URLs separadas por vírgula, somadas às existentes (exige site_url)"
+        required: false
+      cadastro:
+        description: "Abrir ou fechar o cadastro de contas novas"
+        required: false
+        type: choice
+        default: manter
+        options: [manter, aberto, fechado]
+
+permissions:
+  contents: read
+
+jobs:
+  ajustar:
+    runs-on: ubuntu-latest
+    environment: producao-risco
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || 'gbvwzwpuzlaftinfcxkc' }}
+    steps:
+      - name: Conferir que há algo a ajustar
+        if: ${{ inputs.site_url == '' && inputs.cadastro == 'manter' }}
+        run: |
+          echo "::error::Informe site_url ou escolha aberto/fechado em cadastro."
+          exit 1
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Ajustar URLs do Auth
+        if: ${{ inputs.site_url != '' }}
+        env:
+          SITE_URL: ${{ inputs.site_url }}
+          REDIRECTS: ${{ inputs.redirects }}
+        run: node scripts/supabase-auth-urls.mjs
+      - name: Abrir ou fechar o cadastro
+        if: ${{ inputs.cadastro == 'aberto' || inputs.cadastro == 'fechado' }}
+        env:
+          CADASTRO: ${{ inputs.cadastro }}
+        run: node scripts/supabase-auth-signup.mjs

@@ -1,4 +1,6 @@
-# Diagnóstico do Supabase sem dados pessoais (os logs deste repositório são públicos).
+# Diagnóstico do Supabase: só leitura e sem dados pessoais (os logs deste
+# repositório são públicos). Roda no ambiente producao-rotina, restrito à main:
+# uma consulta nova precisa entrar na main antes de poder rodar.
 name: Supabase — diagnóstico
 
 on:
@@ -8,43 +10,22 @@ on:
         description: "Arquivo de supabase/diagnostics, auth-logs ou auth-config"
         required: true
         default: estado-schema.sql
-      site_url:
-        description: "Opcional: nova Site URL do Auth (ajusta URLs em vez de diagnosticar)"
-        required: false
-      redirects:
-        description: "Opcional: Redirect URLs separadas por vírgula, somadas às existentes"
-        required: false
-      cadastro:
-        description: "Opcional: abrir ou fechar o cadastro de contas novas (em vez de diagnosticar)"
-        required: false
-        type: choice
-        default: manter
-        options: [manter, aberto, fechado]
+
+permissions:
+  contents: read
 
 jobs:
   diagnostico:
     runs-on: ubuntu-latest
+    environment: producao-rotina
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || 'gbvwzwpuzlaftinfcxkc' }}
+      ALVO: ${{ inputs.alvo }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Ajustar URLs do Auth
-        if: ${{ inputs.site_url != '' }}
-        env:
-          SITE_URL: ${{ inputs.site_url }}
-          REDIRECTS: ${{ inputs.redirects }}
-        run: node scripts/supabase-auth-urls.mjs
-      - name: Abrir ou fechar o cadastro
-        if: ${{ inputs.cadastro == 'aberto' || inputs.cadastro == 'fechado' }}
-        env:
-          CADASTRO: ${{ inputs.cadastro }}
-        run: node scripts/supabase-auth-signup.mjs
-      - name: Diagnóstico
-        if: ${{ inputs.site_url == '' && inputs.cadastro != 'aberto' && inputs.cadastro != 'fechado' }}
-        env:
-          ALVO: ${{ inputs.alvo }}
+      - name: Diagnóstico (somente leitura)
         run: node scripts/supabase-diagnostico.mjs "$ALVO"
