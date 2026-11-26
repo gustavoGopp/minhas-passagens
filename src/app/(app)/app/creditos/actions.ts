@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { addCredit, deleteCredit, setCreditRemaining } from "@/lib/trips/credits-repo";
-import { parseBRL } from "@/lib/trips/summary";
+import { parseMoney } from "@/lib/trips/money";
 
 export interface CreditFormState {
   ok?: boolean;
@@ -44,7 +44,9 @@ export async function addCreditAction(
       notes: fd.get("notes") ?? "",
     });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Dados inválidos" };
-  const cents = parseBRL(parsed.data.amount);
+  const amount = parseMoney(parsed.data.amount);
+  if (!amount.ok) return { error: amount.message };
+  const cents = amount.cents;
   if (cents == null || cents === 0) return { error: "Informe o valor." };
   const d = parsed.data;
   await addCredit(user.id, {
@@ -65,8 +67,10 @@ export async function addCreditAction(
 export async function updateRemainingAction(fd: FormData) {
   const user = await getCurrentUser();
   const id = z.uuid().parse(fd.get("id"));
-  const cents = parseBRL(String(fd.get("remaining") ?? ""));
-  if (cents == null) return;
+  const remaining = parseMoney(String(fd.get("remaining") ?? ""));
+  // Valor ilegível ou vazio: não grava nada (o campo volta ao saldo anterior).
+  if (!remaining.ok || remaining.cents == null) return;
+  const cents = remaining.cents;
   await setCreditRemaining(user.id, id, cents);
   refresh();
 }

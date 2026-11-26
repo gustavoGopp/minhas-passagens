@@ -65,15 +65,6 @@ export function formatBRL(cents: number): string {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
 }
 
-/** "R$ 1.234,56" ou "1234,56" → centavos. */
-export function parseBRL(text: string): number | null {
-  const clean = text.replace(/[^\d,.-]/g, "");
-  if (!clean) return null;
-  const normalized = clean.includes(",") ? clean.replace(/\./g, "").replace(",", ".") : clean;
-  const value = Number(normalized);
-  return Number.isFinite(value) && value >= 0 ? Math.round(value * 100) : null;
-}
-
 /**
  * Agrupa trechos pelo ano local da partida, mantendo a ordem. A tela mostra o
  * ano como título quando há mais de um ano, ou quando não é o ano atual.

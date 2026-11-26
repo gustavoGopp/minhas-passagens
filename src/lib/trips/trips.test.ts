@@ -1,12 +1,6 @@
 import { describe, expect, it } from "vitest";
-import {
-  formatBRL,
-  monthlySpend,
-  parseBRL,
-  pastFlights,
-  upcomingFlights,
-  type BookingLike,
-} from "./summary";
+import { formatBRL, monthlySpend, pastFlights, upcomingFlights, type BookingLike } from "./summary";
+import { parseMoney } from "./money";
 import { formatInZone, localToUtc, utcToLocal } from "./time";
 
 describe("horário local ↔ UTC", () => {
@@ -120,8 +114,8 @@ describe("próximos voos e gastos", () => {
 
   it("formata e interpreta reais", () => {
     expect(formatBRL(123456)).toBe("R$ 1.234,56");
-    expect(parseBRL("R$ 1.234,56")).toBe(123456);
-    expect(parseBRL("459.9")).toBe(45990);
-    expect(parseBRL("")).toBeNull();
+    expect(parseMoney("R$ 1.234,56")).toEqual({ ok: true, cents: 123456 });
+    expect(parseMoney("459.9")).toEqual({ ok: true, cents: 45990 });
+    expect(parseMoney("")).toEqual({ ok: true, cents: null });
   });
 });

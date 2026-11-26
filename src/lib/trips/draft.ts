@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { airportTimeZone } from "@/lib/airports";
 import type { ExtractedBooking } from "@/lib/extract/schema";
-import { parseBRL } from "./summary";
+import { parseMoney } from "./money";
 import { isLocalDateTime, localToUtc, utcToLocal } from "./time";
 
 /** Estado do formulário de passagem (strings, como digitado). */
@@ -184,15 +184,25 @@ const legSchema = z.object({
   passenger: z.string().trim().max(120),
 });
 
+const moneyField = z.string().superRefine((v, ctx) => {
+  const r = parseMoney(v);
+  if (!r.ok) ctx.addIssue({ code: "custom", message: r.message });
+});
+/** Centavos de um valor já validado pelo schema (vazio = sem valor). */
+const centsOf = (v: string) => {
+  const r = parseMoney(v);
+  return r.ok ? r.cents : null;
+};
+
 export const draftSchema = z.object({
   id: z.uuid().optional(),
   locator: z.string().trim().max(20),
   airline: z.string().trim().min(1).max(10),
   seller: z.string().trim().max(80),
   channel: z.enum(["airline", "agency", "miles", "corporate"]),
-  amount: z.string(),
+  amount: moneyField,
   miles: z.string().regex(/^\d*$/, "Milhas: só números"),
-  taxes: z.string(),
+  taxes: moneyField,
   purchased_on: z.string().regex(/^(\d{4}-\d{2}-\d{2})?$/),
   tag: z.enum(["personal", "work"]),
   status: z.enum(["active", "cancelled", "rebooked"]),
@@ -208,10 +218,10 @@ export function rowsFromDraft(d: z.infer<typeof draftSchema>) {
     airline: d.airline,
     seller: d.seller || null,
     channel: d.channel,
-    amount_cents: parseBRL(d.amount),
+    amount_cents: centsOf(d.amount),
     currency: "BRL",
     miles: d.miles ? Number(d.miles) : null,
-    taxes_cents: parseBRL(d.taxes),
+    taxes_cents: centsOf(d.taxes),
     purchased_on: d.purchased_on || null,
     tag: d.tag,
     status: d.status,
