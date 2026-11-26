@@ -21,7 +21,10 @@ describe("trava de dado pessoal no diagnóstico", () => {
 
   it("aceita URLs de configuração e definições de políticas", () => {
     const linhas = [
-      { site_url: "https://minhas-passagens.vercel.app", uri_allow_list: "http://localhost:3000/**" },
+      {
+        site_url: "https://minhas-passagens.vercel.app",
+        uri_allow_list: "http://localhost:3000/**",
+      },
       { tabela: "bookings", politica: "bookings: dono", expressao: "(auth.uid() = user_id)" },
     ];
     expect(problemasDeDadoPessoal(linhas)).toEqual([]);

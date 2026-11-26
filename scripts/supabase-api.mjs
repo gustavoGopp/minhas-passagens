@@ -10,7 +10,8 @@ const API = "https://api.supabase.com/v1";
 export function config() {
   const token = process.env.SUPABASE_ACCESS_TOKEN;
   const ref = process.env.SUPABASE_PROJECT_REF;
-  if (!token) throw new Error(
+  if (!token)
+    throw new Error(
       "Falta SUPABASE_ACCESS_TOKEN. Ele fica nos ambientes do GitHub e só chega a execuções a partir da main.",
     );
   if (!ref) throw new Error("Defina SUPABASE_PROJECT_REF.");
