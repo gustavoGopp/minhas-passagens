@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { airportTimeZone } from "@/lib/airports";
+import { isRealDate, localDateTimeProblem, localToUtc } from "@/lib/trips/time";
 
 /** Formato que a IA devolve. Horários são locais do aeroporto, sem fuso. */
 export const extractedFlightSchema = z.object({
@@ -46,21 +48,35 @@ export type Extraction = z.infer<typeof extractionSchema>;
 export type ExtractedBooking = z.infer<typeof extractedBookingSchema>;
 
 const IATA = /^[A-Z]{3}$/;
-const LOCAL = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
+const TZ_PADRAO = "America/Sao_Paulo";
 
-/** Problemas que justificam tentar de novo com um modelo mais forte. */
+/**
+ * Problemas que justificam tentar de novo com um modelo mais forte: formato,
+ * datas e horas que não existem, trecho incoerente e valores negativos.
+ */
 export function validationProblems(x: Extraction): string[] {
   const problems: string[] = [];
   if (x.bookings.length === 0) problems.push("nenhuma reserva encontrada");
   for (const b of x.bookings) {
     if (b.flights.length === 0) problems.push("reserva sem trechos");
     for (const f of b.flights) {
-      if (!IATA.test(f.origin_iata) || !IATA.test(f.destination_iata))
-        problems.push("aeroporto inválido");
-      if (!LOCAL.test(f.departure_local)) problems.push("data de partida inválida");
-      if (f.arrival_local && !LOCAL.test(f.arrival_local))
-        problems.push("data de chegada inválida");
+      const airportsOk = IATA.test(f.origin_iata) && IATA.test(f.destination_iata);
+      if (!airportsOk) problems.push("aeroporto inválido");
+      else if (f.origin_iata === f.destination_iata) problems.push("origem igual ao destino");
+      const departureOk = localDateTimeProblem(f.departure_local) === null;
+      if (!departureOk) problems.push("data de partida inválida");
+      const arrivalOk = !f.arrival_local || localDateTimeProblem(f.arrival_local) === null;
+      if (!arrivalOk) problems.push("data de chegada inválida");
+      if (airportsOk && departureOk && arrivalOk && f.arrival_local) {
+        const tz = (iata: string) => airportTimeZone(iata) ?? TZ_PADRAO;
+        const departs = Date.parse(localToUtc(f.departure_local, tz(f.origin_iata)));
+        const arrives = Date.parse(localToUtc(f.arrival_local, tz(f.destination_iata)));
+        if (arrives <= departs) problems.push("chegada antes da partida");
+      }
     }
+    if (b.purchased_on && !isRealDate(b.purchased_on)) problems.push("data da compra inválida");
+    if ((b.total_amount ?? 0) < 0 || (b.taxes_amount ?? 0) < 0 || (b.miles ?? 0) < 0)
+      problems.push("valor negativo");
   }
   return problems;
 }

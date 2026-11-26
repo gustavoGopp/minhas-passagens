@@ -28,14 +28,37 @@ function offsetMinutes(utcMs: number, timeZone: string): number {
 
 const LOCAL_RE = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/;
 
+export type LocalProblem = "formato" | "data" | "hora";
+
+/** Data "YYYY-MM-DD" que existe no calendário (31/02 e 29/02 fora de ano bissexto não existem). */
+export function isRealDate(value: string): boolean {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!m) return false;
+  const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+  return d.getUTCFullYear() === +m[1] && d.getUTCMonth() === +m[2] - 1 && d.getUTCDate() === +m[3];
+}
+
+/**
+ * O que há de errado com um horário local "YYYY-MM-DDTHH:mm": o formato, a
+ * data (não existe no calendário) ou a hora. Null quando está certo. Só o
+ * formato não basta: o JavaScript aceitaria "31 de fevereiro" como 3 de março.
+ */
+export function localDateTimeProblem(value: string): LocalProblem | null {
+  const m = LOCAL_RE.exec(value);
+  if (!m) return "formato";
+  if (!isRealDate(value.slice(0, 10))) return "data";
+  if (+m[4] > 23 || +m[5] > 59) return "hora";
+  return null;
+}
+
 export function isLocalDateTime(value: string): boolean {
-  return LOCAL_RE.test(value);
+  return localDateTimeProblem(value) === null;
 }
 
 /** "2026-11-10T07:30" em America/Sao_Paulo → "2026-11-10T10:30:00.000Z". */
 export function localToUtc(local: string, timeZone: string): string {
   const m = LOCAL_RE.exec(local);
-  if (!m) throw new Error(`Data/hora inválida: ${local}`);
+  if (!m || localDateTimeProblem(local)) throw new Error(`Data/hora inválida: ${local}`);
   const naive = Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]);
   let guess = naive - offsetMinutes(naive, timeZone) * 60000;
   // Segunda passada corrige casos perto de mudança de horário.

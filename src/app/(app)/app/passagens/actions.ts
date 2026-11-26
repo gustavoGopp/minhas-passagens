@@ -8,6 +8,7 @@ import { getDecryptedKey } from "@/lib/integrations/repo";
 import {
   draftFromExtraction,
   draftSchema,
+  purchaseAfterFlight,
   rowsFromDraft,
   type BookingDraft,
 } from "@/lib/trips/draft";
@@ -91,6 +92,11 @@ export async function saveBookingAction(_prev: SaveState, formData: FormData): P
   if (!parsed.success) {
     const issue = parsed.error.issues[0];
     return { error: issue ? `${issue.message}` : "Verifique os campos." };
+  }
+  if (purchaseAfterFlight(parsed.data)) {
+    return {
+      error: "A compra não pode ser depois do voo. Confira a data da compra e o ano do voo.",
+    };
   }
   const rows = rowsFromDraft(parsed.data);
   let id = parsed.data.id;
