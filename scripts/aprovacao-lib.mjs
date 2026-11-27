@@ -8,7 +8,10 @@ export const ETIQUETA = "aprovado-pelo-dono";
 /** O que julga o trabalho: cenários aprovados, gabaritos e regras de acesso. */
 const PROTEGIDOS = [/^tests\/aceitacao\//, /^tests\/gabaritos\//, /^docs\/regras-de-acesso\.md$/];
 
-const TESTE = /(^|\/)tests\/|\.(test|spec)\.(m?[jt]sx?)$/;
+/** Arquivo de teste: dentro de uma pasta tests/ ou com nome *.test.* / *.spec.*. */
+const NA_PASTA_TESTS = /(?:^|\/)tests\//;
+const NOME_DE_TESTE = /\.(?:test|spec)\.m?[jt]sx?$/;
+const ehTeste = (caminho) => NA_PASTA_TESTS.test(caminho) || NOME_DE_TESTE.test(caminho);
 
 const protegido = (caminho) => Boolean(caminho) && PROTEGIDOS.some((r) => r.test(caminho));
 
@@ -22,8 +25,7 @@ export function decidir({ arquivos, etiquetas, evento }) {
   for (const a of arquivos) {
     const tocados = [a.filename, a.previous_filename].filter(protegido);
     for (const t of tocados) if (!protegidos.includes(t)) protegidos.push(t);
-    if (!tocados.length && TESTE.test(a.filename))
-      testesAlterados.push(`${a.filename} (${a.status})`);
+    if (!tocados.length && ehTeste(a.filename)) testesAlterados.push(`${a.filename} (${a.status})`);
   }
   const temEtiqueta = etiquetas.includes(ETIQUETA);
   // Push novo depois da aprovação: o dono precisa olhar de novo.
