@@ -67,7 +67,8 @@ function semComentariosNemBlocos(sql) {
 const MARCA_SEGUNDA_ENTREGA = /--\s*segunda entrega:/i;
 const ESTRUTURA =
   /\b(create\s+(table|index|unique\s+index|type|function|or\s+replace\s+function|trigger|view)|alter\s+table|drop\s+(table|column|index|function|trigger|view|type))\b/;
-const DADOS = /(^|;|\b(then|loop|begin))\s*(update\s+[\w."]+(\s+(as\s+)?\w+)?\s+set|delete\s+from|insert\s+into)\b/m;
+const DADOS =
+  /(^|;|\b(then|loop|begin))\s*(update\s+[\w."]+(\s+(as\s+)?\w+)?\s+set|delete\s+from|insert\s+into)\b/m;
 
 /**
  * Regras para migração nova (P18). Devolve a lista de problemas, vazia se ok.
