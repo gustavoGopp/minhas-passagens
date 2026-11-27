@@ -14,8 +14,16 @@ O workflow **Supabase — migrações e publicação** publica o app depois da C
 
 - **Esperando aprovação:** havia migração; clique em **Review deployments → Approve**.
 - **Falta o segredo `PROD_VERCEL_DEPLOY_HOOK`:** crie o gancho na Vercel (**Settings → Git → Deploy Hooks**, branch `main`) e guarde o endereço nesse segredo, no ambiente `producao-rotina` do GitHub. Depois, **Re-run jobs**.
-- **O gancho foi chamado, mas nada mudou na Vercel:** publique à mão em **Deployments → ⋯ → Redeploy** na versão mais nova da main e avise numa sessão (o gancho pode não funcionar com a publicação automática desligada).
+- **O gancho foi chamado, mas nada mudou na Vercel:** publique à mão em **Deployments → ⋯ → Redeploy** na versão mais nova da main e avise numa sessão. O gancho já funcionou na publicação da 2b, em 27/11.
 - **A CI da main falhou:** nada foi publicado de propósito. Peça a correção.
+
+## Não consigo entrar no app (erro do Google)
+
+- **`redirect_uri_mismatch` com `supabase.co/auth/v1/callback`:** o cliente de login do Google perdeu o endereço de retorno do Supabase.
+  1. No Supabase, em **Authentication → Sign In / Providers → Google**, copie o começo do Client ID, antes do primeiro `-`: é o número do projeto do Google.
+  2. No Google Cloud, procure esse número na aba **Todos** do seletor de projetos. O projeto do login fica numa conta Google diferente da sua conta de sempre.
+  3. Abra **APIs e serviços → Credenciais**, entre no cliente com esse ID e adicione `https://gbvwzwpuzlaftinfcxkc.supabase.co/auth/v1/callback` em **URIs de redirecionamento autorizados**, sem apagar os outros. Salve e espere uns 5 minutos.
+- **O mesmo erro com `/api/gmail/callback`:** foi ao conectar o Gmail por um endereço que não é o principal. Abra `https://minhas-passagens.vercel.app` e tente de novo.
 
 ## Uma migração deu errado
 
