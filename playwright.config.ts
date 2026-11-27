@@ -27,6 +27,11 @@ export default defineConfig({
     timezoneId: "America/Sao_Paulo",
     trace: "off",
     screenshot: "off",
+    // Só na sessão do agente, cujo Chromium vem pré-instalado (PLAYWRIGHT_CHROMIUM=/opt/pw-browsers/chromium).
+    // A CI instala o navegador da versão certa e não define a variável.
+    launchOptions: process.env.PLAYWRIGHT_CHROMIUM
+      ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM }
+      : {},
   },
   projects: [
     { name: "celular-claro", use: { ...devices["Pixel 7"], colorScheme: "light" } },
