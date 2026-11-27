@@ -47,6 +47,64 @@ describe("validação da extração", () => {
     bad.bookings[0].flights[0].departure_local = "09/11 06:30";
     expect(validationProblems(bad)).toEqual(["aeroporto inválido", "data de partida inválida"]);
   });
+
+  // Tabela aprovada pelo dono em 26/11/2026 (auditoria A2.1): estes problemas
+  // fazem o app tentar de novo com o modelo mais forte em vez de aceitar.
+  it("aponta data e hora que não existem", () => {
+    const bad = structuredClone(ok);
+    bad.bookings[0].flights[0].departure_local = "2026-02-31T10:00";
+    bad.bookings[0].flights[0].arrival_local = "2026-11-09T25:99";
+    bad.bookings[0].purchased_on = "2026-99-99";
+    expect(validationProblems(bad)).toEqual([
+      "data de partida inválida",
+      "data de chegada inválida",
+      "data da compra inválida",
+    ]);
+  });
+
+  it("aponta origem igual ao destino e chegada antes da partida", () => {
+    const mesmo = structuredClone(ok);
+    mesmo.bookings[0].flights[0].destination_iata = "SDU";
+    expect(validationProblems(mesmo)).toEqual(["origem igual ao destino"]);
+
+    const antes = structuredClone(ok);
+    antes.bookings[0].flights[0].arrival_local = "2026-11-09T05:30";
+    expect(validationProblems(antes)).toEqual(["chegada antes da partida"]);
+  });
+
+  // Revisão de 26/11.
+  it("não compara horários quando não sabe o fuso de um dos aeroportos", () => {
+    const voo = structuredClone(ok);
+    Object.assign(voo.bookings[0].flights[0], {
+      origin_iata: "LAX",
+      destination_iata: "SEA",
+      departure_local: "2026-11-09T20:00",
+      arrival_local: "2026-11-09T22:50",
+    });
+    expect(validationProblems(voo)).toEqual([]);
+    const cruzaData = structuredClone(ok);
+    Object.assign(cruzaData.bookings[0].flights[0], {
+      origin_iata: "SYD",
+      destination_iata: "HNL",
+      departure_local: "2026-11-09T21:00",
+      arrival_local: "2026-11-09T10:00",
+    });
+    expect(validationProblems(cruzaData)).toEqual([]);
+  });
+
+  it("aponta compra depois do voo (quase sempre é o ano lido errado)", () => {
+    const bad = structuredClone(ok);
+    bad.bookings[0].purchased_on = "2026-12-01";
+    expect(validationProblems(bad)).toEqual(["compra depois do voo"]);
+  });
+
+  it("aponta valor, taxa ou milhas negativos", () => {
+    const bad = structuredClone(ok);
+    bad.bookings[0].total_amount = -50;
+    bad.bookings[0].taxes_amount = -1;
+    bad.bookings[0].miles = -1000;
+    expect(validationProblems(bad)).toEqual(["valor negativo"]);
+  });
 });
 
 describe("cleanText", () => {

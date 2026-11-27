@@ -51,10 +51,11 @@ export interface MonthSpend {
 export function monthlySpend(bookings: BookingLike[]): MonthSpend[] {
   const map = new Map<string, MonthSpend>();
   for (const b of bookings) {
-    if (b.status === "cancelled" || !b.purchased_on || b.currency !== "BRL") continue;
+    if (b.status === "cancelled" || !b.purchased_on) continue;
+    if (b.currency !== "BRL" && !b.miles) continue;
     const month = b.purchased_on.slice(0, 7);
     const cur = map.get(month) ?? { month, cents: 0, miles: 0 };
-    cur.cents += (b.amount_cents ?? 0) + (b.taxes_cents ?? 0);
+    if (b.currency === "BRL") cur.cents += (b.amount_cents ?? 0) + (b.taxes_cents ?? 0);
     cur.miles += b.miles ?? 0;
     map.set(month, cur);
   }
@@ -65,13 +66,19 @@ export function formatBRL(cents: number): string {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
 }
 
-/** "R$ 1.234,56" ou "1234,56" → centavos. */
-export function parseBRL(text: string): number | null {
-  const clean = text.replace(/[^\d,.-]/g, "");
-  if (!clean) return null;
-  const normalized = clean.includes(",") ? clean.replace(/\./g, "").replace(",", ".") : clean;
-  const value = Number(normalized);
-  return Number.isFinite(value) && value >= 0 ? Math.round(value * 100) : null;
+/** Valor na moeda em que foi pago: reais como "R$ 1.234,56"; as demais com o código ("USD 500,00"). */
+export function formatMoney(cents: number, currency: string): string {
+  if (currency === "BRL") return formatBRL(cents);
+  try {
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency,
+      currencyDisplay: "code",
+    }).format(cents / 100);
+  } catch {
+    // Código que o navegador não reconhece como moeda.
+    return `${currency} ${(cents / 100).toFixed(2).replace(".", ",")}`;
+  }
 }
 
 /**

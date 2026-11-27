@@ -3,12 +3,14 @@ import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { listAirports } from "@/lib/airports";
 import { AIRLINES, CHANNELS } from "@/lib/trips/airlines";
-import { emptyLeg, type BookingDraft, type LegDraft } from "@/lib/trips/draft";
+import { emptyLeg, unknownAirports, type BookingDraft, type LegDraft } from "@/lib/trips/draft";
 import { saveBookingAction, type SaveState } from "./actions";
 
 const input =
   "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base sm:text-sm dark:border-zinc-700 dark:bg-zinc-900";
 const label = "flex flex-col gap-1 text-sm font-medium";
+// Moedas mais comuns; a que já veio na passagem entra na lista mesmo se não estiver aqui.
+const CURRENCIES = ["BRL", "USD", "EUR", "ARS", "CLP", "GBP"];
 
 export function BookingForm({
   initial,
@@ -33,8 +35,30 @@ export function BookingForm({
   const set = <K extends keyof BookingDraft>(k: K, v: BookingDraft[K]) =>
     setD((p) => ({ ...p, [k]: v }));
   const setLeg = (i: number, patch: Partial<LegDraft>) =>
-    setD((p) => ({ ...p, legs: p.legs.map((l, j) => (j === i ? { ...l, ...patch } : l)) }));
+    setD((p) => ({
+      ...p,
+      legs: p.legs.map((l, j) => (j === i ? { ...l, ...patch } : l)),
+      // Trocou aeroporto ou horário: a conferência anterior deixa de valer.
+      confirm_unknown_airports: false,
+    }));
   const isMiles = d.channel === "miles";
+  const currency = d.currency ?? "BRL";
+  const unknown = unknownAirports(d);
+  const currencySelect = (
+    <select
+      className={`${input} w-24`}
+      value={currency}
+      aria-label="Moeda"
+      onChange={(e) => set("currency", e.target.value)}
+    >
+      {currency === "" ? <option value="">moeda?</option> : null}
+      {[...new Set([...CURRENCIES, currency])].filter(Boolean).map((c) => (
+        <option key={c} value={c}>
+          {c === "BRL" ? "R$" : c}
+        </option>
+      ))}
+    </select>
+  );
 
   return (
     <form action={action} className="flex flex-col gap-4">
@@ -115,25 +139,31 @@ export function BookingForm({
               />
             </label>
             <label className={label}>
-              Taxas (R$)
-              <input
-                className={input}
-                inputMode="decimal"
-                value={d.taxes}
-                onChange={(e) => set("taxes", e.target.value)}
-              />
+              Taxas
+              <div className="flex gap-2">
+                <input
+                  className={input}
+                  inputMode="decimal"
+                  value={d.taxes}
+                  onChange={(e) => set("taxes", e.target.value)}
+                />
+                {currencySelect}
+              </div>
             </label>
           </>
         ) : (
           <label className={label}>
-            Valor pago (R$)
-            <input
-              className={input}
-              inputMode="decimal"
-              placeholder="0,00"
-              value={d.amount}
-              onChange={(e) => set("amount", e.target.value)}
-            />
+            Valor pago
+            <div className="flex gap-2">
+              <input
+                className={input}
+                inputMode="decimal"
+                placeholder="0,00"
+                value={d.amount}
+                onChange={(e) => set("amount", e.target.value)}
+              />
+              {currencySelect}
+            </div>
           </label>
         )}
         <label className={label}>
@@ -275,6 +305,33 @@ export function BookingForm({
           onChange={(e) => set("notes", e.target.value)}
         />
       </label>
+
+      {currency === "" ? (
+        <p className="text-sm text-amber-800 dark:text-amber-200">
+          Não consegui identificar a moeda do valor. Escolha a moeda ao lado dele.
+        </p>
+      ) : currency !== "BRL" ? (
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+          Valor em {currency}: fica guardado nessa moeda e não entra na soma de gastos em reais.
+        </p>
+      ) : null}
+      {unknown.length ? (
+        <div className="flex flex-col gap-2 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100">
+          <p>
+            Não conheço o aeroporto {unknown.join(", ")}. Informe os horários de{" "}
+            {unknown.join(", ")} no horário de Brasília. Os demais aeroportos continuam no horário
+            local de cada um.
+          </p>
+          <label className="flex items-center gap-2 font-medium">
+            <input
+              type="checkbox"
+              checked={Boolean(d.confirm_unknown_airports)}
+              onChange={(e) => set("confirm_unknown_airports", e.target.checked)}
+            />
+            Conferi os horários
+          </label>
+        </div>
+      ) : null}
 
       {state.error ? (
         <p role="alert" className="text-sm text-red-700 dark:text-red-300">

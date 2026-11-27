@@ -16,6 +16,15 @@ export async function startScanAction() {
   revalidatePath(PATH);
 }
 
+/**
+ * Aeroporto fora das listas e moeda não reconhecida pedem uma conferência que
+ * esta tela não tem: a mensagem manda para o formulário, onde dá para conferir.
+ */
+function importMessage(message: string): string {
+  if (!/Conferi os horários|Escolha a moeda/.test(message)) return message;
+  return `${message.split(". ")[0]}. Cadastre esta passagem pelo formulário (Passagens → Nova) para conferir os horários e a moeda.`;
+}
+
 export interface ProgressState {
   status: string;
   total: number;
@@ -168,7 +177,9 @@ export async function importCandidatesAction(
       await mark("imported", id);
       out.imported++;
     } catch (e) {
-      out.errors.push(`${c.draft.locator || "sem localizador"}: ${(e as Error).message}`);
+      out.errors.push(
+        `${c.draft.locator || "sem localizador"}: ${importMessage((e as Error).message)}`,
+      );
     }
   }
   revalidatePath(PATH);

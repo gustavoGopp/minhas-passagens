@@ -3,6 +3,7 @@ import { useActionState, useState } from "react";
 import { PONTE_AEREA, WEEKDAYS_PT, expandRule } from "@/lib/prices/rule";
 import { estimateQuota, FREQUENCY_LABEL, PROVIDER_QUOTA } from "@/lib/prices/schedule";
 import type { MonitorInput } from "@/lib/prices/schema";
+import { parseMoney } from "@/lib/trips/money";
 import type {
   DateRange,
   Frequency,
@@ -31,10 +32,8 @@ const PROVIDER_NAMES: Record<PriceProviderId, string> = {
 const reais = (cents: number | null | undefined) =>
   cents == null ? "" : (cents / 100).toFixed(2).replace(".", ",").replace(/,00$/, "");
 const toCents = (text: string): number | null => {
-  const clean = text.replace(/[^\d,.]/g, "");
-  if (!clean) return null;
-  const n = Number(clean.includes(",") ? clean.replace(/\./g, "").replace(",", ".") : clean);
-  return Number.isFinite(n) ? Math.round(n * 100) : null;
+  const r = parseMoney(text);
+  return r.ok ? r.cents : null;
 };
 
 export function MonitorForm({
@@ -132,6 +131,10 @@ export function MonitorForm({
     <form action={action} className="flex flex-col gap-4">
       <input type="hidden" name="id" value={id ?? ""} />
       <input type="hidden" name="payload" value={JSON.stringify(payload)} />
+      {/* O servidor relê os valores como digitados e recusa o que não for valor em reais. */}
+      <input type="hidden" name="target_text" value={target} />
+      <input type="hidden" name="margin_text" value={margin} />
+      <input type="hidden" name="margin_mode" value={marginMode} />
 
       {!id ? (
         <div className="flex flex-wrap gap-2 text-xs">

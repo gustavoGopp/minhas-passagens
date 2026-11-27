@@ -18,7 +18,7 @@ import { horizonFor, longWeekendPlan, PONTE_AEREA } from "@/lib/prices/rule";
 import { monitorInputSchema, type MonitorInput } from "@/lib/prices/schema";
 import { getProfile } from "@/lib/profiles/repo";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { parseBRL } from "@/lib/trips/summary";
+import { parseMoney } from "@/lib/trips/money";
 
 export interface MonitorFormState {
   ok?: boolean;
@@ -43,6 +43,18 @@ export async function saveMonitorAction(
   } catch {
     return { error: "Dados inválidos" };
   }
+  // Os valores vêm também como texto digitado: o servidor relê e recusa o que
+  // não for um valor em reais, em vez de confiar na conta feita no navegador.
+  if (raw && typeof raw === "object") {
+    const target = parseMoney(String(fd.get("target_text") ?? ""));
+    if (!target.ok) return { error: `Preço-alvo: ${target.message}` };
+    (raw as Record<string, unknown>).target_cents = target.cents ?? 0;
+    if (fd.get("margin_mode") === "brl") {
+      const margin = parseMoney(String(fd.get("margin_text") ?? ""));
+      if (!margin.ok) return { error: `Margem: ${margin.message}` };
+      (raw as Record<string, unknown>).margin_cents = margin.cents;
+    }
+  }
   const parsed = monitorInputSchema.safeParse(raw);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Dados inválidos" };
   const id = z
@@ -66,9 +78,13 @@ export async function createPonteAereaAction(
   fd: FormData,
 ): Promise<MonitorFormState> {
   const user = await getCurrentUser();
-  const target = parseBRL(String(fd.get("target") ?? ""));
+  const targetInput = parseMoney(String(fd.get("target") ?? ""));
+  if (!targetInput.ok) return { error: `Preço-alvo: ${targetInput.message}` };
+  const target = targetInput.cents;
   if (!target) return { error: "Informe o preço-alvo por trecho." };
-  const margin = parseBRL(String(fd.get("margin") ?? "")) ?? 0;
+  const marginInput = parseMoney(String(fd.get("margin") ?? ""));
+  if (!marginInput.ok) return { error: `Margem: ${marginInput.message}` };
+  const margin = marginInput.cents ?? 0;
   const profile = await getProfile(user.id);
   const tz = profile?.timezone ?? "America/Sao_Paulo";
   const base: Omit<MonitorInput, "name" | "origin" | "destination" | "rule"> = {

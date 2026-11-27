@@ -6,7 +6,7 @@ import { airlineName } from "@/lib/trips/airlines";
 import type { BookingDraft, BookingRow, FlightRow } from "@/lib/trips/draft";
 import { listTrips } from "@/lib/trips/repo";
 import { reviewItems } from "@/lib/trips/review";
-import { formatBRL } from "@/lib/trips/summary";
+import { formatMoney } from "@/lib/trips/summary";
 import { PendingButton } from "@/components/pending-button";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
@@ -61,7 +61,11 @@ function Summary({ b, flights }: { b: BookingRow; flights: FlightRow[] }) {
         {[
           airlineName(b.airline),
           b.locator ? `localizador ${b.locator}` : null,
-          b.amount_cents != null ? formatBRL(b.amount_cents) : b.miles ? `${b.miles} milhas` : null,
+          b.amount_cents != null
+            ? formatMoney(b.amount_cents, b.currency)
+            : b.miles
+              ? `${b.miles} milhas`
+              : null,
           b.purchased_on ? `compra em ${br(b.purchased_on)}` : null,
         ]
           .filter(Boolean)

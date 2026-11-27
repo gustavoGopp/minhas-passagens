@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { airportTimeZone } from "@/lib/airports";
+import { airportTimeZone, isKnownAirport } from "@/lib/airports";
 import type { ExtractedBooking } from "@/lib/extract/schema";
-import { parseBRL } from "./summary";
-import { isLocalDateTime, localToUtc, utcToLocal } from "./time";
+import { currencyCode, parseMoney } from "./money";
+import { existsInZone, isRealDate, localDateTimeProblem, localToUtc, utcToLocal } from "./time";
 
 /** Estado do formulário de passagem (strings, como digitado). */
 export interface LegDraft {
@@ -24,6 +24,8 @@ export interface BookingDraft {
   seller: string;
   channel: "airline" | "agency" | "miles" | "corporate";
   amount: string;
+  /** Moeda do valor (código ISO de 3 letras). Só BRL entra nas somas de gastos. */
+  currency?: string;
   miles: string;
   taxes: string;
   purchased_on: string;
@@ -31,6 +33,11 @@ export interface BookingDraft {
   status: "active" | "cancelled" | "rebooked";
   source: "manual" | "text" | "image" | "email";
   notes: string;
+  /**
+   * "Conferi os horários": exigido quando algum aeroporto não está nas listas
+   * do app. Nesse caso os horários valem como horário de Brasília.
+   */
+  confirm_unknown_airports?: boolean;
   legs: LegDraft[];
 }
 
@@ -48,16 +55,22 @@ export function emptyLeg(airline = "AD"): LegDraft {
   };
 }
 
-export function emptyDraft(): BookingDraft {
+/** Dia de hoje ("YYYY-MM-DD") em Brasília. Em UTC, depois das 21h já seria amanhã. */
+export function todayInBrazil(nowIso = new Date().toISOString()): string {
+  return utcToLocal(nowIso, DEFAULT_TZ).slice(0, 10);
+}
+
+export function emptyDraft(nowIso?: string): BookingDraft {
   return {
     locator: "",
     airline: "AD",
     seller: "",
     channel: "airline",
     amount: "",
+    currency: "BRL",
     miles: "",
     taxes: "",
-    purchased_on: new Date().toISOString().slice(0, 10),
+    purchased_on: todayInBrazil(nowIso),
     tag: "personal",
     status: "active",
     source: "manual",
@@ -80,9 +93,10 @@ export function draftFromExtraction(
     seller: b.seller ?? "",
     channel: b.channel,
     amount: money(b.total_amount),
+    currency: currencyCode(b.currency),
     miles: b.miles == null ? "" : String(Math.round(b.miles)),
     taxes: money(b.taxes_amount),
-    purchased_on: b.purchased_on ?? fallbackPurchasedOn ?? new Date().toISOString().slice(0, 10),
+    purchased_on: b.purchased_on ?? fallbackPurchasedOn ?? todayInBrazil(),
     tag: "personal",
     status: b.status === "cancelled" ? "cancelled" : "active",
     source,
@@ -141,6 +155,7 @@ export function draftFromRows(b: BookingRow, flights: FlightRow[]): BookingDraft
     seller: b.seller ?? "",
     channel: b.channel,
     amount: cents(b.amount_cents),
+    currency: currencyCode(b.currency),
     miles: b.miles == null ? "" : String(b.miles),
     taxes: cents(b.taxes_cents),
     purchased_on: b.purchased_on ?? "",
@@ -171,35 +186,141 @@ const iata = z
   .transform((s) => s.toUpperCase())
   .refine((s) => /^[A-Z]{3}$/.test(s), "Use o código de 3 letras do aeroporto (ex.: SDU)");
 
+const LOCAL_MESSAGES = { data: "Esta data não existe", hora: "Hora inválida" } as const;
+
+/** Horário local que existe de verdade (não só no formato). */
+const localField = (formatMessage: string, optional = false) =>
+  z.string().superRefine((v, ctx) => {
+    if (optional && v === "") return;
+    const problem = localDateTimeProblem(v);
+    if (problem) {
+      ctx.addIssue({
+        code: "custom",
+        message: problem === "formato" ? formatMessage : LOCAL_MESSAGES[problem],
+      });
+    }
+  });
+
+const tzOf = (iata: string) => airportTimeZone(iata) ?? DEFAULT_TZ;
+
 const legSchema = z.object({
   id: z.uuid().optional(),
   airline: z.string().trim().min(1).max(10),
   flight_number: z.string().trim().max(10),
   origin: iata,
   destination: iata,
-  departure_local: z.string().refine(isLocalDateTime, "Informe data e hora de partida"),
-  arrival_local: z
-    .string()
-    .refine((v) => v === "" || isLocalDateTime(v), "Hora de chegada inválida"),
+  departure_local: localField("Informe data e hora de partida"),
+  arrival_local: localField("Hora de chegada inválida", true),
   passenger: z.string().trim().max(120),
 });
 
-export const draftSchema = z.object({
+const moneyField = z.string().superRefine((v, ctx) => {
+  const r = parseMoney(v);
+  if (!r.ok) ctx.addIssue({ code: "custom", message: r.message });
+});
+/** Centavos de um valor já validado pelo schema (vazio = sem valor). */
+const centsOf = (v: string) => {
+  const r = parseMoney(v);
+  return r.ok ? r.cents : null;
+};
+
+const draftFields = z.object({
   id: z.uuid().optional(),
   locator: z.string().trim().max(20),
   airline: z.string().trim().min(1).max(10),
   seller: z.string().trim().max(80),
   channel: z.enum(["airline", "agency", "miles", "corporate"]),
-  amount: z.string(),
+  amount: moneyField,
+  currency: z
+    .string()
+    .regex(/^[A-Z]{3}$/, "Escolha a moeda do valor")
+    .default("BRL"),
   miles: z.string().regex(/^\d*$/, "Milhas: só números"),
-  taxes: z.string(),
-  purchased_on: z.string().regex(/^(\d{4}-\d{2}-\d{2})?$/),
+  taxes: moneyField,
+  purchased_on: z.string().refine((v) => v === "" || isRealDate(v), "Data da compra inválida"),
   tag: z.enum(["personal", "work"]),
   status: z.enum(["active", "cancelled", "rebooked"]),
   source: z.enum(["manual", "text", "image", "email"]),
   notes: z.string().max(2000),
+  confirm_unknown_airports: z.boolean().optional(),
   legs: z.array(legSchema).min(1, "Inclua pelo menos um trecho"),
 });
+
+/**
+ * Rascunho de passagem válido: os campos de draftFields e a coerência de cada
+ * trecho (origem diferente do destino; chegada depois da partida, comparadas
+ * no fuso de cada aeroporto).
+ */
+export const draftSchema = draftFields.superRefine((d, ctx) => {
+  const unknown = unknownAirports(d);
+  if (unknown.length && !d.confirm_unknown_airports) {
+    const codes = unknown.join(", ");
+    ctx.addIssue({
+      code: "custom",
+      path: ["confirm_unknown_airports"],
+      message: `Não conheço o aeroporto ${codes}. Informe os horários de ${codes} no horário de Brasília e marque “Conferi os horários”.`,
+    });
+    return;
+  }
+  d.legs.forEach((l, i) => {
+    // Horário com formato, data ou hora errados já foi apontado no campo.
+    if (localDateTimeProblem(l.departure_local)) return;
+    if (l.arrival_local && localDateTimeProblem(l.arrival_local)) return;
+    if (l.origin === l.destination) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["legs", i, "destination"],
+        message: "Origem e destino são o mesmo aeroporto",
+      });
+      return;
+    }
+    const missing = (field: "departure_local" | "arrival_local") =>
+      ctx.addIssue({
+        code: "custom",
+        path: ["legs", i, field],
+        message: "Esta hora não existe nesse aeroporto (mudança de horário de verão)",
+      });
+    if (!existsInZone(l.departure_local, tzOf(l.origin))) return missing("departure_local");
+    if (!l.arrival_local) return;
+    if (!existsInZone(l.arrival_local, tzOf(l.destination))) return missing("arrival_local");
+    const departs = Date.parse(localToUtc(l.departure_local, tzOf(l.origin)));
+    const arrives = Date.parse(localToUtc(l.arrival_local, tzOf(l.destination)));
+    if (arrives <= departs) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["legs", i, "arrival_local"],
+        message: "A chegada está antes da partida",
+      });
+    }
+  });
+});
+
+/**
+ * Para regravar uma passagem que já está no banco (trocar o ano, restaurar uma
+ * apagada): confere os campos, mas não aplica as regras de coerência, que só
+ * valem para o que o dono digita ou importa agora.
+ */
+export const savedDraftSchema = draftFields;
+
+/** Aeroportos do rascunho cujo fuso o app não conhece (sem repetição, na ordem em que aparecem). */
+export function unknownAirports(d: { legs: Pick<LegDraft, "origin" | "destination">[] }): string[] {
+  const codes = d.legs.flatMap((l) => [l.origin, l.destination]).map((c) => c.trim().toUpperCase());
+  return [...new Set(codes)].filter((c) => /^[A-Z]{3}$/.test(c) && !isKnownAirport(c));
+}
+
+/**
+ * Compra com data depois do primeiro voo. O formulário recusa; a importação em
+ * lote deixa passar e a tela "Conferir passagens" resolve com um clique (quase
+ * sempre é o ano do voo que foi lido errado no e-mail).
+ */
+export function purchaseAfterFlight(d: Pick<BookingDraft, "purchased_on" | "legs">): boolean {
+  if (!d.purchased_on) return false;
+  const first = d.legs
+    .map((l) => l.departure_local.slice(0, 10))
+    .filter(Boolean)
+    .sort()[0];
+  return Boolean(first) && d.purchased_on > first;
+}
 
 /** Converte o rascunho validado nas linhas do banco (horários locais → UTC pelo fuso do aeroporto). */
 export function rowsFromDraft(d: z.infer<typeof draftSchema>) {
@@ -208,10 +329,10 @@ export function rowsFromDraft(d: z.infer<typeof draftSchema>) {
     airline: d.airline,
     seller: d.seller || null,
     channel: d.channel,
-    amount_cents: parseBRL(d.amount),
-    currency: "BRL",
+    amount_cents: centsOf(d.amount),
+    currency: d.currency,
     miles: d.miles ? Number(d.miles) : null,
-    taxes_cents: parseBRL(d.taxes),
+    taxes_cents: centsOf(d.taxes),
     purchased_on: d.purchased_on || null,
     tag: d.tag,
     status: d.status,
@@ -224,10 +345,8 @@ export function rowsFromDraft(d: z.infer<typeof draftSchema>) {
     flight_number: l.flight_number || null,
     origin: l.origin,
     destination: l.destination,
-    departs_at: localToUtc(l.departure_local, airportTimeZone(l.origin) ?? DEFAULT_TZ),
-    arrives_at: l.arrival_local
-      ? localToUtc(l.arrival_local, airportTimeZone(l.destination) ?? DEFAULT_TZ)
-      : null,
+    departs_at: localToUtc(l.departure_local, tzOf(l.origin)),
+    arrives_at: l.arrival_local ? localToUtc(l.arrival_local, tzOf(l.destination)) : null,
     passenger: l.passenger || null,
   }));
   return { booking, flights };

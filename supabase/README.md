@@ -25,3 +25,14 @@ npx supabase db push
 - Um arquivo por mudança, nome `AAAAMMDDHHMMSS_descricao.sql`.
 - Nunca edite uma migração já aplicada em produção; crie outra.
 - Colunas com segredo (ex.: `user_integrations.encrypted_key`) só são lidas no servidor.
+
+## Credenciais dos workflows
+
+Os workflows que tocam o banco de produção rodam em dois ambientes do GitHub (Settings → Environments), ambos restritos ao branch `main`. As credenciais existem só neles, com nomes começados por `PROD_`. Não há credencial de produção nos segredos gerais do repositório: sem o ambiente configurado, o job falha.
+
+| Ambiente          | Aprovação do dono | Workflows                                | Segredos                                                                          |
+| ----------------- | ----------------- | ---------------------------------------- | --------------------------------------------------------------------------------- |
+| `producao-rotina` | Não               | backup, diagnóstico, migrações           | `PROD_SUPABASE_ACCESS_TOKEN`, `PROD_BACKUP_PASSPHRASE`                            |
+| `producao-risco`  | Sim               | restauração, agendador, ajustes de login | `PROD_SUPABASE_ACCESS_TOKEN`, `PROD_BACKUP_PASSPHRASE`, `PROD_TELEGRAM_BOT_TOKEN` |
+
+O teste `scripts/workflows.test.mjs` falha se um workflow ler os segredos gerais antigos ou usar um segredo `PROD_` fora de um ambiente.

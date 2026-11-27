@@ -8,9 +8,10 @@ import {
   spendByMonth,
   spendByTag,
   type SpendLine,
+  otherCurrencyTotals,
 } from "@/lib/trips/reports";
 import { listTrips } from "@/lib/trips/repo";
-import { formatBRL } from "@/lib/trips/summary";
+import { formatBRL, formatMoney } from "@/lib/trips/summary";
 
 export const metadata = { title: "Gastos" };
 
@@ -72,8 +73,17 @@ async function Reports() {
     );
   const months = spendByMonth(bookings, credits).slice(0, 12);
   const routes = averageByRoute(bookings, flights);
+  const otherCurrencies = otherCurrencyTotals(bookings);
+  const otherCount = otherCurrencies.reduce((n, c) => n + c.count, 0);
   return (
     <>
+      {otherCount ? (
+        <p className="rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm dark:border-zinc-800 dark:bg-zinc-900">
+          Fora da soma: {otherCount} {otherCount === 1 ? "passagem" : "passagens"} em outra moeda (
+          {otherCurrencies.map((c) => formatMoney(c.cents, c.currency)).join("; ")}). Os totais
+          abaixo são só em reais.
+        </p>
+      ) : null}
       <section className="flex flex-col gap-2">
         <h2 className="text-sm font-semibold tracking-wide text-zinc-600 uppercase dark:text-zinc-400">
           Por mês da compra

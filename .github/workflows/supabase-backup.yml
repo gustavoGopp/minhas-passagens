@@ -6,7 +6,8 @@ name: Supabase — backup
 
 on:
   schedule:
-    - cron: "23 6 * * 0" # domingo, 03:23 em Brasília
+    - cron: "23 6 * * 0" # domingo, 03:23 em Brasília: backup cifrado
+    - cron: "17 7 1 * *" # dia 1º, 04:17 em Brasília: ensaio (exporta e simula a restauração, sem guardar)
   workflow_dispatch:
     inputs:
       modo:
@@ -24,10 +25,12 @@ permissions:
 jobs:
   backup:
     runs-on: ubuntu-latest
+    # Restrito à main: nenhum outro branch recebe a credencial nem a senha.
+    environment: producao-rotina
     env:
-      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.PROD_SUPABASE_ACCESS_TOKEN }}
       SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || 'gbvwzwpuzlaftinfcxkc' }}
-      MODO: ${{ inputs.modo || 'backup' }}
+      MODO: ${{ inputs.modo || (github.event.schedule == '17 7 1 * *' && 'teste') || 'backup' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -36,10 +39,10 @@ jobs:
       - name: Conferir a senha do backup
         if: ${{ env.MODO == 'backup' }}
         env:
-          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+          BACKUP_PASSPHRASE: ${{ secrets.PROD_BACKUP_PASSPHRASE }}
         run: |
           if [ ${#BACKUP_PASSPHRASE} -lt 16 ]; then
-            echo "::error::Crie o segredo BACKUP_PASSPHRASE (16+ caracteres) em Settings → Secrets and variables → Actions. Nada foi exportado."
+            echo "::error::Falta o segredo PROD_BACKUP_PASSPHRASE (16+ caracteres) no ambiente producao-rotina (Settings → Environments). Nada foi exportado."
             exit 1
           fi
       - name: Exportar
@@ -50,7 +53,7 @@ jobs:
       - name: Cifrar
         if: ${{ env.MODO == 'backup' }}
         env:
-          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+          BACKUP_PASSPHRASE: ${{ secrets.PROD_BACKUP_PASSPHRASE }}
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/out"

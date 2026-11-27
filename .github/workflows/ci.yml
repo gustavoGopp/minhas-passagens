@@ -5,6 +5,9 @@ on:
     branches: ["**"]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -20,3 +23,22 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+
+  # Único check exigido na proteção da main. Sempre roda e só passa se todos
+  # os outros jobs passaram: um job pulado não conta como aprovado.
+  gate:
+    if: ${{ always() }}
+    needs: [verify]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Conferir os outros jobs
+        env:
+          RESULTADOS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          for r in $RESULTADOS; do
+            if [ "$r" != "success" ]; then
+              echo "::error::Há job que não passou ($RESULTADOS). O merge fica bloqueado."
+              exit 1
+            fi
+          done
+          echo "Todos os jobs passaram."
