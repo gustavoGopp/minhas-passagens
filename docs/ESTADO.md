@@ -10,11 +10,11 @@ Atualizado em 27/11/2026.
 - A base de trabalho com IA está sendo aplicada em 6 etapas (39 mudanças). **Etapas 0, 1, 2a e 2b feitas.** A lista completa está em https://claude.ai/artifact/DgjhGFEUdzvop9dWE2Q7wU
 - Com a 2b: a migração de produção espera a CI verde e o clique do dono, e o app só é publicado depois dela; a chave de serviço tem lista curta (`scripts/chave-de-servico.mjs`); falhas do servidor vão para o banco e para o e-mail do vigia; há roteiro de emergência (`docs/EMERGENCIA.md`) e tipos do banco gerados. O histórico de preço só o servidor grava e a chave cifrada não vai ao navegador.
 
-## Próximo passo: etapa 3
+## Próximo passo: etapa 3 em andamento (PR 55)
 
-Depois do merge deste PR, abrir uma sessão nova e colar o pedido abaixo.
+Já no PR 55 (branch claude/sharp-mendel-im56vf): corretor, limites, rodada de verdade pela etiqueta `avaliar-extracao`, teto de 30 leituras, 3 tentativas e gasto real. O P26 (e-mail como dado) está no branch claude/sharp-mendel-im56vf-p26 e entra depois da rodada 1. Falta o gabarito. Com o conector do Gmail ligado, abrir uma sessão nova no branch do PR e colar:
 
-> Leia `docs/ESTADO.md` e `docs/DECISOES.md`. Faça a etapa 3 da base de IA (avaliação da extração), um pull request no branch da sessão. Use a página de achados (endereço acima) para os detalhes. Antes de começar, me mostre o plano e o que depende de decisão minha. Os testes de banco e de ponta a ponta precisam continuar verdes; gabarito novo nasce de exemplos aprovados por mim.
+> Leia `docs/ESTADO.md`, `docs/DECISOES.md` e o plano no PR 55. Continue a etapa 3 no branch claude/sharp-mendel-im56vf. Procure no meu Gmail (só leitura, `in:anywhere`, as buscas de `scanQueries` em `src/lib/mail/gmail.ts`) os e-mails de passagem; mostre primeiro só a lista (data, remetente, assunto com localizador mascarado) separada por tipo, e eu escolho. Anonimize antes de gravar e me mostre as trocas. Depois: teste de repetição, rodada 1, juntar o P26, rodada 2, revisão limpa e entrega.
 
 Depois vêm a etapa 4 (qualidade contínua) e a 5 (modelo reutilizável).
 
@@ -23,7 +23,7 @@ Depois vêm a etapa 4 (qualidade contínua) e a 5 (modelo reutilizável).
 - Pôr o check `aprovacao` na regra da main, se ainda não estiver. Sem isso, a checagem de cenários só avisa, não bloqueia.
 - Guardar a `BYOK_MASTER_KEY` num cofre de senhas.
 - Escolher onde fica a segunda cópia do backup, fora do GitHub.
-- Para a etapa 3: escolher a origem do gabarito da extração e onde ele fica.
+- Para a etapa 3: ligar o conector do Gmail; criar o ambiente `avaliacao-ia` com a chave da avaliação.
 
 ## Em aberto
 
