@@ -27,7 +27,7 @@ describe("documentos que o agente lê", () => {
       for (const [, trecho] of ler(doc).matchAll(/`([^`\n]+)`/g)) {
         const caminho = trecho.replace(/\/$/, "");
         const pareceCaminho =
-          /^(\.?[\w.-]+\/)+[\w.-]*$/.test(trecho) || /^[\w.-]+\.(md|mjs|ts|json|yml)$/.test(trecho);
+          /^([\w.-]+\/)+[\w.-]*$/.test(trecho) || /^[\w.-]+\.(md|mjs|ts|json|yml)$/.test(trecho);
         if (!pareceCaminho || caminho.startsWith("node_modules")) continue;
         const candidatos = [caminho, path.join("docs", caminho)];
         if (!candidatos.some((c) => existsSync(path.join(raiz, c))))
