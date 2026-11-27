@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Extraction } from "./schema";
 
 vi.mock("server-only", () => ({}));
-const { extractBookings } = await import("./extract");
+const { extractBookings, tempoDaChamada } = await import("./extract");
 
 // O código em volta do modelo (P24, P25): decisão de reforço, consumo de cada
 // chamada e tradução de erros. O modelo é trocado por respostas fixas.
@@ -126,5 +126,17 @@ describe("extractBookings", () => {
     const r = await extractBookings("sk-teste", texto, {}, deps);
     expect(r).toMatchObject({ ok: false, error: expect.stringMatching(/recusou/) });
     expect(r.chamadas[0]).toMatchObject({ resultado: "erro", tokensEntrada: 10 });
+  });
+});
+
+describe("tempoDaChamada", () => {
+  // A função da Vercel tem 60 s; a chamada precisa acabar antes, com folga.
+  it.each([
+    [undefined, 0, 90_000],
+    [60_000, 0, 57_000],
+    [10_000, 0, 7_000],
+    [4_000, 0, 5_000],
+  ])("prazo %s, agora %i → %i ms", (prazo, agora, ms) => {
+    expect(tempoDaChamada(prazo, agora)).toBe(ms);
   });
 });

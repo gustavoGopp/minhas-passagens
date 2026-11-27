@@ -38,7 +38,7 @@ const { extrair } = vi.hoisted(() => ({
   extrair: vi.fn(async (_chave: string, input: { kind: string; text?: string }) => {
     const locator = /TESTE[0-9]/.exec(input.text ?? "")?.[0] ?? "";
     const data: Extraction = { bookings: locator ? [reserva(locator)] : [], warnings: [] };
-    return { ok: true as const, data, model: "modelo-falso" };
+    return { ok: true as const, data, model: "modelo-falso", chamadas: [] };
   }),
 }));
 vi.mock("@/lib/extract/extract", async (original) => ({

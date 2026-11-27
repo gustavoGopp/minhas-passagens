@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { GastoDaIA } from "@/components/gasto-da-ia";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { listIntegrationsPublic, type Provider } from "@/lib/integrations/repo";
 import { PROVIDER_INFO } from "@/lib/integrations/providers";
@@ -26,6 +27,9 @@ export default function IntegracoesPage({
       </Suspense>
       <Suspense fallback={<p className="text-sm text-zinc-600 dark:text-zinc-400">Carregando…</p>}>
         <IntegrationsList />
+      </Suspense>
+      <Suspense fallback={null}>
+        <GastoDaIA />
       </Suspense>
     </main>
   );

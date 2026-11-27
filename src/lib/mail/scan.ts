@@ -2,7 +2,14 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { exigir } from "@/lib/supabase/exigir";
 import { registrarFalha } from "@/lib/falhas";
+import {
+  cabeNoTeto,
+  MENSAGEM_DO_TETO,
+  registrarChamadas,
+  type OrigemDaExtracao,
+} from "@/lib/extract/consumo";
 import { entradaDoEmail, extractBookings } from "@/lib/extract/extract";
+import { MAX_TENTATIVAS_POR_EMAIL } from "@/lib/extract/limites";
 import { getDecryptedKeyWith } from "@/lib/integrations/repo";
 import { draftFromExtraction } from "@/lib/trips/draft";
 import { googleClient } from "./accounts";
@@ -223,20 +230,48 @@ export async function advanceScan(
         });
         return "error";
       }
-      // Reservas antigas (queda no meio) voltam para a fila.
+      // Reservas antigas (queda no meio) voltam para a fila, até a 3ª tentativa;
+      // depois viram erro e não são cobradas de novo (P25).
+      const parada = new Date(clock() - STALE_PROCESSING_MS).toISOString();
+      exigir(
+        await admin
+          .from("mail_messages")
+          .update({
+            status: "error",
+            error: `Leitura interrompida ${MAX_TENTATIVAS_POR_EMAIL} vezes: ${MAX_TENTATIVAS_POR_EMAIL} tentativas sem resposta.`,
+          })
+          .eq("scan_id", scan.id)
+          .eq("status", "processing")
+          .gte("attempts", MAX_TENTATIVAS_POR_EMAIL)
+          .lt("updated_at", parada),
+        "mail_messages",
+      );
       exigir(
         await admin
           .from("mail_messages")
           .update({ status: "candidate" })
           .eq("scan_id", scan.id)
           .eq("status", "processing")
-          .lt("updated_at", new Date(clock() - STALE_PROCESSING_MS).toISOString()),
+          .lt("attempts", MAX_TENTATIVAS_POR_EMAIL)
+          .lt("updated_at", parada),
         "mail_messages",
       );
 
+      // Teto diário: a leitura automática espera o dia seguinte (P25).
+      const origem: OrigemDaExtracao = scan.kind === "sync" ? "automatica" : "varredura";
+      if (!(await cabeNoTeto(scan.user_id, origem, clock(), admin))) {
+        if (scan.last_error !== MENSAGEM_DO_TETO)
+          await setScan(admin, scan.id, { last_error: MENSAGEM_DO_TETO });
+        return status;
+      }
+      if (scan.last_error === MENSAGEM_DO_TETO) {
+        await setScan(admin, scan.id, { last_error: null });
+        scan = { ...scan, last_error: null };
+      }
+
       const { data: next, error } = await admin
         .from("mail_messages")
-        .select("id, provider_message_id, received_at")
+        .select("id, provider_message_id, received_at, attempts")
         .eq("scan_id", scan.id)
         .eq("status", "candidate")
         .order("received_at", { ascending: false })
@@ -250,14 +285,18 @@ export async function advanceScan(
         return "review";
       }
       // Reserva: só quem mudar candidate → processing extrai (não paga duas vezes).
+      // Cada reserva conta uma tentativa; a conferência do valor atual impede que
+      // duas chamadas em paralelo contem a mesma tentativa.
       const claimed = await admin
         .from("mail_messages")
-        .update({ status: "processing" })
+        .update({ status: "processing", attempts: Number(m.attempts ?? 0) + 1 })
         .eq("id", m.id)
         .eq("status", "candidate")
+        .eq("attempts", m.attempts)
         .select("id");
       if (!claimed.data?.length) continue;
-      if ((await processMessage(admin, scan, m, token, apiKey, f)) === "stop") return "error";
+      const fim = await processMessage(admin, scan, m, token, apiKey, f, origem, deadline);
+      if (fim === "stop") return "error";
       continue;
     }
     break;
@@ -272,6 +311,8 @@ async function processMessage(
   token: string,
   apiKey: string,
   f: typeof fetch,
+  origem: OrigemDaExtracao,
+  prazo: number,
 ): Promise<"ok" | "stop"> {
   const done = async (patch: Record<string, unknown>) => {
     exigir(await admin.from("mail_messages").update(patch).eq("id", m.id), "mail_messages");
@@ -286,8 +327,9 @@ async function processMessage(
     const r = await extractBookings(
       apiKey,
       entradaDoEmail({ assunto: meta.subject, remetente: meta.from, corpo: text }),
-      { allowEmpty: true, receivedOn },
+      { allowEmpty: true, receivedOn, prazo },
     );
+    await registrarChamadas(scan.user_id, origem, r.chamadas, admin);
     if (!r.ok) {
       await done({ status: "error", error: r.error.slice(0, 300) });
       // Chave recusada ou sem crédito: para a varredura em vez de errar cada e-mail.

@@ -27,4 +27,5 @@ export const EXTRA_EXPORT_COLUMNS = {
   mail_scans: "id, status, created_at, confirmed_at, finished_at, last_error",
   mail_messages: "provider_message_id, received_at, sender_domain, class, status, created_at",
   import_candidates: "id, received_at, draft, status, booking_id, decided_at, created_at",
+  extracoes: "*",
 } as const;

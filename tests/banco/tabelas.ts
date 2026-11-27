@@ -199,6 +199,19 @@ export const TABELAS: Tabela[] = [
     dono: soLer,
   },
   {
+    nome: "extracoes",
+    pk: "id",
+    linha: (c) => ({
+      user_id: c.user,
+      origem: "automatica",
+      modelo: "modelo-ficticio",
+      resultado: "ok",
+      tokens_entrada: 100,
+    }),
+    alterar: { coluna: "tokens_entrada", valor: 1 },
+    dono: soLer,
+  },
+  {
     nome: "import_candidates",
     pk: "id",
     linha: (c) => ({ user_id: c.user, message_id: c.message, draft: {} }),

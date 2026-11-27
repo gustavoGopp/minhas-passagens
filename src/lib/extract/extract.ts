@@ -77,6 +77,18 @@ export interface ExtractOptions {
   allowEmpty?: boolean;
   /** Data em que o e-mail foi recebido: base para deduzir o ano das datas. */
   receivedOn?: string;
+  /**
+   * Instante (epoch ms) em que a função precisa terminar. Com prazo, a chamada
+   * usa só o tempo que sobra e não repete sozinha: um e-mail não é pago duas
+   * vezes por uma chamada que a Vercel interrompeu (P25).
+   */
+  prazo?: number;
+}
+
+/** Tempo máximo de uma chamada à API, em ms. */
+export function tempoDaChamada(prazo: number | undefined, agora: number = Date.now()): number {
+  if (prazo === undefined) return 90_000;
+  return Math.min(90_000, Math.max(5_000, prazo - agora - 3_000));
 }
 
 function content(input: ExtractInput, opts: ExtractOptions = {}): Anthropic.ContentBlockParam[] {
@@ -189,7 +201,13 @@ export async function extractBookings(
     padrao: serverEnv().EXTRACTION_MODEL_DEFAULT,
     reforco: serverEnv().EXTRACTION_MODEL_RETRY,
   };
-  const client = deps.cliente ?? new Anthropic({ apiKey, maxRetries: 1, timeout: 90_000 });
+  const client =
+    deps.cliente ??
+    new Anthropic({
+      apiKey,
+      maxRetries: opts.prazo === undefined ? 1 : 0,
+      timeout: tempoDaChamada(opts.prazo),
+    });
   const chamadas: Chamada[] = [];
   let modeloAtual = modelos.padrao;
   try {

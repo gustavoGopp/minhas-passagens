@@ -115,6 +115,7 @@ beforeEach(() => {
     ok: true,
     data: { bookings: [booking], warnings: [] },
     model: "haiku",
+    chamadas: [],
   });
 });
 
@@ -166,7 +167,11 @@ describe("varredura do Gmail", () => {
     );
     expect(st).toBe("review");
     expect(extract).toHaveBeenCalledTimes(1); // m3 não tinha sinais de passagem: sem custo
-    expect(extract.mock.calls[0][2]).toEqual({ allowEmpty: true, receivedOn: "2026-10-20" });
+    expect(extract.mock.calls[0][2]).toEqual({
+      allowEmpty: true,
+      receivedOn: "2026-10-20",
+      prazo: expect.any(Number),
+    });
     expect(statusOf("m1")).toBe("extracted");
     expect(statusOf("m3")).toBe("not_booking");
     const [c] = db.rows("import_candidates");
@@ -195,6 +200,7 @@ describe("varredura do Gmail", () => {
     extract.mockResolvedValue({
       ok: false,
       error: "Sua chave da Anthropic foi recusada. Atualize em Integrações.",
+      chamadas: [],
     });
     await advanceScan(
       db.client(),
