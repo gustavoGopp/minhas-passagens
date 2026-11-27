@@ -52,14 +52,15 @@ Uma linha por decisão, com data e motivo. Só se acrescenta; decisão trocada g
 
 ## Incidentes e a trava que ficou
 
-| Data  | O que houve                                                                               | Trava                                                                                           |
-| ----- | ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| 02/11 | Login falhando: migrações não aplicadas, URL do site errada e segredo do Google trocado   | Migração automática no merge; diagnóstico `auth-config`                                         |
-| 02/11 | Produção parada: prévias de cada branch consumiram o limite diário da Vercel              | `vercel.json` publica só a main                                                                 |
-| 02/11 | Avisos registrados como enviados sem nenhum canal configurado                             | Aviso só conta como enviado quando um canal entrega (`src/lib/notify/delivery.ts`)              |
-| 03/11 | 15 voos com data de compra depois do voo; o ano era lido errado no e-mail                 | Tela Conferir passagens; a extração tenta de novo com o modelo forte                            |
-| 26/11 | Um valor de exemplo num teste tinha formato de chave do Stripe e o GitHub recusou o envio | Valores de exemplo sem formato de fornecedor; proteção de segredos do GitHub ligada             |
-| 27/11 | A primeira versão das travas deixava enviar código para a main por caminhos não vigiados  | Travas reescritas com 126 casos de teste; envio de arquivos pela API do GitHub negado ao agente |
+| Data  | O que houve                                                                                                                                               | Trava                                                                                           |
+| ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| 02/11 | Login falhando: migrações não aplicadas, URL do site errada e segredo do Google trocado                                                                   | Migração automática no merge; diagnóstico `auth-config`                                         |
+| 02/11 | Produção parada: prévias de cada branch consumiram o limite diário da Vercel                                                                              | `vercel.json` publica só a main                                                                 |
+| 02/11 | Avisos registrados como enviados sem nenhum canal configurado                                                                                             | Aviso só conta como enviado quando um canal entrega (`src/lib/notify/delivery.ts`)              |
+| 03/11 | 15 voos com data de compra depois do voo; o ano era lido errado no e-mail                                                                                 | Tela Conferir passagens; a extração tenta de novo com o modelo forte                            |
+| 26/11 | Um valor de exemplo num teste tinha formato de chave do Stripe e o GitHub recusou o envio                                                                 | Valores de exemplo sem formato de fornecedor; proteção de segredos do GitHub ligada             |
+| 27/11 | A primeira versão das travas deixava enviar código para a main por caminhos não vigiados                                                                  | Travas reescritas com 126 casos de teste; envio de arquivos pela API do GitHub negado ao agente |
+| 27/11 | Login com Google recusado (`redirect_uri_mismatch`): o endereço de retorno do Supabase faltava no cliente do Google, que fica noutra conta Google do dono | Seção "Não consigo entrar no app" em `docs/EMERGENCIA.md`, com o caminho até o cliente certo    |
 
 ## Entrevista de 29/10 (resumo)
 

@@ -1,6 +1,6 @@
 # Regras de acesso
 
-Aprovadas pelo dono em 27/11/2026. Cada regra é um teste em `tests/banco/regras-de-acesso.test.ts`, rodado na CI contra um Supabase de verdade. A CI também prova que cada teste falha quando a regra é quebrada de propósito (`scripts/banco-teste/quebrar-regras.mjs`). Mudar este arquivo pede a etiqueta `aprovado-pelo-dono` no pull request.
+Aprovadas pelo dono em 27/11/2026; as da etapa 2b (histórico de preço, chave cifrada e registro de falhas), também em 27/11. Cada regra é um teste em `tests/banco/regras-de-acesso.test.ts`, rodado na CI contra um Supabase de verdade. A CI também prova que cada teste falha quando a regra é quebrada de propósito (`scripts/banco-teste/quebrar-regras.mjs`). Mudar este arquivo pede a etiqueta `aprovado-pelo-dono` no pull request.
 
 A e B são duas pessoas com conta. "Visitante" é quem usa só a chave pública, sem login.
 
@@ -16,9 +16,9 @@ A e B são duas pessoas com conta. "Visitante" é quem usa só a chave pública,
 
 - `bookings` (passagens) e `refunds_credits` (reembolsos e créditos).
 - `flights` (trechos). B também não pendura trecho numa passagem de A.
-- `user_integrations` (chaves de API cifradas).
+- `user_integrations` (chaves de API cifradas). Mas ninguém lê a chave cifrada pelo navegador, nem A: só o servidor a lê. A vê o final da chave e a situação dela.
 - `push_subscriptions` (avisos no celular).
-- `price_monitors`, `price_checks`, `price_observations` e `price_alerts` (preços). Hoje A consegue criar e alterar o próprio histórico de preço pelo navegador. A regra que fecha isso, e a que esconde a chave cifrada do navegador, foram aprovadas em 27/11 e entram num pull request separado, depois que o app novo estiver no ar: a migração roda antes da publicação, e o app antigo ainda precisa desses acessos.
+- `price_monitors` (monitores de preço).
 
 ## Regras parciais
 
@@ -30,7 +30,8 @@ A e B são duas pessoas com conta. "Visitante" é quem usa só a chave pública,
 
 - `notification_log` (avisos enviados). Impede apagar o registro para receber um aviso de novo.
 - `mail_accounts`, `mail_scans`, `mail_messages` e `import_candidates` (Gmail e importação).
+- `price_checks`, `price_observations` e `price_alerts` (histórico de preço). Impede forjar preço ou alerta; o "Verificar agora" grava pelo servidor.
 
 ## Ninguém, nem logado
 
-- `app_config` (segredos do agendador), `app_migrations` e `registro_falhas` (falhas do servidor, regra aprovada em 27/11). Só o servidor.
+- `app_config` (segredos do agendador), `app_migrations` e `registro_falhas` (falhas do servidor). Só o servidor.
