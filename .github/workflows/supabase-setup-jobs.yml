@@ -16,17 +16,22 @@ jobs:
     runs-on: ubuntu-latest
     # Só a partir da main e só depois de o dono aprovar a execução no GitHub.
     environment: producao-risco
-    env:
-      SUPABASE_ACCESS_TOKEN: ${{ secrets.PROD_SUPABASE_ACCESS_TOKEN }}
-      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || 'gbvwzwpuzlaftinfcxkc' }}
-      TELEGRAM_BOT_TOKEN: ${{ secrets.PROD_TELEGRAM_BOT_TOKEN }}
-      APP_URL: ${{ inputs.app_url }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: npm
+      # A instalação de pacotes roda sem nenhuma credencial no ambiente: código
+      # de terceiros não enxerga os segredos de produção (revisão de novembro, S1).
+      - run: npm install -g npm@11.21.2
       - run: npm ci
-      - run: node scripts/supabase-migrate.mjs
-      - run: node scripts/supabase-setup-jobs.mjs
+      - name: Migrações e agendador
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.PROD_SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || 'gbvwzwpuzlaftinfcxkc' }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.PROD_TELEGRAM_BOT_TOKEN }}
+          APP_URL: ${{ inputs.app_url }}
+        run: |
+          node scripts/supabase-migrate.mjs
+          node scripts/supabase-setup-jobs.mjs

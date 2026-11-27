@@ -11,7 +11,9 @@
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "verify": "bash scripts/verificar.sh",
+    "verify:rapido": "bash scripts/verificar.sh rapido"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.3.0",
