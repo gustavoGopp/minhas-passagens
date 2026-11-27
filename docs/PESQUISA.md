@@ -1,5 +1,7 @@
 # Pesquisa técnica (Etapa 2, 2026-10-29)
 
+> Retrato de 29/10/2026. Não é atualizado. O que foi decidido depois está em [`DECISOES.md`](DECISOES.md): por exemplo, o agendador roda a cada 5 minutos e a reserva pela Cloudflare não foi feita.
+
 Resumo das opções avaliadas antes de começar a construir. Os números foram lidos em páginas oficiais via resultados de busca (a sessão não alcançava os sites diretamente) e devem ser reconfirmados ao criar cada conta.
 
 ## Fontes de preço de passagens

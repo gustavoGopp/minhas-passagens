@@ -2,7 +2,7 @@
 
 Organize as passagens aéreas que você comprou, acompanhe preços de rotas que interessam e veja feriados no calendário. Tudo em um app mobile-first, em português, hospedado em planos gratuitos. Cada pessoa usa as próprias chaves de API, então o custo de uma nunca cai na conta de outra.
 
-> Projeto pessoal, em construção, com código aberto sob licença MIT. Acompanhe o andamento em [`docs/STATUS.md`](docs/STATUS.md).
+> Projeto pessoal, em construção, com código aberto sob licença MIT. O andamento está em [`docs/ESTADO.md`](docs/ESTADO.md) e as decisões em [`docs/DECISOES.md`](docs/DECISOES.md).
 
 ## O que é
 
@@ -55,6 +55,7 @@ Outros comandos:
 | `npm run format`    | Prettier em todo o projeto        |
 | `npm run typecheck` | Checagem de tipos do TypeScript   |
 | `npm run build`     | Build de produção do Next.js      |
+| `npm run verify`    | Tudo acima, de uma vez (é a CI)   |
 
 ## Como fazer deploy (sua própria cópia)
 
@@ -64,7 +65,7 @@ O projeto roda inteiro em planos gratuitos. Cada passo abaixo leva poucos minuto
 
 1. Crie um projeto em https://supabase.com (plano Free; região `South America (São Paulo)`).
 2. Em **Project Settings → API**, copie a URL do projeto, a chave pública (`anon` / `publishable`) e a chave secreta (`service_role` / `secret`).
-3. Aplique as migrações: **SQL Editor → New query**, cole o conteúdo de cada arquivo de `supabase/migrations/` em ordem e execute. Detalhes em [`supabase/README.md`](supabase/README.md).
+3. Aplique as migrações pelo workflow **Supabase — migrações** do seu fork (ele roda sozinho a cada merge que mexe em `supabase/migrations/`). Antes, crie os ambientes e as credenciais descritos em [`supabase/README.md`](supabase/README.md).
 
 ### 2. Google (botão "Entrar com Google")
 
@@ -101,9 +102,15 @@ Guarde a `BYOK_MASTER_KEY` com cuidado: ela cifra as chaves de API de todos os u
 
 Cada pessoa cola as próprias chaves (Anthropic, API de preços) na tela de Integrações. Elas ficam cifradas no banco com AES-256-GCM e nunca vão ao navegador. O uso é cobrado na conta de quem forneceu a chave.
 
-Notificações, agendador e backup têm os passos em [`docs/STATUS.md`](docs/STATUS.md). Sem `CRON_SECRET`, o vigia diário (`/api/jobs/watchdog`) fica desligado e responde 503.
+Sem `CRON_SECRET`, o vigia diário (`/api/jobs/watchdog`) fica desligado e responde 503.
 
-### 5. Gmail: encontrar passagens no e-mail (opcional)
+### 5. Avisos, agendador e backup
+
+1. **Agendador e avisos:** em Actions, rode **Supabase — notificações e agendador** com a URL do seu app. Ele gera as chaves de push, agenda o ciclo de 5 minutos no banco e, se houver `PROD_TELEGRAM_BOT_TOKEN`, registra o bot do Telegram. O workflow espera a sua aprovação.
+2. **Backup:** o workflow **Supabase — backup** roda todo domingo e guarda 4 cópias cifradas. A restauração está descrita em [`.claude/skills/restaurar-backup/SKILL.md`](.claude/skills/restaurar-backup/SKILL.md).
+3. **Vigia:** com `CRON_SECRET` definido, o app avisa por e-mail se o agendador parar ou se o backup atrasar mais de 8 dias.
+
+### 6. Gmail: encontrar passagens no e-mail (opcional)
 
 O app lê o Gmail com permissão só de leitura (`gmail.readonly`), num passo separado do login. Para uso pessoal (menos de 100 usuários), o Google dispensa a verificação: aparece a tela de "app não verificado" e você segue em **Avançado → Acessar**.
 

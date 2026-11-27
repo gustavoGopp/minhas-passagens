@@ -1,0 +1,59 @@
+# Decisões
+
+Uma linha por decisão, com data e motivo. Só se acrescenta; decisão trocada ganha uma linha nova que cita a antiga. O histórico do que foi construído está no Git e nos pull requests.
+
+## Produto e arquitetura
+
+| Data  | Decisão                                                                                                                                              | Por quê                                                              |
+| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| 29/10 | Next.js 16 na Vercel Hobby; Supabase Free (login Google, Postgres com regras de acesso por linha); Vitest; Prettier                                  | Planos gratuitos; login e isolamento prontos                         |
+| 29/10 | Cada pessoa usa as próprias chaves de API (Anthropic, preços, Resend), cifradas no servidor com AES-256-GCM                                          | Gasto de um usuário nunca cai na conta do dono                       |
+| 29/10 | Licença MIT; calendário hebraico implementado no projeto                                                                                             | A biblioteca pronta é GPL                                            |
+| 29/10 | Feriados calculados no próprio app (nacionais por lei, estaduais e 6 cidades de base pública CC BY-SA, municipais à mão)                             | Sem depender de API em uso                                           |
+| 29/10 | Cada aeroporto é um lugar distinto (SDU ≠ GIG; CGH ≠ GRU ≠ VCP)                                                                                      | Entrevista                                                           |
+| 29/10 | Extração: Haiku 5.5; nova tentativa com Sonnet 5.5 se a validação falhar; saída estruturada; o fuso vem da tabela de aeroportos, não do modelo       | Custo de centavos por mês                                            |
+| 29/10 | O original (texto, print, PDF) não é guardado: vai para a extração e é descartado. Preços: observações 180 dias, checagens 365                       | Privacidade; banco gratuito de 500 MB                                |
+| 29/10 | Avisos imediatos: preço no alvo, check-in (abertura e 24h antes), passagem nova. Silêncio das 23h às 7h, menos o check-in de 24h                     | Entrevista                                                           |
+| 29/10 | Gastos pela data da compra; reembolso na data do recebimento                                                                                         | Entrevista                                                           |
+| 02/11 | Agendador: pg_cron do Supabase chama o app a cada 5 minutos; vigia diário pela Vercel. A reserva por Cloudflare não foi feita                        | Custo zero; evita a pausa do Supabase                                |
+| 02/11 | Prévias da Vercel desligadas: só a main é publicada                                                                                                  | As prévias estouraram o limite do plano e pararam a produção         |
+| 03/11 | Preços: Travelpayouts em todas as datas e SerpApi (Google Flights) nas duas semanas seguintes, com teto de 240 buscas por mês                        | O Travelpayouts sozinho quase nunca tem voo na janela de horário     |
+| 03/11 | Backup semanal em JSON, cifrado com GPG antes de virar artefato; 28 dias de retenção; restauração por workflow com simulação                         | O Supabase gratuito não tem backup; repositório e registros públicos |
+| 03/11 | Gmail só de leitura, em passo separado do login; só metadados dos e-mails no banco; importação em lote com revisão                                   | Cadastrar à mão era a barreira                                       |
+| 26/11 | Valores: vírgula é centavo; ponto e 3 dígitos é milhar; ponto e 1 ou 2 dígitos é centavo; ambíguo é recusado (`src/lib/trips/money.test.ts`)         | "1.000" era gravado como R$ 1,00                                     |
+| 26/11 | Datas precisam existir; origem ≠ destino; chegada depois da partida; compra depois do voo é recusada no formulário e vai para Conferir na importação | "31 de fevereiro" virava 4 de março                                  |
+| 26/11 | Voo internacional: 73 aeroportos com fuso; fora das listas vale horário de Brasília com "Conferi os horários"; moeda original fora da soma em reais  | Suporte completo fica para depois                                    |
+| 26/11 | Cadastro de contas novas fechado até o pacote "antes de abrir para outras pessoas" (issue 41)                                                        | Havia uma segunda conta não identificada                             |
+
+## Como trabalhamos
+
+| Data  | Decisão                                                                                                                             | Por quê                                                                 |
+| ----- | ----------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| 26/11 | Base de trabalho em 39 mudanças e 6 etapas, a partir de pesquisa com 231 achados: https://claude.ai/artifact/DgjhGFEUdzvop9dWE2Q7wU | Sair do amador sem repetir a documentação maior que o produto           |
+| 26/11 | Um pull request por etapa; o dono junta; da etapa 2 em diante, uma sessão nova por etapa                                            | Mudanças pequenas e conversa curta erram menos                          |
+| 26/11 | Produção só pela main, em dois ambientes do GitHub: `producao-rotina` (sem aprovação) e `producao-risco` (com aprovação do dono)    | Qualquer branch rodava SQL como dono do banco                           |
+| 26/11 | Credenciais de produção com nomes `PROD_...`, só nos ambientes                                                                      | Sem ambiente configurado, o job falha em vez de rodar sem proteção      |
+| 26/11 | Regra de negócio nasce de tabela de exemplos aprovada pelo dono; o teste é escrito antes e visto falhar                             | 249 testes verdes conviviam com três erros de regra                     |
+| 26/11 | Mudança em zona sensível passa por revisor que não participou da escrita                                                            | Na etapa 0 ele achou 19 problemas, 2 graves                             |
+| 27/11 | `CLAUDE.md` curto e escrito à mão; o que não admite exceção vira hook, permissão ou teste; procedimento vira skill                  | Arquivo gerado ou longo piora o resultado; texto não garante            |
+| 27/11 | Estado em `docs/ESTADO.md` com teto de uma tela; pendências em issues; o histórico fica no Git                                      | O arquivo de estado anterior tinha 284 linhas e era lido em toda sessão |
+| 27/11 | Pacote novo só com aprovação do dono; versões com menos de 7 dias não entram; scripts de instalação desligados                      | Ataques recentes no npm rodaram na instalação                           |
+
+## Incidentes e a trava que ficou
+
+| Data  | O que houve                                                                               | Trava                                                                               |
+| ----- | ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| 02/11 | Login falhando: migrações não aplicadas, URL do site errada e segredo do Google trocado   | Migração automática no merge; diagnóstico `auth-config`                             |
+| 02/11 | Produção parada: prévias de cada branch consumiram o limite diário da Vercel              | `vercel.json` publica só a main                                                     |
+| 02/11 | Avisos registrados como enviados sem nenhum canal configurado                             | Aviso só conta como enviado quando um canal entrega (`src/lib/notify/delivery.ts`)  |
+| 03/11 | 15 voos com data de compra depois do voo; o ano era lido errado no e-mail                 | Tela Conferir passagens; a extração tenta de novo com o modelo forte                |
+| 26/11 | Um valor de exemplo num teste tinha formato de chave do Stripe e o GitHub recusou o envio | Valores de exemplo sem formato de fornecedor; proteção de segredos do GitHub ligada |
+
+## Entrevista de 29/10 (resumo)
+
+- **Objetivo:** uso pessoal primeiro; depois outras pessoas, vitrine e possível produto. Sem prazo.
+- **Rotina:** ponte aérea SDU e CGH toda semana. Rio para São Paulo na segunda até 8h ou domingo à tarde; São Paulo para o Rio na quinta a partir das 18h ou sexta até 13h.
+- **Companhias e canais:** Azul, Gol e LATAM; site da companhia, agências online, milhas e agência corporativa.
+- **Dores:** monitorar preço à mão, esquecer check-in, comprar duplicado ou trecho errado, não saber gastos e créditos.
+- **Orçamento:** até R$ 50 por mês, gastando o mínimo.
+- **Fora da primeira versão:** monitor internacional, WhatsApp, compra dentro do app, raspagem de sites, resumo diário.
