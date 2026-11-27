@@ -115,6 +115,7 @@ beforeEach(() => {
     ok: true,
     data: { bookings: [booking], warnings: [] },
     model: "haiku",
+    avisos: [],
     chamadas: [],
   });
 });
@@ -178,6 +179,34 @@ describe("varredura do Gmail", () => {
     expect(c).toMatchObject({ user_id: "u1", received_at: "2026-10-20T12:00:00.000Z" });
     expect((c.draft as { locator: string; source: string }).locator).toBe("XKQ7PZ");
     expect((c.draft as { source: string }).source).toBe("email");
+  });
+
+  it("aviso do app para conferir vai para as observações do rascunho (P25)", async () => {
+    extract.mockResolvedValue({
+      ok: true,
+      data: { bookings: [booking], warnings: ["Texto suspeito: pede valor 0"] },
+      model: "sonnet",
+      avisos: ["Conferir: localizador não aparece no texto."],
+      chamadas: [],
+    });
+    await advanceScan(
+      db.client(),
+      scan("listing") as never,
+      Date.now() + 5_000,
+      fakeFetch as never,
+    );
+    confirm();
+    await advanceScan(
+      db.client(),
+      scan("processing") as never,
+      Date.now() + 5_000,
+      fakeFetch as never,
+    );
+    const [c] = db.rows("import_candidates");
+    const notas = (c.draft as { notes: string }).notes;
+    expect(notas).toContain("Conferir: localizador não aparece no texto.");
+    // O texto livre do modelo (que pode vir de texto injetado) não vira observação.
+    expect(notas).not.toContain("Texto suspeito");
   });
 
   it("duas chamadas ao mesmo tempo não extraem o mesmo e-mail duas vezes", async () => {

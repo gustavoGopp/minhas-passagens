@@ -35,11 +35,13 @@ vi.mock("@/lib/auth/current-user", async () => {
 // Extração falsa: nenhuma chamada à Anthropic. Devolve a passagem do localizador
 // que aparece no texto do e-mail.
 const { extrair } = vi.hoisted(() => ({
-  extrair: vi.fn(async (_chave: string, input: { kind: string; text?: string }) => {
-    const locator = /TESTE[0-9]/.exec(input.text ?? "")?.[0] ?? "";
-    const data: Extraction = { bookings: locator ? [reserva(locator)] : [], warnings: [] };
-    return { ok: true as const, data, model: "modelo-falso", chamadas: [] };
-  }),
+  extrair: vi.fn(
+    async (_chave: string, input: { kind: string; text?: string; email?: { corpo: string } }) => {
+      const locator = /TESTE[0-9]/.exec(input.email?.corpo ?? input.text ?? "")?.[0] ?? "";
+      const data: Extraction = { bookings: locator ? [reserva(locator)] : [], warnings: [] };
+      return { ok: true as const, data, model: "modelo-falso", avisos: [], chamadas: [] };
+    },
+  ),
 }));
 vi.mock("@/lib/extract/extract", async (original) => ({
   ...(await original<typeof import("@/lib/extract/extract")>()),
@@ -199,7 +201,7 @@ describe("importar passagens do Gmail", () => {
       "sk-ant-ficticia-0000",
       "sk-ant-ficticia-0000",
     ]);
-    expect(extrair.mock.calls.every((c) => c[1].text?.includes(FRASE_DO_CORPO))).toBe(true);
+    expect(extrair.mock.calls.every((c) => c[1].email?.corpo.includes(FRASE_DO_CORPO))).toBe(true);
     const cands = await linhas("import_candidates");
     expect(cands).toHaveLength(2);
     expect(cands.every((c) => c.status === "pending")).toBe(true);
@@ -256,7 +258,7 @@ describe("importar passagens do Gmail", () => {
     await avancarAte("review");
     // Só o e-mail novo foi lido pela IA.
     expect(extrair).toHaveBeenCalledTimes(1);
-    expect(extrair.mock.calls[0][1].text).toContain("TESTE5");
+    expect(extrair.mock.calls[0][1].email?.corpo).toContain("TESTE5");
     const pendentes = (await linhas("import_candidates")).filter((c) => c.status === "pending");
     expect(pendentes).toHaveLength(1);
     const r = await importCandidatesAction(

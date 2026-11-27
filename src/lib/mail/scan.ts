@@ -349,7 +349,7 @@ async function processMessage(
         user_id: scan.user_id,
         message_id: m.id,
         received_at: meta.receivedAt || m.received_at,
-        draft: draftFromExtraction(b, "email", receivedOn),
+        draft: comAvisos(draftFromExtraction(b, "email", receivedOn), r.avisos),
       })),
     );
     if (error) throw new Error(`import_candidates: ${error.message}`);
@@ -359,6 +359,16 @@ async function processMessage(
     await done({ status: "error", error: (e as Error).message.slice(0, 300) });
     return "ok";
   }
+}
+
+/**
+ * Avisos do próprio app (coerência com o texto, aeroporto fora das listas) vão
+ * para as observações do rascunho, onde o dono os vê antes de importar. O texto
+ * livre do modelo (warnings) fica de fora: pode vir de texto injetado no e-mail.
+ */
+function comAvisos<T extends { notes: string }>(draft: T, avisos: string[]): T {
+  if (!avisos.length) return draft;
+  return { ...draft, notes: [draft.notes, ...avisos].filter(Boolean).join("\n") };
 }
 
 /** Agendador: avança as varreduras em andamento de todos, dentro do prazo. */

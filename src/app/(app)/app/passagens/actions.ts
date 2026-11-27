@@ -75,7 +75,7 @@ export async function extractAction(
   }
   return {
     drafts: result.data.bookings.map((b) => draftFromExtraction(b, source)),
-    warnings: result.data.warnings,
+    warnings: [...result.avisos, ...result.data.warnings],
     model: result.model,
   };
 }
