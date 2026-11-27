@@ -81,6 +81,39 @@ describe("workflows do GitHub", () => {
     expect(semPermissao).toEqual([]);
   });
 
+  it("toda ação de terceiros é fixada por SHA, não por etiqueta que pode mudar", () => {
+    const soltas = [];
+    for (const w of workflows) {
+      for (const m of w.texto.matchAll(/uses:\s*([^\s#]+)/g)) {
+        if (!/@[0-9a-f]{40}$/.test(m[1])) soltas.push(`${w.arquivo}: ${m[1]}`);
+      }
+    }
+    expect(soltas).toEqual([]);
+  });
+
+  it("a CI roda o banco de teste e os testes de ponta a ponta, sem credencial de produção", () => {
+    const ci = workflows.find((x) => x.arquivo === "ci.yml");
+    expect(Object.keys(ci.yaml.jobs)).toEqual(
+      expect.arrayContaining(["verify", "banco", "ponta-a-ponta", "gate"]),
+    );
+    expect(ci.texto).not.toMatch(/secrets\.PROD_/);
+    for (const [nome, job] of Object.entries(ci.yaml.jobs)) {
+      expect(job.environment, `ci.yml: ${nome}`).toBeUndefined();
+    }
+  });
+
+  it("o job do banco reaplica as migrações, prova as regras quebrando-as e sonda com a chave pública", () => {
+    const passos = JSON.stringify(workflows.find((x) => x.arquivo === "ci.yml").yaml.jobs.banco);
+    for (const script of [
+      "reaplicar-migracoes.mjs",
+      "quebrar-regras.mjs",
+      "sonda-chave-publica.mjs --como-producao",
+      "test:banco",
+    ]) {
+      expect(passos).toContain(script);
+    }
+  });
+
   it("a CI tem um job final 'gate' que sempre roda e depende de todos os outros", () => {
     const ci = workflows.find((x) => x.arquivo === "ci.yml").yaml;
     const outros = Object.keys(ci.jobs).filter((j) => j !== "gate");

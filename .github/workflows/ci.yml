@@ -46,11 +46,43 @@ jobs:
       - name: Auditoria das dependências de produção
         run: npm audit --omit=dev --audit-level=high
 
+  # Supabase de verdade (Docker), só com dados fictícios e sem credencial de produção.
+  # Migrações do zero e de novo; regras de acesso provadas quebrando-as; sonda com a
+  # chave pública; fluxos do servidor (docs/regras-de-acesso.md e tests/).
+  banco:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: npm que entende o .npmrc
+        run: npm install -g npm@11.21.2
+      - run: npm ci
+      - name: Ferramenta do Supabase (versão fixa, conferida pelo hash)
+        run: bash scripts/banco-teste/instalar-supabase-cli.sh
+      - name: Subir o Supabase local (aplica todas as migrações do zero)
+        run: supabase start
+      - name: Endereços e chaves do Supabase local
+        run: supabase status -o env | grep -E '^(DB_URL|API_URL|ANON_KEY|SERVICE_ROLE_KEY)=' | tr -d '"' >> "$GITHUB_ENV"
+      - name: Aplicar todas as migrações pela segunda vez
+        run: node scripts/banco-teste/reaplicar-migracoes.mjs
+      - name: Regras de acesso
+        run: npm run test:banco -- tests/banco
+      - name: Cada regra quebrada de propósito tem de ser percebida
+        run: node scripts/banco-teste/quebrar-regras.mjs
+      - name: Sonda com a chave pública
+        run: node scripts/banco-teste/sonda-chave-publica.mjs --como-producao
+      - name: Fluxos do servidor
+        run: npm run test:banco -- tests/integracao
+
   # Único check exigido na proteção da main. Sempre roda e só passa se todos
   # os outros jobs passaram: um job pulado não conta como aprovado.
   gate:
     if: ${{ always() }}
-    needs: [verify]
+    needs: [verify, banco]
     runs-on: ubuntu-latest
     steps:
       - name: Conferir os outros jobs

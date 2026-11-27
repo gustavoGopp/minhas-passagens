@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import path from "node:path";
 import { defineConfig } from "vitest/config";
 
@@ -12,7 +13,19 @@ export default defineConfig({
     fileParallelism: false,
     testTimeout: 30_000,
     hookTimeout: 60_000,
-    env: { TZ: "UTC" },
+    // Variáveis do app apontando para o Supabase local; chave mestra gerada na hora.
+    // Nenhum valor de produção: os serviços de fora são falsos nos testes.
+    env: {
+      TZ: "UTC",
+      NEXT_PUBLIC_SUPABASE_URL: process.env.API_URL ?? "",
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.ANON_KEY ?? "",
+      SUPABASE_SERVICE_ROLE_KEY: process.env.SERVICE_ROLE_KEY ?? "",
+      NEXT_PUBLIC_APP_URL: "http://127.0.0.1:3000",
+      BYOK_MASTER_KEY: randomBytes(32).toString("base64"),
+      TELEGRAM_BOT_TOKEN: "token-ficticio",
+      GOOGLE_OAUTH_CLIENT_ID: "cliente-ficticio.apps.googleusercontent.com",
+      GOOGLE_OAUTH_CLIENT_SECRET: "segredo-ficticio",
+    },
   },
   resolve: {
     alias: { "@": path.resolve(import.meta.dirname, "src") },
