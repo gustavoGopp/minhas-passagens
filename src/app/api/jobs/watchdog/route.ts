@@ -12,6 +12,8 @@ import {
   unknownBackupEmail,
 } from "@/lib/jobs/health";
 import { runTick } from "@/lib/jobs/tick";
+import { falhasDesde, registrarFalha } from "@/lib/falhas";
+import { resumoDasFalhas } from "@/lib/falhas-resumo";
 import { getDecryptedKeyWith } from "@/lib/integrations/repo";
 import { sendEmailDetailed } from "@/lib/notify/email";
 import { claimInterval, getConfig, safeEqual, setConfig } from "@/lib/notify/config";
@@ -23,7 +25,8 @@ export const maxDuration = 60;
  * Vigia diário (Vercel Cron, independente do pg_cron). Se o último tick tiver
  * mais de 30 minutos: roda um tick de reconciliação (no máximo 1 por hora) e
  * manda e-mail ao dono da instância com a chave Resend dele (no máximo 1 a cada 20 h).
- * Também confere a data do último backup no GitHub e avisa se passar de 8 dias.
+ * Também confere a data do último backup no GitHub e avisa se passar de 8 dias,
+ * e manda o resumo das falhas do servidor das últimas 24 horas, se houver (P23).
  * Exige CRON_SECRET na Vercel (o cron envia "Authorization: Bearer <CRON_SECRET>"):
  * sem ele, ninguém de fora consegue disparar ticks pelo vigia.
  */
@@ -41,9 +44,12 @@ export async function GET(request: NextRequest) {
 
   const now = new Date().toISOString();
   const cfg = await getConfig(["last_tick_at", "app_url"]);
+  const appUrl = (cfg.app_url ?? process.env.NEXT_PUBLIC_APP_URL ?? "").replace(/\/$/, "");
   const minutes = minutesSince(cfg.last_tick_at, now);
   if (!isTickStale(cfg.last_tick_at, now)) {
-    return NextResponse.json({ ok: true, stale: false, minutes, backup: await checkBackup(now) });
+    const backup = await checkBackup(now);
+    const falhas = await checkFalhas(now, appUrl);
+    return NextResponse.json({ ok: true, stale: false, minutes, backup, falhas });
   }
 
   let reconciled = false;
@@ -52,12 +58,12 @@ export async function GET(request: NextRequest) {
     try {
       await runTick({ now, recordTick: false });
       reconciled = true;
-    } catch {
+    } catch (e) {
       // segue para o alerta
+      await registrarFalha("vigia:reconciliacao", e);
     }
   }
 
-  const appUrl = (cfg.app_url ?? process.env.NEXT_PUBLIC_APP_URL ?? "").replace(/\/$/, "");
   const emailed = await alertOwner(
     "watchdog_alert_at",
     now,
@@ -67,7 +73,24 @@ export async function GET(request: NextRequest) {
   // O backup é conferido por último: nada aqui pode atrasar ou derrubar o
   // ciclo de reconciliação e o alerta de agendador parado.
   const backup = await checkBackup(now);
-  return NextResponse.json({ ok: true, stale: true, minutes, reconciled, emailed, backup });
+  const falhas = await checkFalhas(now, appUrl);
+  return NextResponse.json({ ok: true, stale: true, minutes, reconciled, emailed, backup, falhas });
+}
+
+/**
+ * Resumo das falhas das últimas 24 horas no e-mail do dono (decisão de 27/11).
+ * Sem falha, nada sai. Nunca lança: o resumo não derruba o resto do vigia.
+ */
+async function checkFalhas(now: string, appUrl: string) {
+  try {
+    const desde = new Date(Date.parse(now) - 24 * 3_600_000).toISOString();
+    const linhas = await falhasDesde(desde);
+    const mail = resumoDasFalhas(linhas, now, appUrl);
+    if (!mail) return { total: 0 };
+    return { total: linhas.length, emailed: await alertOwner("falhas_alert_at", now, mail) };
+  } catch (e) {
+    return { erro: e instanceof Error ? e.message : String(e) };
+  }
 }
 
 /**
@@ -75,7 +98,7 @@ export async function GET(request: NextRequest) {
  * ponte aérea), no máximo um por tipo de alerta a cada ALERT_EVERY_HOURS.
  */
 async function alertOwner(
-  claimKey: "watchdog_alert_at" | "backup_alert_at",
+  claimKey: "watchdog_alert_at" | "backup_alert_at" | "falhas_alert_at",
   now: string,
   mail: { subject: string; text: string },
 ): Promise<boolean> {

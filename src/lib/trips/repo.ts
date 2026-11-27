@@ -56,8 +56,11 @@ export async function createTrip(userId: string, rows: Rows): Promise<string> {
     })),
   );
   if (ins.error) {
-    await supabase.from("bookings").delete().eq("id", id).eq("user_id", userId);
-    throw new Error(`Falha ao salvar os trechos: ${ins.error.message}`);
+    const desfeita = await supabase.from("bookings").delete().eq("id", id).eq("user_id", userId);
+    const sobra = desfeita.error
+      ? ` A passagem ficou gravada sem trechos; apague-a na lista (${desfeita.error.message}).`
+      : "";
+    throw new Error(`Falha ao salvar os trechos: ${ins.error.message}.${sobra}`);
   }
   return id;
 }

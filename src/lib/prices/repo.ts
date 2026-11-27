@@ -1,5 +1,6 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { exigir } from "@/lib/supabase/exigir";
 import { airportTimeZone } from "@/lib/airports";
 import { holidaysAround, overridesFromRows, type HolidayEvent } from "@/lib/holidays";
 import { getDecryptedKeyWith } from "@/lib/integrations/repo";
@@ -232,12 +233,15 @@ export async function setMonitorActive(userId: string, id: string, active: boole
 /** Antecipa a checagem dos monitores ativos de um provedor (ex.: logo após salvar a chave). */
 export async function checkMonitorsSoon(userId: string, provider: string) {
   const supabase = await createSupabaseServerClient();
-  await supabase
-    .from("price_monitors")
-    .update({ next_check_at: new Date().toISOString(), last_error: null })
-    .eq("user_id", userId)
-    .eq("provider", provider)
-    .eq("active", true);
+  exigir(
+    await supabase
+      .from("price_monitors")
+      .update({ next_check_at: new Date().toISOString(), last_error: null })
+      .eq("user_id", userId)
+      .eq("provider", provider)
+      .eq("active", true),
+    "Falha ao antecipar a checagem dos monitores",
+  );
 }
 
 /** Feriados do ano corrente e do seguinte conforme as preferências do usuário. */
@@ -274,10 +278,14 @@ export async function performCheck(
   const next = nextCheckAt(monitor.frequency, now, tz, monitor.id);
 
   const finish = async (error: string | null) => {
-    await client
-      .from("price_monitors")
-      .update({ last_checked_at: now, next_check_at: next, last_error: error })
-      .eq("id", monitor.id);
+    exigir(
+      await client
+        .from("price_monitors")
+        .update({ last_checked_at: now, next_check_at: next, last_error: error })
+        .eq("id", monitor.id)
+        .eq("user_id", monitor.user_id),
+      "Falha ao registrar a checagem no monitor",
+    );
   };
 
   const apiKey = await getDecryptedKeyWith(client, monitor.user_id, monitor.provider);
@@ -338,13 +346,16 @@ export async function performCheck(
       e instanceof ProviderAuthError
         ? "O provedor recusou a chave. Confira em Mais → Integrações."
         : `Falha na consulta: ${(e as Error).message}`.slice(0, 500);
-    await client.from("price_checks").insert({
-      monitor_id: monitor.id,
-      user_id: monitor.user_id,
-      provider: monitor.provider,
-      checked_at: now,
-      error,
-    });
+    exigir(
+      await client.from("price_checks").insert({
+        monitor_id: monitor.id,
+        user_id: monitor.user_id,
+        provider: monitor.provider,
+        checked_at: now,
+        error,
+      }),
+      "Falha ao registrar a checagem",
+    );
     await finish(error);
     return { ok: false, error };
   }
@@ -383,7 +394,7 @@ export async function performCheck(
   const checkId = check.id as string;
 
   if (result.observations.length) {
-    await insertWithBookingUrl(
+    const obs = await insertWithBookingUrl(
       client,
       "price_observations",
       result.observations.map((o) => ({
@@ -395,9 +406,10 @@ export async function performCheck(
         observed_at: now,
       })),
     );
+    if (obs.error) throw new Error(`Falha ao gravar os preços vistos: ${obs.error.message}`);
   }
   if (result.alerts.length) {
-    await insertWithBookingUrl(
+    const avisos = await insertWithBookingUrl(
       client,
       "price_alerts",
       result.alerts.map((a) => ({
@@ -413,6 +425,8 @@ export async function performCheck(
         booking_url: a.offer.bookingUrl ?? null,
       })),
     );
+    if (avisos.error)
+      throw new Error(`Falha ao gravar os avisos de preço: ${avisos.error.message}`);
   }
   await finish(s.failed && s.failed === s.requests ? "Todas as consultas falharam." : null);
   return { ok: true, result, checkId };

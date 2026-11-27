@@ -2,6 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { serverEnv } from "@/lib/env";
 import { decryptSecret, encryptSecret, keyHint, secretContext } from "@/lib/crypto/byok";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const PROVIDERS = ["anthropic", "travelpayouts", "resend", "duffel", "serpapi"] as const;
@@ -36,22 +37,30 @@ export async function saveIntegration(
   validated: boolean,
 ): Promise<void> {
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.from("user_integrations").upsert(
-    {
-      user_id: userId,
-      provider,
-      encrypted_key: encryptSecret(
-        plainKey,
-        serverEnv().BYOK_MASTER_KEY,
-        secretContext(userId, provider),
-      ),
-      key_hint: keyHint(plainKey),
-      status: validated ? "active" : "invalid",
-      validated_at: validated ? new Date().toISOString() : null,
-    },
-    { onConflict: "user_id,provider" },
-  );
+  const campos = {
+    encrypted_key: encryptSecret(
+      plainKey,
+      serverEnv().BYOK_MASTER_KEY,
+      secretContext(userId, provider),
+    ),
+    key_hint: keyHint(plainKey),
+    status: validated ? ("active" as const) : ("invalid" as const),
+    validated_at: validated ? new Date().toISOString() : null,
+  };
+  // Atualiza e, se não havia chave, cria. Gravar por cima ("upsert") exigiria ler a
+  // chave cifrada, que o navegador não lê (regra aprovada em 27/11).
+  const { data, error } = await supabase
+    .from("user_integrations")
+    .update(campos)
+    .eq("user_id", userId)
+    .eq("provider", provider)
+    .select("id");
   if (error) throw new Error(`Falha ao salvar a chave: ${error.message}`);
+  if (data && data.length > 0) return;
+  const { error: erroNova } = await supabase
+    .from("user_integrations")
+    .insert({ user_id: userId, provider, ...campos });
+  if (erroNova) throw new Error(`Falha ao salvar a chave: ${erroNova.message}`);
 }
 
 export async function removeIntegration(userId: string, provider: SecretProvider): Promise<void> {
@@ -72,7 +81,8 @@ export async function getDecryptedKey(
   userId: string,
   provider: SecretProvider,
 ): Promise<string | null> {
-  return getDecryptedKeyWith(await createSupabaseServerClient(), userId, provider);
+  // A cifra só é lida pelo servidor: o cliente do usuário não tem acesso à coluna.
+  return getDecryptedKeyWith(createSupabaseAdminClient(), userId, provider);
 }
 
 /** Chaves de um provedor para todos os usuários (agendador, service role). */

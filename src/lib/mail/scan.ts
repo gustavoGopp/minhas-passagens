@@ -1,5 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { exigir } from "@/lib/supabase/exigir";
+import { registrarFalha } from "@/lib/falhas";
 import { extractBookings } from "@/lib/extract/extract";
 import { getDecryptedKeyWith } from "@/lib/integrations/repo";
 import { draftFromExtraction } from "@/lib/trips/draft";
@@ -107,10 +109,11 @@ async function accessToken(admin: SupabaseClient, userId: string, f: typeof fetc
     return (await refreshAccessToken(client, refresh, f)).accessToken;
   } catch (e) {
     if (e instanceof OAuthError && e.revoked) {
-      await admin
+      const marca = await admin
         .from("mail_accounts")
         .update({ status: "expired", last_error: e.message.slice(0, 300) })
         .eq("user_id", userId);
+      if (marca.error) await registrarFalha("gmail:marcar-expirado", marca.error);
     }
     throw e;
   }
@@ -197,15 +200,18 @@ export async function advanceScan(
       for (const m of data) {
         if (clock() >= deadline) break;
         const meta = await getMeta(token, m.provider_message_id as string, f);
-        await admin
-          .from("mail_messages")
-          .update({
-            status: headerDecision(meta) === "candidate" ? "candidate" : "skipped",
-            received_at: meta.receivedAt,
-            sender_domain: senderDomain(meta.from).slice(0, 255) || null,
-            class: classify(meta.subject, ""),
-          })
-          .eq("id", m.id);
+        exigir(
+          await admin
+            .from("mail_messages")
+            .update({
+              status: headerDecision(meta) === "candidate" ? "candidate" : "skipped",
+              received_at: meta.receivedAt,
+              sender_domain: senderDomain(meta.from).slice(0, 255) || null,
+              class: classify(meta.subject, ""),
+            })
+            .eq("id", m.id),
+          "mail_messages",
+        );
       }
       continue;
     }
@@ -220,12 +226,15 @@ export async function advanceScan(
         return "error";
       }
       // Reservas antigas (queda no meio) voltam para a fila.
-      await admin
-        .from("mail_messages")
-        .update({ status: "candidate" })
-        .eq("scan_id", scan.id)
-        .eq("status", "processing")
-        .lt("updated_at", new Date(clock() - STALE_PROCESSING_MS).toISOString());
+      exigir(
+        await admin
+          .from("mail_messages")
+          .update({ status: "candidate" })
+          .eq("scan_id", scan.id)
+          .eq("status", "processing")
+          .lt("updated_at", new Date(clock() - STALE_PROCESSING_MS).toISOString()),
+        "mail_messages",
+      );
 
       const { data: next, error } = await admin
         .from("mail_messages")
@@ -266,8 +275,9 @@ async function processMessage(
   apiKey: string,
   f: typeof fetch,
 ): Promise<"ok" | "stop"> {
-  const done = (patch: Record<string, unknown>) =>
-    admin.from("mail_messages").update(patch).eq("id", m.id);
+  const done = async (patch: Record<string, unknown>) => {
+    exigir(await admin.from("mail_messages").update(patch).eq("id", m.id), "mail_messages");
+  };
   try {
     const { meta, text } = await getBody(token, m.provider_message_id, f);
     if (bodyDecision(text) === "skip") {
@@ -415,20 +425,25 @@ export async function syncAccounts(
         if (e2) throw new Error(`mail_messages: ${e2.message}`);
         found += fresh.length;
       }
-      await admin
-        .from("mail_accounts")
-        .update({
-          last_sync_at: now,
-          ...(historyId ? { history_id: historyId } : {}),
-          last_error: null,
-        })
-        .eq("user_id", userId);
+      exigir(
+        await admin
+          .from("mail_accounts")
+          .update({
+            last_sync_at: now,
+            ...(historyId ? { history_id: historyId } : {}),
+            last_error: null,
+          })
+          .eq("user_id", userId),
+        "mail_accounts",
+      );
       synced++;
     } catch (e) {
-      await admin
+      await registrarFalha("agendador:gmail-sincronizacao", e);
+      const marca = await admin
         .from("mail_accounts")
         .update({ last_sync_at: now, last_error: (e as Error).message.slice(0, 300) })
         .eq("user_id", userId);
+      if (marca.error) await registrarFalha("agendador:gmail-sincronizacao", marca.error);
     }
   }
   return { synced, found };

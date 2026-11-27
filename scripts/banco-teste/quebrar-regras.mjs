@@ -96,10 +96,26 @@ try {
        where table_schema = 'public' and table_name = $1 and grantee in ('anon', 'authenticated')`,
       [nome],
     );
+    // Concessões por coluna (ex.: user_integrations sem a chave cifrada). O revoke de
+    // tabela também as retira, então voltam junto.
+    const { rows: porColuna } = await db.query(
+      `select grantee, privilege_type, column_name from information_schema.column_privileges
+       where table_schema = 'public' and table_name = $1 and grantee in ('anon', 'authenticated')
+         and not exists (select 1 from information_schema.role_table_grants g
+           where g.table_schema = 'public' and g.table_name = $1
+             and g.grantee = column_privileges.grantee
+             and g.privilege_type = column_privileges.privilege_type)`,
+      [nome],
+    );
     const devolver =
       `revoke all on public.${nome} from anon, authenticated;` +
       concessoes
         .map((c) => `grant ${c.privilege_type} on public.${nome} to ${c.grantee};`)
+        .join("") +
+      porColuna
+        .map(
+          (c) => `grant ${c.privilege_type} (${c.column_name}) on public.${nome} to ${c.grantee};`,
+        )
         .join("");
     await provar({
       titulo: `${nome}, regra aberta`,

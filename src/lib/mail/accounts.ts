@@ -3,7 +3,9 @@ import { createHash } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { serverEnv } from "@/lib/env";
 import { getDecryptedKeyWith, saveSecretWith } from "@/lib/integrations/repo";
+import { registrarFalha } from "@/lib/falhas";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { exigir } from "@/lib/supabase/exigir";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { OAuthError, refreshAccessToken, revokeToken } from "./google-oauth";
 import { GMAIL_HEALTH_EVERY_HOURS, maskEmail } from "./status";
@@ -78,8 +80,25 @@ export async function disconnectGmail(userId: string): Promise<void> {
   const admin = createSupabaseAdminClient();
   const token = await getDecryptedKeyWith(admin, userId, "gmail").catch(() => null);
   if (token) await revokeToken(token);
-  await admin.from("user_integrations").delete().eq("user_id", userId).eq("provider", "gmail");
-  await admin.from("mail_accounts").delete().eq("user_id", userId);
+  exigir(
+    await admin.from("user_integrations").delete().eq("user_id", userId).eq("provider", "gmail"),
+    "Falha ao apagar o acesso ao Gmail",
+  );
+  exigir(
+    await admin.from("mail_accounts").delete().eq("user_id", userId),
+    "Falha ao apagar a conexão do Gmail",
+  );
+}
+
+/** Liga ou desliga a leitura automática dos e-mails novos da pessoa. */
+export async function ligarLeituraAutomatica(userId: string, ligada: boolean): Promise<void> {
+  exigir(
+    await createSupabaseAdminClient()
+      .from("mail_accounts")
+      .update({ auto_sync: ligada })
+      .eq("user_id", userId),
+    "Falha ao mudar a leitura automática",
+  );
 }
 
 /**
@@ -110,20 +129,24 @@ export async function gmailHealth(
       const token = await getDecryptedKeyWith(admin, userId, "gmail");
       if (!token) throw new OAuthError("invalid_grant", "sem token");
       await refreshAccessToken(client, token, f);
-      await admin
-        .from("mail_accounts")
-        .update({ last_refresh_ok_at: now, last_error: null })
-        .eq("user_id", userId);
+      exigir(
+        await admin
+          .from("mail_accounts")
+          .update({ last_refresh_ok_at: now, last_error: null })
+          .eq("user_id", userId),
+        "Falha ao registrar a renovação do acesso ao Gmail",
+      );
       checked++;
     } catch (e) {
       const revoked = e instanceof OAuthError && e.revoked;
-      await admin
+      const marca = await admin
         .from("mail_accounts")
         .update({
           ...(revoked ? { status: "expired" } : {}),
           last_error: (e as Error).message.slice(0, 300),
         })
         .eq("user_id", userId);
+      if (marca.error) await registrarFalha("agendador:gmail-acesso", marca.error);
       if (revoked) expired++;
       else failed++;
     }

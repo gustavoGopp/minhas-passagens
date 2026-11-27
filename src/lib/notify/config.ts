@@ -17,6 +17,7 @@ export type ConfigKey =
   | "watchdog_run_at"
   // Último e-mail de backup atrasado (um por intervalo de alerta).
   | "backup_alert_at"
+  | "falhas_alert_at"
   // Última vez em que o vigia conseguiu conferir o backup no GitHub.
   | "backup_checked_at";
 

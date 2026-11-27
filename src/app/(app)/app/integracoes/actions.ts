@@ -3,11 +3,11 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { validateAnthropicKey } from "@/lib/integrations/anthropic";
-import { disconnectGmail } from "@/lib/mail/accounts";
+import { disconnectGmail, ligarLeituraAutomatica } from "@/lib/mail/accounts";
 import { getProvider } from "@/lib/prices/providers";
 import { checkMonitorsSoon } from "@/lib/prices/repo";
 import { sendEmailDetailed } from "@/lib/notify/channels";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { exigir } from "@/lib/supabase/exigir";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   PROVIDERS,
@@ -69,7 +69,10 @@ export async function saveApiKeyAction(
     await saveIntegration(user.id, provider, api_key, sent.ok);
     if (sent.ok) {
       const supabase = await createSupabaseServerClient();
-      await supabase.from("profiles").update({ notify_email: true }).eq("id", user.id);
+      exigir(
+        await supabase.from("profiles").update({ notify_email: true }).eq("id", user.id),
+        "Falha ao ligar os avisos por e-mail",
+      );
     }
     revalidatePath("/app/integracoes");
     revalidatePath("/app/notificacoes");
@@ -101,10 +104,7 @@ export async function removeApiKeyAction(formData: FormData) {
 /** Liga ou desliga a leitura automática dos e-mails novos (sincronização). */
 export async function toggleAutoSyncAction(formData: FormData) {
   const user = await getCurrentUser();
-  await createSupabaseAdminClient()
-    .from("mail_accounts")
-    .update({ auto_sync: formData.get("value") === "on" })
-    .eq("user_id", user.id);
+  await ligarLeituraAutomatica(user.id, formData.get("value") === "on");
   revalidatePath("/app/integracoes");
 }
 

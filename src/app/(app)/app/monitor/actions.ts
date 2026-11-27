@@ -5,19 +5,13 @@ import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { getDecryptedKey } from "@/lib/integrations/repo";
 import { runPilot, type PilotReport } from "@/lib/prices/pilot";
-import {
-  deleteMonitor,
-  getMonitor,
-  performCheck,
-  saveMonitor,
-  setMonitorActive,
-} from "@/lib/prices/repo";
+import { verificarAgora } from "@/lib/prices/verificar-agora";
+import { deleteMonitor, getMonitor, saveMonitor, setMonitorActive } from "@/lib/prices/repo";
 import { loadHolidayContext } from "@/lib/holidays/context";
 import { listMonitors } from "@/lib/prices/repo";
 import { horizonFor, longWeekendPlan, PONTE_AEREA } from "@/lib/prices/rule";
 import { monitorInputSchema, type MonitorInput } from "@/lib/prices/schema";
 import { getProfile } from "@/lib/profiles/repo";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { parseMoney } from "@/lib/trips/money";
 
 export interface MonitorFormState {
@@ -135,8 +129,7 @@ export async function checkNowAction(
   if (monitor.last_checked_at && Date.now() - Date.parse(monitor.last_checked_at) < 10 * 60_000) {
     return { error: "Verificado há menos de 10 minutos. Tente daqui a pouco." };
   }
-  const supabase = await createSupabaseServerClient();
-  const r = await performCheck(supabase, monitor, await getProfile(user.id));
+  const r = await verificarAgora(user.id, monitor);
   refresh(id);
   if (!r.ok) return { error: r.error };
   const s = r.result.summary;

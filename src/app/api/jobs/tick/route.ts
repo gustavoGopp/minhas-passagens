@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { registrarFalha } from "@/lib/falhas";
 import { runTick } from "@/lib/jobs/tick";
 import { getConfig, safeEqual } from "@/lib/notify/config";
 
@@ -18,6 +19,7 @@ export async function POST(request: NextRequest) {
   try {
     return NextResponse.json(await runTick());
   } catch (e) {
+    await registrarFalha("agendador", e);
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }
 }
