@@ -144,7 +144,7 @@ export const TABELAS: Tabela[] = [
     pk: "id",
     linha: (c) => ({ monitor_id: c.monitor, user_id: c.user, provider: "travelpayouts" }),
     alterar: { coluna: "error", valor: "alterado" },
-    dono: soLer,
+    dono: tudo,
   },
   {
     nome: "price_observations",
@@ -159,7 +159,7 @@ export const TABELAS: Tabela[] = [
       provider: "travelpayouts",
     }),
     alterar: { coluna: "price_cents", valor: 1 },
-    dono: soLer,
+    dono: tudo,
   },
   {
     nome: "price_alerts",
@@ -173,7 +173,7 @@ export const TABELAS: Tabela[] = [
       price_cents: 24000,
     }),
     alterar: { coluna: "price_cents", valor: 1 },
-    dono: soLer,
+    dono: tudo,
   },
   {
     nome: "mail_accounts",

@@ -97,6 +97,32 @@ describe("travas para migração nova (P18)", () => {
     ).toEqual([]);
   });
 
+  // Revisão em sessão limpa da 2b: a migração roda antes da publicação, então o app
+  // antigo roda um tempo sobre o banco novo. Tirar acesso de que ele precisa o quebra.
+  it("retirar acesso (revoke, ou apagar policy sem recriar a mesma) só como segunda entrega", () => {
+    expect(problemasDaMigracaoNova("revoke select on public.t from authenticated;")).toHaveLength(
+      1,
+    );
+    expect(
+      problemasDaMigracaoNova(
+        'drop policy if exists "t: dono" on public.t;\ncreate policy "t: dono lê" on public.t for select using (true);',
+      ),
+    ).toHaveLength(1);
+    expect(
+      problemasDaMigracaoNova(
+        '-- segunda entrega: o app novo já não grava em t pelo navegador\nrevoke insert on public.t from authenticated;\ndrop policy if exists "t: dono" on public.t;',
+      ),
+    ).toEqual([]);
+  });
+
+  it("revoke na tabela criada na mesma migração não é retirar acesso: passa", () => {
+    expect(
+      problemasDaMigracaoNova(
+        "create table if not exists public.nova (id bigint generated always as identity primary key);\nrevoke all on public.nova from public, anon, authenticated, service_role;\nrevoke all on sequence public.nova_id_seq from anon, authenticated;\ngrant select on public.nova to service_role;",
+      ),
+    ).toEqual([]);
+  });
+
   it("correção de dados não se mistura com mudança de estrutura", () => {
     expect(
       problemasDaMigracaoNova("alter table t add column x int;\nupdate t set x = 1;"),

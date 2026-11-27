@@ -30,8 +30,9 @@ describe("migrações", () => {
   // P18: da etapa 2b em diante, migração só acrescenta, não controla transação
   // (o migrador já roda cada uma numa transação) e não mistura dado com estrutura.
   it("migração nova segue as regras do migrador (scripts/migracoes-lib.mjs)", () => {
+    // Compara só a data e a hora: a 20261127020000 já está na main e fica de fora.
     const problemas = migracoes
-      .filter((m) => m.arquivo > "20261127020000")
+      .filter((m) => m.arquivo.slice(0, 14) > "20261127020000")
       .flatMap((m) =>
         problemasDaMigracaoNova(readFileSync(path.join(dir, m.arquivo), "utf8")).map(
           (p) => `${m.arquivo}: ${p}`,

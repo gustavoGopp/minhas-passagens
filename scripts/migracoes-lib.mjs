@@ -65,6 +65,32 @@ function semComentariosNemBlocos(sql) {
 }
 
 const MARCA_SEGUNDA_ENTREGA = /--\s*segunda entrega:/i;
+
+const semSchema = (nome) => nome.replace(/"/g, "").replace(/^public\./, "");
+
+/**
+ * Retirar acesso é uma contração: a migração roda antes da publicação, e o app
+ * antigo pode precisar do acesso retirado (revisão em sessão limpa da 2b).
+ * Não conta: revoke numa tabela (ou na sequência dela) criada no mesmo arquivo,
+ * nem apagar uma policy para recriá-la com o mesmo nome.
+ */
+function retiraAcesso(limpo) {
+  const criadas = [...limpo.matchAll(/create\s+table\s+(?:if\s+not\s+exists\s+)?([\w."]+)/g)].map(
+    (m) => semSchema(m[1]),
+  );
+  const nova = (alvo) => criadas.some((t) => alvo === t || alvo.startsWith(`${t}_`));
+  for (const m of limpo.matchAll(
+    /\brevoke\b[^;]*?\bon\s+(?:table\s+|sequence\s+)?([^;]*?)\s+from\b/g,
+  )) {
+    const alvos = m[1].split(",").map((a) => semSchema(a.trim()));
+    if (alvos.some((a) => !nova(a))) return true;
+  }
+  const recriadas = new Set([...limpo.matchAll(/create\s+policy\s+"([^"]+)"/g)].map((m) => m[1]));
+  for (const m of limpo.matchAll(/drop\s+policy\s+(?:if\s+exists\s+)?"([^"]+)"/g)) {
+    if (!recriadas.has(m[1])) return true;
+  }
+  return false;
+}
 const ESTRUTURA =
   /\b(create\s+(table|index|unique\s+index|type|function|or\s+replace\s+function|trigger|view)|alter\s+table|drop\s+(table|column|index|function|trigger|view|type))\b/;
 const DADOS =
@@ -92,6 +118,10 @@ export function problemasDaMigracaoNova(sql) {
   if (apaga && !MARCA_SEGUNDA_ENTREGA.test(sql))
     problemas.push(
       'apaga ou renomeia coluna ou tabela: só como segunda entrega, com a marca "-- segunda entrega: <motivo>"',
+    );
+  if (retiraAcesso(limpo) && !MARCA_SEGUNDA_ENTREGA.test(sql))
+    problemas.push(
+      'retira acesso (revoke ou policy apagada sem recriar): o app antigo roda um tempo sobre o banco novo; só como segunda entrega, com a marca "-- segunda entrega: <motivo>"',
     );
   // Dentro de blocos do $$ … $$ também conta: correção de dados costuma vir num bloco.
   const comBlocos = sql.toLowerCase().replace(/--[^\n]*/g, "");

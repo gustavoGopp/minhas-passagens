@@ -14,7 +14,7 @@ Depois do merge, a migração roda em produção quando a CI fica verde na main 
    - as policies (quem lê e quem grava cada linha, sempre por `auth.uid() = user_id`);
    - `grant select, insert, update, delete on ... to authenticated;` (só os comandos necessários). Sem o `grant`, o usuário logado recebe "permission denied".
    - a tabela na lista de exportação da conta (`src/lib/account/export-tables.ts`); um teste falha se faltar.
-4. **Só acrescente.** Renomear ou apagar coluna ou tabela vira duas entregas: primeiro o app passa a usar o novo; numa entrega seguinte o antigo sai, num arquivo com a marca `-- segunda entrega: <motivo>`. Um teste recusa sem a marca.
+4. **Só acrescente.** Renomear ou apagar coluna ou tabela vira duas entregas: primeiro o app passa a usar o novo; numa entrega seguinte o antigo sai, num arquivo com a marca `-- segunda entrega: <motivo>`. O mesmo vale para retirar acesso (`revoke`, policy apagada sem recriar): o app antigo ainda roda sobre o banco novo até a publicação. Um teste recusa sem a marca.
 5. **Correção de dados** vai num arquivo separado da mudança de estrutura (um teste recusa a mistura), guarda uma marca em `app_config` na mesma transação (modelo: `20261127000000_fuso_aeroportos_estrangeiros.sql`) e registra quantas linhas alterou.
 6. **Teste num Postgres de verdade** antes de abrir o PR: o Supabase local (`supabase start`, como no `CLAUDE.md`) aplica todas do zero, e `node scripts/banco-teste/reaplicar-migracoes.mjs` aplica de novo. Mostre a saída.
 7. **No PR**, preencha "Mexe no banco?" dizendo o que a migração faz em português simples.

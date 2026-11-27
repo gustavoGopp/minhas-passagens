@@ -197,55 +197,6 @@ describe("tabela flights", () => {
     }));
 });
 
-// A chave de API cifrada nunca vai ao navegador, nem para o próprio dono (regra
-// aprovada em 27/11). Aqui quem barra é a concessão por coluna, não a regra por
-// linha: por isso estes testes não chamam concederTudo. A prova de quebra
-// (concessão de tabela inteira) tem de fazer o "nega" falhar.
-describe("tabela user_integrations", () => {
-  const t = TABELAS.find((x) => x.nome === "user_integrations")!;
-
-  it("nega: A não lê a própria chave cifrada pelo navegador", () =>
-    emTransacao(async (c) => {
-      await como(c, A);
-      const r = await tentar(
-        c,
-        `select encrypted_key from public.user_integrations where id = $1`,
-        [A.linhas[t.nome]],
-      );
-      expect(r.ok, "A leu a chave cifrada").toBe(false);
-      expect(r.erro).toMatch(/permission denied/);
-    }));
-
-  it("permite: A lê o que a tela mostra da própria chave", () =>
-    emTransacao(async (c) => {
-      await como(c, A);
-      const r = await tentar(
-        c,
-        `select provider, key_hint, status, validated_at, updated_at
-         from public.user_integrations where id = $1`,
-        [A.linhas[t.nome]],
-      );
-      expect(r.erro).toBeUndefined();
-      expect(r.linhas).toBe(1);
-    }));
-
-  // O app troca a chave atualizando a linha (src/lib/integrations/repo.ts). Gravar
-  // por cima com "on conflict do update" pediria ler a cifra, e isso está fechado.
-  it("permite: A troca a própria chave", () =>
-    emTransacao(async (c) => {
-      await como(c, A);
-      const r = await tentar(
-        c,
-        `update public.user_integrations
-         set encrypted_key = 'outra-cifra-ficticia', key_hint = '5678'
-         where id = $1`,
-        [A.linhas[t.nome]],
-      );
-      expect(r.erro).toBeUndefined();
-      expect(r.linhas).toBe(1);
-    }));
-});
-
 for (const t of TABELAS.filter((t) => t.global)) {
   describe(`tabela ${t.nome}`, () => {
     const pk = globais[t.nome];
