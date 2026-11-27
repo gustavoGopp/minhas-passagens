@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { validationProblems, type Extraction } from "./schema";
+import { coerencia, validationProblems, type Extraction } from "./schema";
 
 vi.mock("server-only", () => ({}));
 const { cleanText } = await import("./extract");
@@ -112,5 +112,53 @@ describe("cleanText", () => {
     expect(cleanText("<style>x{}</style><p>Voo&nbsp;AD 4512</p><div>SDU → CGH</div>")).toBe(
       "Voo AD 4512\nSDU → CGH",
     );
+  });
+});
+
+// P25: o que o modelo devolveu bate com o texto do e-mail? Problemas fazem o app
+// tentar com o modelo de reforço; avisos só pedem conferência do dono.
+describe("coerência com o texto de origem", () => {
+  const texto = "Sua reserva QWE7RT está confirmada. Voo AD4512 de SDU para CGH em 09/11.";
+  const comLocalizador = (locator: string | null, voo: string | null = "AD 4512") => {
+    const x = structuredClone(ok);
+    x.bookings[0].locator = locator;
+    x.bookings[0].flights[0].flight_number = voo;
+    return x;
+  };
+
+  it("localizador e número do voo presentes no texto: nada a apontar", () => {
+    expect(coerencia(comLocalizador("QWE7RT"), texto)).toEqual({ problemas: [], avisos: [] });
+    expect(coerencia(comLocalizador(" qwe7rt "), texto).problemas).toEqual([]);
+  });
+
+  it("localizador que não está no texto é problema (inventado ou vindo de texto injetado)", () => {
+    expect(coerencia(comLocalizador("ZZZ999"), texto).problemas).toEqual([
+      "localizador não aparece no texto",
+    ]);
+  });
+
+  it("número de voo que não está no texto é problema; 4512 dentro de 14512 não conta", () => {
+    expect(coerencia(comLocalizador("QWE7RT", "AD 9999"), texto).problemas).toEqual([
+      "número do voo não aparece no texto",
+    ]);
+    expect(coerencia(comLocalizador("QWE7RT", "AD 4512"), "QWE7RT voo 14512").problemas).toEqual([
+      "número do voo não aparece no texto",
+    ]);
+  });
+
+  it("sem texto (print ou PDF) ou sem localizador e voo, não confere presença", () => {
+    expect(coerencia(comLocalizador("ZZZ999"), undefined).problemas).toEqual([]);
+    expect(coerencia(comLocalizador(null, null), texto).problemas).toEqual([]);
+  });
+
+  it("aeroporto fora das listas do app vira aviso para conferir, sem reforço", () => {
+    const x = comLocalizador("QWE7RT");
+    x.bookings[0].flights[0].destination_iata = "SEA";
+    expect(coerencia(x, texto)).toEqual({
+      problemas: [],
+      avisos: [
+        "Conferir: aeroporto SEA fora das listas do app (horário tratado como de Brasília).",
+      ],
+    });
   });
 });

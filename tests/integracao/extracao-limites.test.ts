@@ -25,14 +25,19 @@ vi.mock("@/lib/auth/current-user", async () => {
 const estado = vi.hoisted(() => ({ modo: "responde" as "responde" | "trava" }));
 const { extrair } = vi.hoisted(() => ({
   extrair: vi.fn(
-    async (_chave: string, input: { kind: string; text?: string }, _opcoes?: object) => {
+    async (
+      _chave: string,
+      input: { kind: string; text?: string; email?: { corpo: string } },
+      _opcoes?: object,
+    ) => {
       if (estado.modo === "trava") return new Promise<never>(() => {});
-      const locator = /LIMITE[0-9]+/.exec(input.text ?? "")?.[0] ?? "";
+      const locator = /LIMITE[0-9]+/.exec(input.email?.corpo ?? input.text ?? "")?.[0] ?? "";
       const data: Extraction = { bookings: locator ? [reserva(locator)] : [], warnings: [] };
       const r: ExtractResult = {
         ok: true,
         data,
         model: "modelo-falso",
+        avisos: [],
         chamadas: [
           {
             modelo: "modelo-falso",
