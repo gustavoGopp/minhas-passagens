@@ -1,0 +1,41 @@
+{
+  "id": "15-compra-tripcom-azul",
+  "tipo": "compra",
+  "descricao": "Agência estrangeira (Trip.com) vendendo voo da Azul; tem o PNR da companhia, sem valor no e-mail.",
+  "trocas": [
+    "localizador (PNR) → ZB7QWD",
+    "número da reserva da Trip.com → número falso",
+    "data de nascimento → 15 ago. 1990",
+    "nome completo → Fulano Exemplo Silva",
+    "primeiro nome → FULANO",
+    "sobrenome → SILVA",
+    "e-mail do remetente → domínio example.com (exigido pela trava)"
+  ],
+  "entrada": {
+    "assunto": "Confirmação de reserva de voo:  São Paulo - Rio de Janeiro",
+    "remetente": "Trip.com <pt_flt_noreply@trip.example.com>",
+    "recebido_em": "2026-11-03",
+    "corpo": "N.º da reserva 1‌100‌200‌300‌400‌500\nConfirmação de reserva de voo: São Paulo - Rio de Janeiro Confirmação de reserva de voo\nOlá, Fulano Exemplo Silva\nAgradecemos por reservar com a Trip.com! Suas passagens foram emitidas. Anexamos seu itinerário eletrônico, que você pode usar para solicitações de visto e nos trâmites de imigração, juntamente com seu recibo eletrônico para reembolso.\nClique no botão abaixo para ver mais detalhes e gerenciar suas reservas.\nGerenciar minha reserva\nCódigo de reserva da companhia aérea (PNR): ZB7QWD\n· Use o número de referência de reserva da companhia aérea para gerenciar sua reserva e fazer o check-in on-line no site da companhia aérea.\nSão Paulo - Rio de Janeiro ‪|‬ 4 de março de 2027\n* Todos os horários de partida/chegada estão no horário local.\n20:10 CGH São Paulo–Congonhas Airport\nAzul AD4915 ‪|‬ Econômica ‪|‬ Embraer 195 ‪|‬ Sem refeições\nSem bagagem despachada gratuita\n21:10 SDU Aeroporto Santos Dumont\nVer políticas e solicitar cancelamento e alteração\nFULANO  (Nome(s))  SILVA  (Sobrenome)\nPassagem de adulto   ‪|‬   Data de nascimento: 15 ago. 1990\nAlterar nome        Alterar documento de identificação\nOs nomes devem corresponder ao documento de identidade: Verifique se os nomes dos passageiros listados acima e no itinerário anexo correspondem ao documento de identificação usado para a viagem. Qualquer diferença nos nomes pode resultar na recusa do embarque ou na cobrança de taxas extras para alteração.\nNota sobre o documento de identificação usado na reserva: As informações do passaporte/documento de identidade não foram exigidas no ato da reserva. No entanto, certifique-se de portar um passaporte ou documento de identidade válido ao fazer o check-in.\nBagagem\nItem pessoal\n1 peça\nDeve ser colocado sob o assento à sua frente.\nAs dimensões de cada peça não pode exceder 35*45*20CM\nBagagem de mão\n1 peça, peso máx. por peça: 10 kg\nAs dimensões de cada peça não pode exceder 25*35*55CM\nBagagem despachada\nNão incluído\nAdicionar bagagem\nCheck-in e seleção de assentos\nVisualize e reserve seus assentos preferidos com antecedência. Clique no botão abaixo para prosseguir.\nSelecionar assento e fazer check-in\nNotificação de viagem\n•\nDocumento de viagem e visto\nCertifique-se de que seus documentos de viagem sejam válidos durante toda a sua viagem e que seu documento de identificação seja válido por pelo menos 6 meses a partir da data da viagem.\nRecomendamos confirmar com a embaixada de cada país se você precisa de visto, caso seu voo inclua uma conexão, ou de passagem de volta, caso tenha comprado apenas o voo de ida. O não cumprimento dessas regras pode resultar na recusa do check-in, da entrada ou saída do país.\nA Trip.com não se responsabiliza em caso de embarque ou entrada negados devido a problemas com seu passaporte, documento de identificação, visto, status de vacinação, etc.\n•\nImportante saber antes de viajar\nO seu voo pode estar com overbooking. Para garantir uma viagem tranquila e assegurar o assento da sua preferência, faça o check-in on-line e selecione seu assento com antecedência. Caso não seja possível fazer o check-in on-line, faça o check-in no balcão do aeroporto o mais cedo possível.\nComo os horários limite de check-in variam de acordo com a companhia aérea e o aeroporto e estão sujeitos a alterações, recomendamos chegar em São Paulo–Congonhas Airport 3 horas antes da partida para fazer o check-in.\nEncontre sua hospedagem perfeita em Rio de Janeiro: até 25% de desconto!\nHotéis mais bem avaliados Exclusivo para viajantes Trip.com\nHotéis que aceitam animais de estimação, resorts de luxo, hospedagens autênticas, quartos com vista – encontre tudo na Trip.com!\n    Explorar hotéis    \nEconomize até 25% em hotéis de aeroporto\nHospedagens convenientes para chegadas tardias\n    Ver ofertas    \nQual a probabilidade de você recomendar a Trip.com a um familiar ou amigo?\nNem um pouco provável\nExtremamente provável\n0 1 2 3 4 5 6 7 8 9 10\nÉ recomendado cuidado ao encaminhar este e-mail, pois ele contém informações pessoais e detalhes da reserva que podem ser alterados ou cancelados pelo destinatário.\nBaixe nosso app\nAcesse as ofertas exclusivas do app e ganhe Trip Coins em cada reserva\nBaixar agora\nChamadas gratuitas via internet\nStatus do voo em tempo real\n4,8/5 na App Store\n4,5/5 no Google Play\nViaje sem preocupações com nossa garantia de serviço\nServiço que você pode confiar\nFale com nossa equipe de atendimento ao cliente a qualquer dia da semana, de qualquer lugar do mundo. Saiba mais\nAtendimento em aprox. 30s\nDúvidas mais frequentes\nReservas e preços\nEmissão de passagens e pagamento\nInformações sobre reservas\nAlteração de informações pessoais\n...\nNão responda a esta mensagem. O endereço de e-mail do qual ela foi enviada não pode receber e-mails.\nNão encaminhe este e-mail, pois ele contém suas informações pessoais e detalhes da reserva.\nCopyright © 1999-2026 Trip.com Todos os direitos reservados\nAo usar o website Trip.com, você concorda com a Política de Privacidade da Trip.com."
+  },
+  "esperado": {
+    "reservas": [
+      {
+        "localizador": "ZB7QWD",
+        "companhia": "AD",
+        "status": "active",
+        "valor": null,
+        "moeda": null,
+        "milhas": null,
+        "trechos": [
+          {
+            "origem": "CGH",
+            "destino": "SDU",
+            "partida": "2027-03-04T20:10",
+            "chegada": "2027-03-04T21:10",
+            "voo": "AD 4915"
+          }
+        ]
+      }
+    ]
+  }
+}

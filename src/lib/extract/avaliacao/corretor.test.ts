@@ -143,6 +143,34 @@ describe("corrigirCaso", () => {
     expect(errados(corrigirCaso(comMilhas, [errado]))).toEqual(["valor"]);
   });
 
+  // Decisão do dono (27/11): numa emissão com pontos, o gabarito confere também
+  // as taxas pagas em dinheiro. Taxa vazia vale como zero, como na soma de gastos.
+  it("emissão com pontos: taxas em dinheiro conferidas junto com o valor", () => {
+    const comTaxas: Esperado = {
+      reservas: [{ ...esperado.reservas[0], valor: null, milhas: 15360, taxas: 102.04 }],
+    };
+    const certo = reserva({ total_amount: null, miles: 15360, taxes_amount: 102.04 });
+    expect(errados(corrigirCaso(comTaxas, [certo]))).toEqual([]);
+    const semTaxa = reserva({ total_amount: null, miles: 15360, taxes_amount: null });
+    expect(errados(corrigirCaso(comTaxas, [semTaxa]))).toEqual(["valor"]);
+    const taxaErrada = reserva({ total_amount: null, miles: 15360, taxes_amount: 62.14 });
+    expect(errados(corrigirCaso(comTaxas, [taxaErrada]))).toEqual(["valor"]);
+  });
+
+  it("taxa zero no gabarito aceita taxa vazia ou zero; sem taxa no gabarito, não confere", () => {
+    const taxaZero: Esperado = {
+      reservas: [{ ...esperado.reservas[0], valor: null, milhas: 16290, taxas: 0 }],
+    };
+    for (const taxes_amount of [null, 0])
+      expect(
+        errados(
+          corrigirCaso(taxaZero, [reserva({ total_amount: null, miles: 16290, taxes_amount })]),
+        ),
+      ).toEqual([]);
+    const semCampo = reserva({ taxes_amount: 30 });
+    expect(errados(corrigirCaso(esperado, [semCampo]))).toEqual([]);
+  });
+
   it("cancelamento: status errado é erro", () => {
     const cancelada: Esperado = {
       reservas: [{ ...esperado.reservas[0], status: "cancelled" }],

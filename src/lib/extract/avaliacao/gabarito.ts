@@ -28,6 +28,7 @@ const reserva = z.object({
   valor: z.number().nonnegative().nullable(),
   moeda: z.string().nullable(),
   milhas: z.number().nonnegative().nullable(),
+  taxas: z.number().nonnegative().nullable().optional(),
   trechos: z.array(trecho).min(1),
 });
 

@@ -1,0 +1,18 @@
+{
+  "id": "26-propaganda-maxmilhas-15h",
+  "tipo": "propaganda",
+  "descricao": "Cupom de passagens da MaxMilhas, sem voo.",
+  "trocas": [
+    "primeiro nome → Fulano",
+    "e-mail do remetente → domínio example.com (exigido pela trava)"
+  ],
+  "entrada": {
+    "assunto": "Pausa pro café com 10% OFF ☕✈️",
+    "remetente": "Maxmilhas <contato@relacionamento.maxmilhas.example.com>",
+    "recebido_em": "2026-11-27",
+    "corpo": "MaxFriday: pausa pro café com 10% OFF às 15h \r\n96 \r\nFecha a viagem completa com desconto, mas quem usar primeiro leva.\n͏&zwnj; ͏&zwnj; ͏&zwnj; ͏&zwnj; ͏&zwnj; ͏&zwnj; ͏&zwnj; ͏&zwnj; ͏&zwnj; ͏&zwnj; ͏&zwnj; ͏&zwnj; ͏&zwnj; ͏&zwnj; ͏&zwnj; ͏&zwnj; ͏&zwnj; ͏&zwnj; ͏&zwnj; ͏&zwnj;\n96 \r\nDescadastre-se \r\nOi, Fulano\nPausa pro café? Tem cupom fresquinho às 15h.\nO meio da tarde ficou mais leve: às 15h em ponto a gente libera um cupom de 10% OFF em passagens pra você aproveitar a MaxFriday. Mas os cupons são limitados e valem até se esgotarem: quem usar primeiro leva. Deixa o destino escolhido e o código copiado.\nCUPOM MAXFRIDAY\nCupons de 10% OFF limitados\nVálidos até se esgotarem. Quem chegar primeiro leva.\nPASSAGENS · LIBERADO ÀS 15H\nUse o código no pagamento:\nMAXFRIDAY10ZN26 \r\nCupons limitados, liberados às 15h e válidos hoje até 23h59 ou até se esgotarem. Desconto máximo de R$ 1.000 por pedido, só sobre a tarifa (não inclui taxas), até 6 passageiros, uso único por CPF. Não cumulativo com desconto no Pix ou outros cupons.\nEscolher meu destino agora \r\nComo sair na frente às 15h\n1\nEscolha o destino e as datas antes das 15h .\n2\nDeixe o código MAXFRIDAY10ZN26 copiado.\n3\nÀs 15h, aplique o cupom no pagamento e finalize.\nTermina o café, garante a passagem. Às 15h05, pode ser tarde demais.\nTamo junto 💚 Maxmilhas\n96 \r\nTudo pra você viajar mais! \r\nQuem tem app, viaja ao máximo! \r\nOfertas e cupons na palma da sua mão \r\nVocê está recebendo esse e-mail porque se cadastrou na Maxmilhas.\nNão quer mais receber nossos e-mails? Clique aqui .\nCopyright © 2026 Maxmilhas. All rights reserved. \r\nMaxmilhas - MM Turismo & Viagens S.A | CNPJ 16.988.607/0001-61 \r\nConfira nossa Política de privacidade ."
+  },
+  "esperado": {
+    "reservas": []
+  }
+}

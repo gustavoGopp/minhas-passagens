@@ -1,0 +1,41 @@
+{
+  "id": "13-compra-azul-pontos",
+  "tipo": "compra",
+  "descricao": "Compra no site da Azul com pontos TudoAzul mais taxa em dinheiro. Texto puro cheio de links.",
+  "trocas": [
+    "localizador → KX48PT",
+    "número de identificação do cliente → 5555.1234.9876",
+    "nome do passageiro → Fulano Silva",
+    "e-mail da companhia → domínio example.com (exigido pela trava)",
+    "links de rastreio → https://link.example.com/",
+    "e-mail do remetente → domínio example.com (exigido pela trava)"
+  ],
+  "entrada": {
+    "assunto": "Reserva KX48PT realizada com sucesso",
+    "remetente": "Azul <noreply@voeazul-news.example.com>",
+    "recebido_em": "2026-11-02",
+    "corpo": "https://link.example.com/\nDetalhes da sua viagem\nhttps://link.example.com/\nVer na web\nhttps://link.example.com/\nhttps://link.example.com/\nOi, Fulano Silva!\nSua compra foi um sucesso\nhttps://link.example.com/\nObrigada por fazer uma escolha Azul!\nSeu código de reserva é:\nKX48PT\nhttps://link.example.com/\nVer minha reserva\nhttps://link.example.com/\nPara atendimento na Central de Reservas,\nutilize o nº de identificação: 5555.1234.9876\nO serviço está sujeito a fatores operacionais e a exigências de segurança que podem causar atrasos, interrupções ou cancelamentos, mesmo com as medidas adotadas para garantir pontualidade e regularidade.\nhttps://link.example.com/\nConfira os detalhes da sua reserva:\nhttps://link.example.com/\nVoos\nQuer alterar, cancelar ou gerenciar seu voo?\nhttps://link.example.com/\nGerenciar reserva\nVoo para\nRio de Janeiro, Santos Dumont\nCGH\nSao Paulo, Congonhas\n12/02/2027 - 08:30\nhttps://link.example.com/\nVoo 4231\nSDU\nRio de Janeiro, Santos Dumont\n12/02/2027 -\n09:30\nhttps://link.example.com/\nViajantes\nhttps://link.example.com/\nGerenciar bagagens |\nhttps://link.example.com/\nGerenciar assentos\nhttps://link.example.com/\nFulano Silva2 incluídas\nhttps://link.example.com/\n14C\nhttps://link.example.com/\nDados de compra\nAssento CGH-SDU\nR$ 0,00\nServiços\nR$ 62,14\nTarifa Total\n15.360 pontos\nDados de pagamento\nNº Parcelas\nStatus\nTotal da compra\nPontos TudoAzul\n1\nAprovado\n15.360 pontos\nCartão de Crédito MasterCard\n1\nAprovado\nR$ 102,04\nTotal da Passagem\n15.360 pontos + R$ 102,04\nhttps://link.example.com/\nhttps://link.example.com/\nhttps://link.example.com/\nhttps://link.example.com/\nhttps://link.example.com/\nhttps://link.example.com/\nhttps://link.example.com/\nhttps://link.example.com/\nEmbarque\nsem papel!\nhttps://link.example.com/\nOs seus cartões de embarque estão disponíveis no app Azul. Baixe agora para receber atualizações do seu voo e utilize o seu celular para viajar sem carregar papéis.\nhttps://link.example.com/\nhttps://link.example.com/\nhttps://link.example.com/\nhttps://link.example.com/\nTem alguma dúvida?\nhttps://link.example.com/\nEnvie uma mensagem para\nhttps://link.example.com/\nCéu , a nossa assistente virtual,\ne tenha um ótimo voo Azul!\nBaixe o app e tenha uma boa viagem.\nhttps://link.example.com/\nhttps://link.example.com/\nhttps://link.example.com/\nEmbarque em nossas redes sociais.\nhttps://link.example.com/\nhttps://link.example.com/\nhttps://link.example.com/\nAdicione\nmailto:azul@voeazul-news.example.com\nazul@voeazul-news.example.comà sua lista de contatos p/ garantir que nossos comunicados cheguem a\nsua caixa de entrada. A visualização da movimentação de saldos atualizados e o período de expiração dos\npontos TudoAzul informado neste e-mail são para mera consulta do participante. Para obter mais\ninformações sobre saldos e validade, acesse o extrato da sua conta em:\nhttps://link.example.com/\nhttps://link.example.com/\nAvisos importantes\n1 - Apresente-se para o embarque 2 (duas) horas antes da partida do voo, com documento de identificação original, com fotografia.\n2. O bilhete não é endossável, sendo válido por um ano após a data de emissão.\n3. Cancelamentos, alterações e reembolsos podem ser realizados dentro do prazo de validade, conforme as regras tarifárias vigentes no momento da compra, as quais podem ser consultadas no websitevoeazul.com.br, na seção \"Para sua Viagem\"(Voos Nacionais/Voos Internacionais).\n4. O contrato de transporte de passagens encontra-se disponível em nossas lojas ou em nosso site ( https://www.voeazul.com.br/br/pt/sobreazul/contrato-aereo )\n5. Em caso de dúvidas sobre alterações de voo, pedidos de reembolso, não comparecimento ao voo ou demais questões, contatar a central de atendimento no telefone 4003-1118 (capitais e regiões metropolitanas) ou 0800 887 1118 (demais localidades). Para elogios, reclamações ou sugestões, contatar o SAC no telefone 0800 884 4040.\nA sua escolha é muito importante para nós\nEsse email é enviado por: AZUL LINHAS AÉREAS BRASILEIRAS S.A.\nAvenida Marcos Penteado de Ulhôa Rodrigues, 939, 9º Andar, Torre Jatobá, Condomínio Castelo Branco O Barueri, São Paulo, 06460-040, BR"
+  },
+  "esperado": {
+    "reservas": [
+      {
+        "localizador": "KX48PT",
+        "companhia": "AD",
+        "status": "active",
+        "valor": null,
+        "moeda": null,
+        "milhas": 15360,
+        "taxas": 102.04,
+        "trechos": [
+          {
+            "origem": "CGH",
+            "destino": "SDU",
+            "partida": "2027-02-12T08:30",
+            "chegada": "2027-02-12T09:30",
+            "voo": "AD 4231"
+          }
+        ]
+      }
+    ]
+  }
+}

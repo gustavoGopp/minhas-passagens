@@ -92,6 +92,19 @@ describe("lerGabarito", () => {
     expect(() => lerGabarito(pasta([ruim]))).toThrow(/0\.json/);
   });
 
+  it("lê as taxas em dinheiro de uma emissão com pontos e recusa taxa negativa", () => {
+    const comPontos = (taxas: number) => ({
+      ...caso,
+      esperado: {
+        reservas: [{ ...caso.esperado.reservas[0], valor: null, milhas: 15360, taxas }],
+      },
+    });
+    expect(lerGabarito(pasta([comPontos(102.04)])).casos[0].esperado.reservas[0].taxas).toBe(
+      102.04,
+    );
+    expect(() => lerGabarito(pasta([comPontos(-1)]))).toThrow(/0\.json/);
+  });
+
   it("recusa ids repetidos", () => {
     expect(() => lerGabarito(pasta([caso, caso]))).toThrow(/repetido/);
   });

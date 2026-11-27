@@ -21,6 +21,11 @@ export interface ReservaEsperada {
   valor: number | null;
   moeda: string | null;
   milhas: number | null;
+  /**
+   * Taxas pagas em dinheiro numa emissão com pontos. Sem o campo, não são
+   * conferidas; taxa vazia devolvida vale zero, como na soma de gastos.
+   */
+  taxas?: number | null;
   trechos: TrechoEsperado[];
 }
 
@@ -95,7 +100,8 @@ export function corrigirCaso(esperado: Esperado, devolvidas: ExtractedBooking[])
     const valorOk =
       !!o &&
       mesmoNumero(o.total_amount, e.valor) &&
-      (e.milhas === null || mesmoNumero(o.miles, e.milhas));
+      (e.milhas === null || mesmoNumero(o.miles, e.milhas)) &&
+      (e.taxas === undefined || e.taxas === null || mesmoNumero(o.taxes_amount ?? 0, e.taxas));
     add("valor", valorOk);
     add("moeda", !!o && currencyCode(o.currency) === currencyCode(e.moeda));
 
