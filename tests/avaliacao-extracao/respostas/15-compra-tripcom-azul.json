@@ -31,23 +31,23 @@
             }
           ],
           "warnings": [
-            "Valor total e moeda não informados no e-mail.",
-            "Data da compra não informada no e-mail.",
-            "Data de nascimento do passageiro não extraída por não ser campo do schema."
+            "O número 1100200300400 é o número de pedido da Trip.com, não o localizador; o localizador usado é o PNR da companhia, ZB7QWD.",
+            "Valor total, moeda e data da compra não aparecem no e-mail.",
+            "Ano do voo obtido diretamente do e-mail (4 de março de 2027)."
           ]
         },
         "stop_reason": "end_turn",
         "usage": {
-          "input_tokens": 4932,
+          "input_tokens": 5438,
           "cache_creation_input_tokens": 0,
           "cache_read_input_tokens": 0,
           "cache_creation": {
             "ephemeral_5m_input_tokens": 0,
             "ephemeral_1h_input_tokens": 0
           },
-          "output_tokens": 262,
+          "output_tokens": 628,
           "output_tokens_details": {
-            "thinking_tokens": 0
+            "thinking_tokens": 317
           },
           "service_tier": "standard",
           "inference_geo": "global",

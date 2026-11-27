@@ -7,19 +7,19 @@
         "parsed_output": {
           "bookings": [],
           "warnings": [
-            "O e-mail é uma notificação de nota fiscal do pedido QWE-1RT-Y-26 e não contém dados de voos, trechos ou localizador de reserva, por isso nenhuma reserva foi extraída."
+            "Nenhuma passagem aérea encontrada: o e-mail trata apenas de nota fiscal e nota de débito do pedido QWE-1RT-Y-26."
           ]
         },
         "stop_reason": "end_turn",
         "usage": {
-          "input_tokens": 3254,
+          "input_tokens": 3712,
           "cache_creation_input_tokens": 0,
           "cache_read_input_tokens": 0,
           "cache_creation": {
             "ephemeral_5m_input_tokens": 0,
             "ephemeral_1h_input_tokens": 0
           },
-          "output_tokens": 93,
+          "output_tokens": 75,
           "output_tokens_details": {
             "thinking_tokens": 0
           },

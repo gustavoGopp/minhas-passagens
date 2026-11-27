@@ -9,7 +9,7 @@
             {
               "locator": "VC6JMA",
               "airline_code": "AD",
-              "seller": "Azul",
+              "seller": null,
               "channel": "airline",
               "total_amount": null,
               "currency": null,
@@ -31,24 +31,25 @@
             }
           ],
           "warnings": [
-            "O e-mail não informa a data da compra, valores pagos nem moeda; campos financeiros ficaram nulos.",
-            "O ano não aparece no voo; foi deduzido como 2026 pela data de recebimento do e-mail (2026-11-02).",
-            "O nome do passageiro aparece apenas como 'Fulano', sem sobrenome.",
-            "O horário de chegada é o mesmo dia da partida, presumido pelo horário de 11:30 informado."
+            "Ano do voo deduzido pelo e-mail recebido em 2026-11-02 (03/11 é o mais próximo).",
+            "Sobrenome do passageiro não informado; apenas 'Fulano' aparece no e-mail.",
+            "Valor, moeda e data da compra não aparecem no e-mail.",
+            "Vendedor não informado no e-mail.",
+            "Texto suspeito: e-mail de marketing/newsletter com links promocionais; sem instruções para alterar a extração."
           ]
         },
         "stop_reason": "end_turn",
         "usage": {
-          "input_tokens": 3477,
+          "input_tokens": 4041,
           "cache_creation_input_tokens": 0,
           "cache_read_input_tokens": 0,
           "cache_creation": {
             "ephemeral_5m_input_tokens": 0,
             "ephemeral_1h_input_tokens": 0
           },
-          "output_tokens": 618,
+          "output_tokens": 352,
           "output_tokens_details": {
-            "thinking_tokens": 271
+            "thinking_tokens": 0
           },
           "service_tier": "standard",
           "inference_geo": "global",

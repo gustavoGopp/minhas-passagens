@@ -7,19 +7,19 @@
         "parsed_output": {
           "bookings": [],
           "warnings": [
-            "O e-mail é uma notificação de nota fiscal e nota de débito do pedido ASD-2FG-H-26 da 123Milhas, sem dados de voo, trechos, localizador de reserva ou valores de passagem; nenhuma reserva foi extraída."
+            "E-mail é apenas nota fiscal/nota de débito do pedido ASD-2FG-H-26 da 123Milhas, sem dados de voos, trechos ou localizador de companhia aérea."
           ]
         },
         "stop_reason": "end_turn",
         "usage": {
-          "input_tokens": 3252,
+          "input_tokens": 3710,
           "cache_creation_input_tokens": 0,
           "cache_read_input_tokens": 0,
           "cache_creation": {
             "ephemeral_5m_input_tokens": 0,
             "ephemeral_1h_input_tokens": 0
           },
-          "output_tokens": 108,
+          "output_tokens": 86,
           "output_tokens_details": {
             "thinking_tokens": 0
           },

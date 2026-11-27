@@ -7,19 +7,19 @@
         "parsed_output": {
           "bookings": [],
           "warnings": [
-            "O e-mail trata de uma reserva de hospedagem (Búzios Beach Resort), não de passagem aérea; nenhum voo foi encontrado, por isso bookings está vazio."
+            "E-mail é confirmação de hospedagem (Búzios Beach Resort), não de passagem aérea; nenhuma passagem foi extraída."
           ]
         },
         "stop_reason": "end_turn",
         "usage": {
-          "input_tokens": 4423,
+          "input_tokens": 5068,
           "cache_creation_input_tokens": 0,
           "cache_read_input_tokens": 0,
           "cache_creation": {
             "ephemeral_5m_input_tokens": 0,
             "ephemeral_1h_input_tokens": 0
           },
-          "output_tokens": 82,
+          "output_tokens": 68,
           "output_tokens_details": {
             "thinking_tokens": 0
           },

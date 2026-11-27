@@ -7,19 +7,19 @@
         "parsed_output": {
           "bookings": [],
           "warnings": [
-            "E-mail é apenas uma notificação de nota fiscal do pedido ZXC-3VB-N-26; não contém dados de voo, trechos ou valores de passagem, por isso nenhuma reserva foi extraída."
+            "Nenhuma passagem encontrada: e-mail é apenas nota fiscal/nota de débito do pedido ZXC-3VB-N-26, sem trechos de voo."
           ]
         },
         "stop_reason": "end_turn",
         "usage": {
-          "input_tokens": 3254,
+          "input_tokens": 3712,
           "cache_creation_input_tokens": 0,
           "cache_read_input_tokens": 0,
           "cache_creation": {
             "ephemeral_5m_input_tokens": 0,
             "ephemeral_1h_input_tokens": 0
           },
-          "output_tokens": 93,
+          "output_tokens": 78,
           "output_tokens_details": {
             "thinking_tokens": 0
           },

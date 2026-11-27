@@ -9,7 +9,7 @@
             {
               "locator": "NAPLXF",
               "airline_code": "G3",
-              "seller": "GOL Linhas Aereas",
+              "seller": "GOL Smiles (site da GOL)",
               "channel": "airline",
               "total_amount": null,
               "currency": null,
@@ -31,24 +31,24 @@
             }
           ],
           "warnings": [
-            "O ano do voo não aparece no e-mail; deduzido como 2026 (e-mail recebido em 2026-05-10 e voo em 27 Ago, dia da semana 'Qui' confere com 2026).",
-            "Data da compra não informada no texto; purchased_on definido como null.",
-            "Valores de preço e forma de pagamento não aparecem no e-mail; total_amount e currency definidos como null.",
+            "O ano do voo não aparece no e-mail; deduzido 2026-08-27 pelo contexto (e-mail recebido em 2026-05-10 e voo em 27 Ago).",
+            "Valor total e moeda não informados no e-mail.",
+            "Data da compra não informada no e-mail.",
             "Assento não confirmado."
           ]
         },
         "stop_reason": "end_turn",
         "usage": {
-          "input_tokens": 4181,
+          "input_tokens": 4769,
           "cache_creation_input_tokens": 0,
           "cache_read_input_tokens": 0,
           "cache_creation": {
             "ephemeral_5m_input_tokens": 0,
             "ephemeral_1h_input_tokens": 0
           },
-          "output_tokens": 736,
+          "output_tokens": 316,
           "output_tokens_details": {
-            "thinking_tokens": 385
+            "thinking_tokens": 0
           },
           "service_tier": "standard",
           "inference_geo": "global",

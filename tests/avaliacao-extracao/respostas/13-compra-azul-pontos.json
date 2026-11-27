@@ -10,7 +10,7 @@
               "locator": "KX48PT",
               "airline_code": "AD",
               "seller": "Azul",
-              "channel": "miles",
+              "channel": "airline",
               "total_amount": null,
               "currency": "BRL",
               "miles": 15360,
@@ -31,25 +31,23 @@
             }
           ],
           "warnings": [
-            "Data da compra não aparece no texto; purchased_on deixado nulo.",
-            "O e-mail não deixa claro se 09:30 é o horário de chegada em SDU; foi interpretado como chegada local.",
-            "Valor da emissão: 15.360 pontos TudoAzul mais R$ 102,04 em taxas; total_amount deixado nulo.",
-            "Moeda BRL assumida pelo símbolo R$ das taxas.",
-            "Ano 2027 consta explicitamente na data do voo."
+            "Data da compra não aparece no e-mail; purchased_on deixado nulo.",
+            "O layout do e-mail é confuso: os horários 08:30 e 09:30 foram interpretados como partida de CGH e chegada em SDU, com base na indicação 'Assento CGH-SDU'. Confirme no app ou site da Azul.",
+            "Pagamento em pontos (15.360) com taxas de R$ 102,04; total_amount deixado nulo conforme a regra de emissão com milhas."
           ]
         },
         "stop_reason": "end_turn",
         "usage": {
-          "input_tokens": 4547,
+          "input_tokens": 5165,
           "cache_creation_input_tokens": 0,
           "cache_read_input_tokens": 0,
           "cache_creation": {
             "ephemeral_5m_input_tokens": 0,
             "ephemeral_1h_input_tokens": 0
           },
-          "output_tokens": 979,
+          "output_tokens": 1113,
           "output_tokens_details": {
-            "thinking_tokens": 612
+            "thinking_tokens": 746
           },
           "service_tier": "standard",
           "inference_geo": "global",

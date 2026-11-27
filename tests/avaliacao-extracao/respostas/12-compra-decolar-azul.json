@@ -7,7 +7,7 @@
         "parsed_output": {
           "bookings": [
             {
-              "locator": "900000112200",
+              "locator": null,
               "airline_code": "AD",
               "seller": "Decolar",
               "channel": "agency",
@@ -31,25 +31,26 @@
             }
           ],
           "warnings": [
-            "O ano do voo não aparece no e-mail; deduzido como 2026 pela data de recebimento (2026-07-15).",
-            "Número do voo não informado.",
-            "Data da compra não informada no texto.",
-            "Nome do passageiro não informado.",
-            "Valor total de R$ 343,32 inclui a taxa de embarque de R$ 62,14 (voo R$ 281,18)."
+            "Localizador da companhia não encontrado: o número 900000112200 é o pedido da Decolar, não o PNR da Azul.",
+            "Ano do voo deduzido pelo contexto: 11 de setembro de 2026, após o recebimento do e-mail em 2026-07-15.",
+            "Número do voo não informado no e-mail.",
+            "Nome do passageiro não informado no e-mail.",
+            "Data da compra não informada no e-mail.",
+            "Valor total de R$ 343,32 inclui taxa de embarque de R$ 62,14 e tarifa de R$ 281,18."
           ]
         },
         "stop_reason": "end_turn",
         "usage": {
-          "input_tokens": 4275,
+          "input_tokens": 4893,
           "cache_creation_input_tokens": 0,
           "cache_read_input_tokens": 0,
           "cache_creation": {
             "ephemeral_5m_input_tokens": 0,
             "ephemeral_1h_input_tokens": 0
           },
-          "output_tokens": 585,
+          "output_tokens": 833,
           "output_tokens_details": {
-            "thinking_tokens": 272
+            "thinking_tokens": 458
           },
           "service_tier": "standard",
           "inference_geo": "global",

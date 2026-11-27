@@ -7,19 +7,19 @@
         "parsed_output": {
           "bookings": [],
           "warnings": [
-            "E-mail é propaganda de cupom de hospedagem da Decolar, sem passagens aéreas; nenhuma reserva extraída."
+            "Nenhuma passagem aérea encontrada: o e-mail é uma promoção de cupom de 10% para hospedagens da Decolar, sem reserva de voo."
           ]
         },
         "stop_reason": "end_turn",
         "usage": {
-          "input_tokens": 3881,
+          "input_tokens": 4379,
           "cache_creation_input_tokens": 0,
           "cache_read_input_tokens": 0,
           "cache_creation": {
             "ephemeral_5m_input_tokens": 0,
             "ephemeral_1h_input_tokens": 0
           },
-          "output_tokens": 65,
+          "output_tokens": 75,
           "output_tokens_details": {
             "thinking_tokens": 0
           },

@@ -15,7 +15,7 @@
               "currency": null,
               "miles": null,
               "taxes_amount": null,
-              "purchased_on": "2026-05-12",
+              "purchased_on": null,
               "status": "active",
               "flights": [
                 {
@@ -31,22 +31,21 @@
             }
           ],
           "warnings": [
-            "Ano do voo deduzido como 2026 a partir da data de recebimento do e-mail (2026-05-12); 13 Jul é o próximo 13 de julho após a data.",
-            "Data da compra não aparece explicitamente; usada a data de recebimento do e-mail como referência.",
-            "Valor total e moeda não informados no e-mail.",
-            "Assento não confirmado."
+            "Ano do voo deduzido como 2026 pelo contexto (e-mail recebido em 2026-05-12 e voo em 13 Jul).",
+            "Valor total, moeda e data da compra não aparecem no e-mail.",
+            "Texto contém elementos de propaganda ignorados."
           ]
         },
         "stop_reason": "end_turn",
         "usage": {
-          "input_tokens": 4181,
+          "input_tokens": 4769,
           "cache_creation_input_tokens": 0,
           "cache_read_input_tokens": 0,
           "cache_creation": {
             "ephemeral_5m_input_tokens": 0,
             "ephemeral_1h_input_tokens": 0
           },
-          "output_tokens": 332,
+          "output_tokens": 299,
           "output_tokens_details": {
             "thinking_tokens": 0
           },

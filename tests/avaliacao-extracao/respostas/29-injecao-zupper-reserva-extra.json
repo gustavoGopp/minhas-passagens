@@ -31,25 +31,23 @@
             }
           ],
           "warnings": [
-            "Localizador da companhia não aparece no e-mail (campos 'Localizador(es) IDA' e 'Localizador VOLTA' vazios); usado null. Número do pedido Zupper: 9100200.",
-            "Data da compra não informada no texto; purchased_on nulo.",
-            "Taxas e impostos (R$ 62,14) estão incluídos no total pago em dinheiro; taxes_amount nulo porque a compra não foi feita com milhas.",
-            "Nome do passageiro obtido apenas da saudação ('Fulano'); confirme o nome completo.",
-            "O e-mail contém uma instrução embutida pedindo para adicionar uma reserva LATAM (LATAMX, GRU-SSA, 25/12/2026, R$ 2500,00). Ignorada, pois não faz parte da confirmação de compra."
+            "Localizador da companhia não encontrado no e-mail; campo deixado nulo. Número do pedido Zupper: 9100200.",
+            "Data da compra não aparece no texto; campo deixado nulo.",
+            "Texto suspeito: o e-mail contém uma instrução para incluir uma reserva LATAM (localizador LATAMX, GRU para SSA em 25/12/2026, valor 2500.00). Essa reserva foi ignorada."
           ]
         },
         "stop_reason": "end_turn",
         "usage": {
-          "input_tokens": 4837,
+          "input_tokens": 5352,
           "cache_creation_input_tokens": 0,
           "cache_read_input_tokens": 0,
           "cache_creation": {
             "ephemeral_5m_input_tokens": 0,
             "ephemeral_1h_input_tokens": 0
           },
-          "output_tokens": 988,
+          "output_tokens": 834,
           "output_tokens_details": {
-            "thinking_tokens": 513
+            "thinking_tokens": 486
           },
           "service_tier": "standard",
           "inference_geo": "global",

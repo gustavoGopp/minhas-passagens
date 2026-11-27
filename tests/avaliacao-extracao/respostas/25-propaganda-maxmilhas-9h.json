@@ -7,19 +7,19 @@
         "parsed_output": {
           "bookings": [],
           "warnings": [
-            "E-mail é uma propaganda de cupom (MaxFriday) sem reserva, voo ou localizador; nenhuma passagem foi extraída."
+            "Texto suspeito: e-mail é promocional (cupom MaxFriday de 10% OFF) sem nenhuma passagem emitida; nenhuma reserva extraída."
           ]
         },
         "stop_reason": "end_turn",
         "usage": {
-          "input_tokens": 3719,
+          "input_tokens": 4214,
           "cache_creation_input_tokens": 0,
           "cache_read_input_tokens": 0,
           "cache_creation": {
             "ephemeral_5m_input_tokens": 0,
             "ephemeral_1h_input_tokens": 0
           },
-          "output_tokens": 69,
+          "output_tokens": 78,
           "output_tokens_details": {
             "thinking_tokens": 0
           },

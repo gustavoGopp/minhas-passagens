@@ -7,11 +7,11 @@
         "parsed_output": {
           "bookings": [
             {
-              "locator": "9100200",
+              "locator": null,
               "airline_code": "AD",
-              "seller": "Zupper Viagens",
+              "seller": "Zupper",
               "channel": "agency",
-              "total_amount": 187.38,
+              "total_amount": null,
               "currency": "BRL",
               "miles": null,
               "taxes_amount": 62.14,
@@ -31,21 +31,22 @@
             }
           ],
           "warnings": [
-            "Localizador da companhia (PNR) não aparece no e-mail; usado o número do pedido Zupper 9100200.",
-            "Data da compra não informada; e-mail recebido em 2026-11-08 e voo em 11/03/2027.",
-            "Nome do passageiro aparece apenas como 'Fulano' no texto."
+            "Número de pedido Zupper 9100200 usado como referência; código PNR da companhia não encontrado, locator deixado nulo.",
+            "Valor total da viagem R$ 187,38 informado, mas o campo total_amount é para valor pago; não foi preenchido para evitar confusão com taxas e serviço.",
+            "Data da compra não aparece no texto; purchased_on nulo.",
+            "Passageiro identificado apenas pelo primeiro nome 'Fulano'."
           ]
         },
         "stop_reason": "end_turn",
         "usage": {
-          "input_tokens": 4775,
+          "input_tokens": 5290,
           "cache_creation_input_tokens": 0,
           "cache_read_input_tokens": 0,
           "cache_creation": {
             "ephemeral_5m_input_tokens": 0,
             "ephemeral_1h_input_tokens": 0
           },
-          "output_tokens": 309,
+          "output_tokens": 351,
           "output_tokens_details": {
             "thinking_tokens": 0
           },

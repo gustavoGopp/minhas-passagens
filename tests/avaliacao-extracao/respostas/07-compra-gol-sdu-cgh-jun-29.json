@@ -9,7 +9,7 @@
             {
               "locator": "YTCMED",
               "airline_code": "G3",
-              "seller": "GOL Linhas Aéreas (site/app GOL)",
+              "seller": "Site GOL / OFERTAS SITE GOL SMILES",
               "channel": "airline",
               "total_amount": null,
               "currency": null,
@@ -31,24 +31,23 @@
             }
           ],
           "warnings": [
-            "O ano do voo não aparece no texto; foi deduzido como 2026 pela data de recebimento do e-mail (2026-05-12) e pelo dia da semana (segunda-feira, 29 de junho).",
-            "Data da compra não informada no e-mail; purchased_on definido como nulo.",
-            "Valor total e forma de pagamento não informados no e-mail.",
-            "Assento não confirmado no momento da emissão."
+            "Ano do voo deduzido como 2026 a partir da data de recebimento do e-mail (2026-05-12); o e-mail indica apenas 'Seg, 29 Jun'.",
+            "Valor total, moeda e data da compra não aparecem no e-mail.",
+            "Número do bilhete informado no e-mail não foi incluído por não ser localizador."
           ]
         },
         "stop_reason": "end_turn",
         "usage": {
-          "input_tokens": 4179,
+          "input_tokens": 4768,
           "cache_creation_input_tokens": 0,
           "cache_read_input_tokens": 0,
           "cache_creation": {
             "ephemeral_5m_input_tokens": 0,
             "ephemeral_1h_input_tokens": 0
           },
-          "output_tokens": 775,
+          "output_tokens": 334,
           "output_tokens_details": {
-            "thinking_tokens": 423
+            "thinking_tokens": 0
           },
           "service_tier": "standard",
           "inference_geo": "global",

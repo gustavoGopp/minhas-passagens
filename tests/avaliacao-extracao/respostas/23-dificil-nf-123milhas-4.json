@@ -7,19 +7,19 @@
         "parsed_output": {
           "bookings": [],
           "warnings": [
-            "O e-mail é uma nota fiscal/nota de débito do pedido POI-4UY-T-26 da 123Milhas, sem dados de voo, trechos, localizador de reserva ou valores de passagem; nenhuma reserva foi extraída."
+            "Nenhuma passagem aérea encontrada: e-mail é apenas nota fiscal/nota de débito do pedido POI-4UY-T-26 da 123Milhas, sem trechos de voo, localizador ou valores de passagem."
           ]
         },
         "stop_reason": "end_turn",
         "usage": {
-          "input_tokens": 3250,
+          "input_tokens": 3708,
           "cache_creation_input_tokens": 0,
           "cache_read_input_tokens": 0,
           "cache_creation": {
             "ephemeral_5m_input_tokens": 0,
             "ephemeral_1h_input_tokens": 0
           },
-          "output_tokens": 103,
+          "output_tokens": 99,
           "output_tokens_details": {
             "thinking_tokens": 0
           },

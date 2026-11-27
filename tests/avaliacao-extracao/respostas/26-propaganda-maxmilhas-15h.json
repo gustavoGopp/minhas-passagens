@@ -7,19 +7,19 @@
         "parsed_output": {
           "bookings": [],
           "warnings": [
-            "E-mail é uma newsletter promocional da Maxmilhas sobre cupom MaxFriday; não contém nenhuma reserva ou trecho de voo."
+            "O e-mail é uma newsletter promocional da Maxmilhas com cupom de desconto; não descreve nenhuma passagem emitida, por isso nenhuma reserva foi extraída."
           ]
         },
         "stop_reason": "end_turn",
         "usage": {
-          "input_tokens": 3714,
+          "input_tokens": 4204,
           "cache_creation_input_tokens": 0,
           "cache_read_input_tokens": 0,
           "cache_creation": {
             "ephemeral_5m_input_tokens": 0,
             "ephemeral_1h_input_tokens": 0
           },
-          "output_tokens": 73,
+          "output_tokens": 83,
           "output_tokens_details": {
             "thinking_tokens": 0
           },
