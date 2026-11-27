@@ -10,6 +10,7 @@ App pessoal, em português, para organizar passagens aéreas, monitorar preços 
 - Escreva para ele em português simples, com frases curtas. Explique um termo técnico na primeira vez.
 - "Pronto" pede evidência: o comando e a saída, a contagem, a captura. Diga também o que não foi verificado.
 - Ele junta os pull requests. Cada merge na main vira produção em minutos.
+- Toda mensagem termina com **"O que você tem que fazer"**: no máximo 5 itens curtos, na ordem, ou "Nada agora". Pedido do dono em 27/11.
 
 ## Verificar
 
