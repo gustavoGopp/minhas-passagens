@@ -8,8 +8,7 @@ Atualizado em 27/11/2026.
 
 - O app está em produção com as três funcionalidades: passagens (com importação do Gmail), monitor de preços e feriados. São 25 passagens e 2 contas; o cadastro de contas novas está fechado.
 - A base de trabalho com IA está sendo aplicada em 6 etapas (39 mudanças). **Etapas 0, 1 e 2a feitas; a 2b está num pull request aberto, esperando o merge.** A lista completa está em https://claude.ai/artifact/DgjhGFEUdzvop9dWE2Q7wU
-- Com a 2b: a migração de produção espera a CI verde e o clique do dono, e o app só é publicado depois dela; a chave de serviço tem lista curta (`scripts/chave-de-servico.mjs`); falhas do servidor vão para o banco e para o e-mail do vigia; há roteiro de emergência (`docs/EMERGENCIA.md`) e tipos do banco gerados.
-- As duas regras aprovadas que fecham acesso (histórico de preço só gravado pelo servidor; chave cifrada fora do navegador) estão num segundo PR, para juntar depois que a 2b estiver no ar.
+- Com a 2b: a migração de produção espera a CI verde e o clique do dono, e o app só é publicado depois dela; a chave de serviço tem lista curta (`scripts/chave-de-servico.mjs`); falhas do servidor vão para o banco e para o e-mail do vigia; há roteiro de emergência (`docs/EMERGENCIA.md`) e tipos do banco gerados. O histórico de preço só o servidor grava e a chave cifrada não vai ao navegador.
 
 ## Próximo passo: etapa 3
 
@@ -24,7 +23,6 @@ Depois vêm a etapa 4 (qualidade contínua) e a 5 (modelo reutilizável).
 - Juntar o PR curto do Playwright (resolve o PR 51 do Dependabot, que fecha sozinho).
 - **Antes de juntar a 2b:** na Vercel, criar o gancho de publicação da `main` (Settings → Git → Deploy Hooks) e guardar o endereço como segredo `PROD_VERCEL_DEPLOY_HOOK` no ambiente `producao-rotina` do GitHub. Sem ele, o app não é publicado.
 - Pôr a etiqueta `aprovado-pelo-dono` no PR da 2b (muda `docs/regras-de-acesso.md`) e, depois do merge, aprovar a migração em Actions.
-- Só depois de a 2b estar publicada: pôr a etiqueta e juntar o PR das duas regras que fecham acesso; aprovar a migração dele.
 - Pôr o check `aprovacao` na regra da main, se ainda não estiver. Sem isso, a checagem de cenários só avisa, não bloqueia.
 - Guardar a `BYOK_MASTER_KEY` num cofre de senhas.
 - Escolher onde fica a segunda cópia do backup, fora do GitHub.
