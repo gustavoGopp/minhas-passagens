@@ -150,3 +150,10 @@ vite.config.ts.timestamp-*
 
 # Next.js generated types (regenerated a cada build/dev)
 next-env.d.ts
+
+# --- minhas-passagens ---
+.vercel
+.verificar.log
+playwright-report/
+test-results/
+.claude/settings.local.json

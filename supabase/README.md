@@ -4,26 +4,15 @@ As migrações em `migrations/` são a fonte da verdade do esquema. Todas as tab
 
 ## Aplicar as migrações
 
-**Opção A, sem instalar nada:** abra o projeto no painel do Supabase → SQL Editor → cole o conteúdo de cada arquivo de `migrations/` em ordem de nome → Run.
+O workflow **Supabase — migrações** aplica, em ordem, os arquivos de `migrations/` que ainda não estão registrados na tabela `public.app_migrations`. Ele roda sozinho quando um pull request que mexe nessa pasta entra na main, e pode ser disparado à mão pelo dono.
 
-**Opção B, com a CLI:**
-
-```bash
-npx supabase login
-```
-
-```bash
-npx supabase link --project-ref <ref-do-projeto>
-```
-
-```bash
-npx supabase db push
-```
+Não use `supabase db push` nem cole SQL no painel: a CLI do Supabase mantém outro registro e reaplicaria tudo. O passo a passo para criar uma migração está em [`.claude/skills/nova-migracao/SKILL.md`](../.claude/skills/nova-migracao/SKILL.md).
 
 ## Convenções
 
 - Um arquivo por mudança, nome `AAAAMMDDHHMMSS_descricao.sql`.
-- Nunca edite uma migração já aplicada em produção; crie outra.
+- Nunca edite uma migração que já está na main; crie outra. Um hook do agente e um passo da CI recusam a edição.
+- Toda migração pode rodar duas vezes sem erro, e migração que cria tabela traz o próprio `GRANT`.
 - Colunas com segredo (ex.: `user_integrations.encrypted_key`) só são lidas no servidor.
 
 ## Credenciais dos workflows

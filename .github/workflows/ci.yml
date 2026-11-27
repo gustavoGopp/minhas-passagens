@@ -1,8 +1,10 @@
 name: CI
 
+# Roda em todo pull request e na main. O único check exigido na proteção da
+# main é o "gate", no fim deste arquivo.
 on:
   push:
-    branches: ["**"]
+    branches: [main]
   pull_request:
 
 permissions:
@@ -12,17 +14,37 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          node-version: 22
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .nvmrc
           cache: npm
+      # O .npmrc (quarentena de versões novas, scripts de instalação desligados)
+      # exige npm 11.10 ou mais novo. Versão fixada; atualizar à mão de tempos em tempos.
+      - name: npm que entende o .npmrc
+        run: npm install -g npm@11.21.2
       - run: npm ci
-      - run: npm run lint
-      - run: npm run format:check
-      - run: npm run typecheck
-      - run: npm test
-      - run: npm run build
+      - name: Migração que já está na main não se edita
+        if: ${{ github.event_name == 'pull_request' }}
+        env:
+          BASE: ${{ github.base_ref }}
+        run: |
+          alteradas=$(git diff --name-only --diff-filter=MDR "origin/$BASE...HEAD" -- supabase/migrations)
+          if [ -n "$alteradas" ]; then
+            echo "::error::Estas migrações já rodaram em produção e foram alteradas ou apagadas. Crie uma migração nova: $alteradas"
+            exit 1
+          fi
+      # O mesmo comando que o agente e o dono rodam: lint, formatação, tipos, testes e build.
+      - run: npm run verify
+      - name: Detalhe da verificação
+        if: ${{ failure() }}
+        run: cat .verificar.log || true
+      # Depois da verificação, para o resultado dela aparecer mesmo com aviso aberto.
+      # Aviso de gravidade alta em dependência de produção trava o merge de propósito.
+      - name: Auditoria das dependências de produção
+        run: npm audit --omit=dev --audit-level=high
 
   # Único check exigido na proteção da main. Sempre roda e só passa se todos
   # os outros jobs passaram: um job pulado não conta como aprovado.
