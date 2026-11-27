@@ -29,7 +29,7 @@ Roda lint, formatação, tipos, testes e build. É o mesmo comando da CI. Banco 
 ## Peça aprovação antes de
 
 - **Instalar pacote novo.** Modelos inventam nomes de pacote e ataques rodam na instalação. Trava: hook `pacote-novo` e `.npmrc`.
-- **Mudar cenários de aceitação, gabaritos ou tabelas de exemplos aprovadas** (`tests/aceitacao/`, `tests/gabaritos/`, `docs/regras-de-acesso.md`). São o que julga o seu trabalho. Trava: checagem "Aprovação do dono" e hook `etiqueta-do-dono` (a etiqueta `aprovado-pelo-dono` só o dono põe).
+- **Mudar cenários de aceitação, gabaritos ou tabelas de exemplos aprovadas** (`tests/aceitacao/`, `docs/regras-de-acesso.md` e, na etapa 3, os gabaritos). São o que julga o seu trabalho. Trava: checagem "Aprovação do dono" e hook `etiqueta-do-dono` (a etiqueta `aprovado-pelo-dono` só o dono põe).
 - **Gastar dinheiro** (API paga, plano pago) ou chamar um serviço externo com dado real do dono.
 - **Mudar workflows que tocam produção** ou a configuração de login.
 

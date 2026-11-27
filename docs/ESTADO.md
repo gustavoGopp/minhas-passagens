@@ -7,7 +7,7 @@ Atualizado em 27/11/2026.
 ## Onde estamos
 
 - O app está em produção com as três funcionalidades: passagens (com importação do Gmail), monitor de preços e feriados. São 25 passagens e 2 contas; o cadastro de contas novas está fechado.
-- A base de trabalho com IA está sendo aplicada em 6 etapas (39 mudanças). **Etapas 0 e 1 feitas; a 2a está no PR do branch `claude/practical-volta-1tatis`.** A lista completa está em https://claude.ai/artifact/DgjhGFEUdzvop9dWE2Q7wU
+- A base de trabalho com IA está sendo aplicada em 6 etapas (39 mudanças). **Etapas 0 e 1 feitas; a 2a está num pull request aberto, esperando o merge.** A lista completa está em https://claude.ai/artifact/DgjhGFEUdzvop9dWE2Q7wU
 - A CI agora sobe um Supabase local e prova as regras de acesso (`docs/regras-de-acesso.md`), cinco fluxos do servidor e os cenários aprovados (`tests/aceitacao/cenarios.md`) no navegador, com capturas.
 
 ## Próximo passo: etapa 2b
