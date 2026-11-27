@@ -27,8 +27,6 @@ Depois vêm a etapa 2b (migrações com aprovação e ordem de publicação, cha
 
 ## Esperando o dono
 
-- Apagar os segredos gerais antigos do repositório e revogar a credencial antiga do Supabase.
-- Criar a regra da main (PR obrigatório, check `gate`, sem push forçado) e ligar "apagar o branch ao mesclar". É a barreira de verdade contra envio direto para a main; as travas do agente só evitam descuido.
 - Guardar a `BYOK_MASTER_KEY` num cofre de senhas.
 - Escolher onde fica a segunda cópia do backup, fora do GitHub.
 - Para a etapa 2b: decidir entre Sentry gratuito e registro só no banco; aceitar ou não um segundo projeto Supabase.
