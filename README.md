@@ -65,7 +65,7 @@ O projeto roda inteiro em planos gratuitos. Cada passo abaixo leva poucos minuto
 
 1. Crie um projeto em https://supabase.com (plano Free; região `South America (São Paulo)`).
 2. Em **Project Settings → API**, copie a URL do projeto, a chave pública (`anon` / `publishable`) e a chave secreta (`service_role` / `secret`).
-3. Aplique as migrações pelo workflow **Supabase — migrações** do seu fork (ele roda sozinho a cada merge que mexe em `supabase/migrations/`). Antes, crie os ambientes e as credenciais descritos em [`supabase/README.md`](supabase/README.md).
+3. Aplique as migrações pelo workflow **Supabase — migrações** do seu fork (ele roda sozinho a cada merge que mexe em `supabase/migrations/`; na primeira vez, dispare à mão em **Actions → Supabase — migrações → Run workflow**). Antes, crie os ambientes e as credenciais descritos em [`supabase/README.md`](supabase/README.md).
 
 ### 2. Google (botão "Entrar com Google")
 

@@ -35,10 +35,10 @@ Roda lint, formatação, tipos, testes e build. É o mesmo comando da CI. `npm r
 
 ## Nunca
 
-- **Juntar pull request** ou fazer push na main. Quem junta é o dono. Trava: permissão negada e hook `bloquear-comando`.
+- **Juntar pull request** ou fazer push na main. Quem junta é o dono. Trava: permissão negada, hook `bloquear-comando` e a regra da main no GitHub.
 - **Editar migração que já está na main.** Ela já rodou em produção. Trava: hook `proteger-migracoes` e passo da CI.
 - **Disparar restauração, migração manual, agendador ou ajuste de login.** Só o dono. Trava: hook `bloquear-workflow` e os ambientes do GitHub.
-- **Ler ou escrever arquivos `.env`** (o `.env.example` é liberado). Trava: permissão negada e hook.
+- **Ler ou escrever arquivos `.env`** (o `.env.example` é liberado). Trava: permissão negada e hook `proteger-segredos`.
 - **Pôr dado pessoal em registro público**: e-mail, nome, localizador, token. Diagnóstico devolve só nomes de objetos e contagens. Trava: `scripts/supabase-diagnostico-lib.mjs`.
 - **Enfraquecer, pular ou apagar um teste para a verificação passar.** Se o teste parece errado, pare e diga qual regra e qual teste discordam.
 
@@ -49,12 +49,12 @@ Ler qualquer arquivo, rodar a verificação, criar e alterar código e testes de
 ## Armadilhas
 
 - O Next.js desta versão mudou em relação ao que você conhece: leia o guia em `node_modules/next/dist/docs/` antes de mexer em rotas, cache ou formulários.
-- As travas valem em sessão comum de um único repositório. Em thread de Projects, hooks e permissões deste arquivo de configuração não carregam.
+- As travas evitam descuido, não são um cofre: a barreira de verdade é a regra da main e os ambientes do GitHub. Valem em sessão comum de um único repositório. Em thread de Projects, hooks e permissões deste arquivo de configuração não carregam.
 - O hook de comando lê o comando inteiro, inclusive o texto de um heredoc. Para criar arquivo, use as ferramentas de escrita, não `cat <<EOF`.
 - A sessão não alcança o banco. Produção só pelos workflows; um Postgres local existe na máquina da sessão (`service postgresql start`) para testar SQL.
 - Horário de voo é horário local do aeroporto; a conversão usa `src/lib/airports`. Aeroporto fora das listas vale como horário de Brasília e exige conferência do dono.
 - Dinheiro é guardado em centavos e na moeda original. Só `BRL` entra nas somas.
-- Um modelo e um nível de esforço por sessão, escolhidos no começo. Ao fim, informe o consumo (`/usage`) no resumo.
+- Um modelo e um nível de esforço por sessão, escolhidos no começo; só o subagente de busca (`.claude/agents/Explore.md`) usa o modelo econômico. Ao fim, informe o consumo (`/usage`) no resumo.
 
 ## Onde está cada coisa
 

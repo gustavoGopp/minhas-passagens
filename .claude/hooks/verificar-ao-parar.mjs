@@ -3,7 +3,8 @@
 // (lint, formatação, tipos e testes). Instrução em texto para "verificar antes
 // de dizer pronto" depende do modelo; o hook vale sempre.
 // - só roda quando o código mudou desde a última verificação que passou;
-// - depois de 3 bloqueios seguidos, libera e avisa, para não prender o turno.
+// - depois de 3 bloqueios seguidos, libera e avisa o dono na tela, para não
+//   prender o turno; com o mesmo código, não bloqueia de novo, só repete o aviso.
 // Origem: pesquisa 1.5, 2.2 e 6.4.
 import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -47,9 +48,27 @@ const pasta = path.join(raiz, "node_modules", ".cache", "verificar");
 mkdirSync(pasta, { recursive: true });
 const arquivoOk = path.join(pasta, "ultimo-ok");
 const arquivoBloqueios = path.join(pasta, "bloqueios");
+const arquivoLiberado = path.join(pasta, "liberado");
 const ler = (f) => (existsSync(f) ? readFileSync(f, "utf8").trim() : "");
 
-if (ler(arquivoOk) === estado) process.exit(0); // nada mudou desde a última verificação verde
+// Aviso para o dono: "systemMessage" é o campo que o Claude Code mostra na tela.
+// (O que um hook de parada escreve na saída de erro com código 0 ninguém vê.)
+function liberarComAviso() {
+  console.log(
+    JSON.stringify({
+      systemMessage:
+        "A verificação automática (lint, formatação, tipos e testes) continua falhando depois de 3 tentativas de correção. O agente foi liberado para não ficar preso, mas o trabalho NÃO está verificado. Peça a ele que diga o que está falhando.",
+    }),
+  );
+  process.exit(0);
+}
+
+if (ler(arquivoOk) === estado) {
+  writeFileSync(arquivoBloqueios, "0");
+  process.exit(0); // nada mudou desde a última verificação verde
+}
+// Já liberado com este mesmo código: não prende o turno de novo, só repete o aviso.
+if (ler(arquivoLiberado) === estado) liberarComAviso();
 
 const r = spawnSync("bash", ["scripts/verificar.sh", "rapido"], { cwd: raiz, encoding: "utf8" });
 if (r.status === 0) {
@@ -62,10 +81,8 @@ const bloqueios = Number(ler(arquivoBloqueios) || 0) + 1;
 writeFileSync(arquivoBloqueios, String(bloqueios));
 if (bloqueios > MAX_BLOQUEIOS) {
   writeFileSync(arquivoBloqueios, "0");
-  console.error(
-    "A verificação continua falhando depois de 3 tentativas. Turno liberado: diga ao dono, sem rodeios, o que está falhando.",
-  );
-  process.exit(0);
+  writeFileSync(arquivoLiberado, estado);
+  liberarComAviso();
 }
 console.error(
   `A verificação rápida falhou (tentativa ${bloqueios} de ${MAX_BLOQUEIOS}). Corrija antes de terminar:\n${r.stdout}${r.stderr}`,

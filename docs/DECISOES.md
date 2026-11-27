@@ -27,27 +27,29 @@ Uma linha por decisão, com data e motivo. Só se acrescenta; decisão trocada g
 
 ## Como trabalhamos
 
-| Data  | Decisão                                                                                                                             | Por quê                                                                 |
-| ----- | ----------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| 26/11 | Base de trabalho em 39 mudanças e 6 etapas, a partir de pesquisa com 231 achados: https://claude.ai/artifact/DgjhGFEUdzvop9dWE2Q7wU | Sair do amador sem repetir a documentação maior que o produto           |
-| 26/11 | Um pull request por etapa; o dono junta; da etapa 2 em diante, uma sessão nova por etapa                                            | Mudanças pequenas e conversa curta erram menos                          |
-| 26/11 | Produção só pela main, em dois ambientes do GitHub: `producao-rotina` (sem aprovação) e `producao-risco` (com aprovação do dono)    | Qualquer branch rodava SQL como dono do banco                           |
-| 26/11 | Credenciais de produção com nomes `PROD_...`, só nos ambientes                                                                      | Sem ambiente configurado, o job falha em vez de rodar sem proteção      |
-| 26/11 | Regra de negócio nasce de tabela de exemplos aprovada pelo dono; o teste é escrito antes e visto falhar                             | 249 testes verdes conviviam com três erros de regra                     |
-| 26/11 | Mudança em zona sensível passa por revisor que não participou da escrita                                                            | Na etapa 0 ele achou 19 problemas, 2 graves                             |
-| 27/11 | `CLAUDE.md` curto e escrito à mão; o que não admite exceção vira hook, permissão ou teste; procedimento vira skill                  | Arquivo gerado ou longo piora o resultado; texto não garante            |
-| 27/11 | Estado em `docs/ESTADO.md` com teto de uma tela; pendências em issues; o histórico fica no Git                                      | O arquivo de estado anterior tinha 284 linhas e era lido em toda sessão |
-| 27/11 | Pacote novo só com aprovação do dono; versões com menos de 7 dias não entram; scripts de instalação desligados                      | Ataques recentes no npm rodaram na instalação                           |
+| Data  | Decisão                                                                                                                                          | Por quê                                                                 |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------- |
+| 26/11 | Base de trabalho em 39 mudanças e 6 etapas, a partir de pesquisa com 231 achados: https://claude.ai/artifact/DgjhGFEUdzvop9dWE2Q7wU              | Sair do amador sem repetir a documentação maior que o produto           |
+| 26/11 | Um pull request por etapa; o dono junta; da etapa 2 em diante, uma sessão nova por etapa                                                         | Mudanças pequenas e conversa curta erram menos                          |
+| 26/11 | Produção só pela main, em dois ambientes do GitHub: `producao-rotina` (sem aprovação) e `producao-risco` (com aprovação do dono)                 | Qualquer branch rodava SQL como dono do banco                           |
+| 26/11 | Credenciais de produção com nomes `PROD_...`, só nos ambientes                                                                                   | Sem ambiente configurado, o job falha em vez de rodar sem proteção      |
+| 26/11 | Regra de negócio nasce de tabela de exemplos aprovada pelo dono; o teste é escrito antes e visto falhar                                          | 249 testes verdes conviviam com três erros de regra                     |
+| 26/11 | Mudança em zona sensível passa por revisor que não participou da escrita                                                                         | Na etapa 0 ele achou 19 problemas, 2 graves                             |
+| 27/11 | `CLAUDE.md` curto e escrito à mão; o que não admite exceção vira hook, permissão ou teste; procedimento vira skill                               | Arquivo gerado ou longo piora o resultado; texto não garante            |
+| 27/11 | Estado em `docs/ESTADO.md` com teto de uma tela; pendências em issues; o histórico fica no Git                                                   | O arquivo de estado anterior tinha 284 linhas e era lido em toda sessão |
+| 27/11 | Pacote novo só com aprovação do dono; versões com menos de 7 dias não entram; scripts de instalação desligados                                   | Ataques recentes no npm rodaram na instalação                           |
+| 27/11 | Travas do agente dizem o que pode (lista curta), não o que não pode; são proteção contra descuido, e a barreira é a regra da main e os ambientes | A revisão achou 11 formas de contornar as listas do que não pode        |
 
 ## Incidentes e a trava que ficou
 
-| Data  | O que houve                                                                               | Trava                                                                               |
-| ----- | ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| 02/11 | Login falhando: migrações não aplicadas, URL do site errada e segredo do Google trocado   | Migração automática no merge; diagnóstico `auth-config`                             |
-| 02/11 | Produção parada: prévias de cada branch consumiram o limite diário da Vercel              | `vercel.json` publica só a main                                                     |
-| 02/11 | Avisos registrados como enviados sem nenhum canal configurado                             | Aviso só conta como enviado quando um canal entrega (`src/lib/notify/delivery.ts`)  |
-| 03/11 | 15 voos com data de compra depois do voo; o ano era lido errado no e-mail                 | Tela Conferir passagens; a extração tenta de novo com o modelo forte                |
-| 26/11 | Um valor de exemplo num teste tinha formato de chave do Stripe e o GitHub recusou o envio | Valores de exemplo sem formato de fornecedor; proteção de segredos do GitHub ligada |
+| Data  | O que houve                                                                               | Trava                                                                                           |
+| ----- | ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| 02/11 | Login falhando: migrações não aplicadas, URL do site errada e segredo do Google trocado   | Migração automática no merge; diagnóstico `auth-config`                                         |
+| 02/11 | Produção parada: prévias de cada branch consumiram o limite diário da Vercel              | `vercel.json` publica só a main                                                                 |
+| 02/11 | Avisos registrados como enviados sem nenhum canal configurado                             | Aviso só conta como enviado quando um canal entrega (`src/lib/notify/delivery.ts`)              |
+| 03/11 | 15 voos com data de compra depois do voo; o ano era lido errado no e-mail                 | Tela Conferir passagens; a extração tenta de novo com o modelo forte                            |
+| 26/11 | Um valor de exemplo num teste tinha formato de chave do Stripe e o GitHub recusou o envio | Valores de exemplo sem formato de fornecedor; proteção de segredos do GitHub ligada             |
+| 27/11 | A primeira versão das travas deixava enviar código para a main por caminhos não vigiados  | Travas reescritas com 126 casos de teste; envio de arquivos pela API do GitHub negado ao agente |
 
 ## Entrevista de 29/10 (resumo)
 
