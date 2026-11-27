@@ -51,6 +51,7 @@ export interface ExtractDeps {
 const SYSTEM = `Você extrai dados de passagens aéreas de confirmações de compra (e-mails de companhias, agências, programas de milhas, prints e PDFs).
 Regras:
 - Devolva uma reserva por localizador; cada trecho (voo) separado, inclusive volta e conexões.
+- locator é só o código de reserva da companhia aérea (PNR, em geral 6 letras e números). Número de pedido ou de reserva de agência (Decolar, Zupper, 123milhas, Trip.com...) não é localizador: se o código da companhia não aparecer, deixe locator nulo e diga isso em warnings.
 - Horários sempre no horário LOCAL do aeroporto, exatamente como aparecem, no formato YYYY-MM-DDTHH:mm. Não converta fusos.
 - Aeroportos em código IATA de 3 letras (Santos Dumont = SDU, Congonhas = CGH, Galeão = GIG, Guarulhos = GRU, Viracopos = VCP).
 - Companhia: AD (Azul), G3 (Gol), LA (LATAM) ou OTHER.

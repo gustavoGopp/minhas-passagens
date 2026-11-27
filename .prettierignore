@@ -3,3 +3,5 @@ node_modules
 out
 coverage
 package-lock.json
+# Gravados pelo workflow avaliacao-extracao, não escritos à mão.
+tests/avaliacao-extracao

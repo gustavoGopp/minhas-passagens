@@ -22,7 +22,12 @@ export const extractedFlightSchema = z.object({
 });
 
 export const extractedBookingSchema = z.object({
-  locator: z.string().nullable().describe("Localizador/código da reserva (PNR)"),
+  locator: z
+    .string()
+    .nullable()
+    .describe(
+      "Código de reserva da companhia aérea (PNR); nulo se só houver número de pedido da agência",
+    ),
   airline_code: z.enum(["AD", "G3", "LA", "OTHER"]),
   seller: z
     .string()
