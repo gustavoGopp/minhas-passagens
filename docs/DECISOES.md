@@ -57,6 +57,7 @@ Uma linha por decisão, com data e motivo. Só se acrescenta; decisão trocada g
 | 27/11 | Migração que retira acesso (revoke, policy apagada) é segunda entrega: só depois que o app que não precisa mais do acesso estiver no ar                                                                                        | A migração roda antes da publicação; a revisão em sessão limpa da 2b achou o app antigo quebrando nessa janela |
 | 27/11 | Mudar prompt, esquema, esforço ou modelo da extração exige uma rodada de verdade antes do merge; a CI compara a impressão digital do pedido com a da última rodada e repete as respostas gravadas                              | Uma linha de prompt custou 3% à Anthropic sem os testes comuns perceberem                                      |
 | 27/11 | A rodada de verdade roda só no workflow `avaliacao-extracao`, pela etiqueta `avaliar-extracao`, no ambiente `avaliacao-ia` que espera o clique do dono, com chave própria e limite de gasto; o resultado é gravado pelo GitHub | O proxy da sessão não guarda chave da Anthropic; quem é julgado não escreve a nota                             |
+| 27/11 | A rodada só troca as respostas gravadas quando termina inteira; a trava de dado pessoal ignora caracteres invisíveis entre dígitos; número falso no gabarito nunca tem formato de cartão, CPF ou telefone                      | Uma rodada parou no meio por um número falso de 16 dígitos e deixou metade das respostas apagadas              |
 
 ## Incidentes e a trava que ficou
 
