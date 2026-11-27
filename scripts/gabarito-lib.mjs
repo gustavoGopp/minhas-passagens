@@ -8,6 +8,8 @@ import { problemasDeDadoPessoal } from "./supabase-diagnostico-lib.mjs";
 
 /** E-mails falsos permitidos: só domínios de exemplo (RFC 2606). */
 const EMAIL_DE_EXEMPLO = /[\w.+-]+@(?:[\w-]+\.)*example\.(?:com|org|net)\b/gi;
+/** Caracteres sem largura que alguns e-mails põem entre dígitos (escondem o formato). */
+const INVISIVEIS = /[​-‍⁠﻿]/g;
 /** 16 dígitos seguidos ou em grupos de 4: número de cartão. */
 const CARTAO = /(?<!\d)(?:\d{4}[ .-]?){3}\d{4}(?!\d)/;
 
@@ -28,7 +30,7 @@ export function problemasDoGabarito(dado, { exigirTrocas = true } = {}) {
   if (exigirTrocas && (!Array.isArray(dado?.trocas) || dado.trocas.length === 0))
     problemas.push({ caminho: "trocas", motivo: "falta a lista do que foi trocado" });
   for (const [caminho, texto] of textos(dado, "", [])) {
-    const limpo = texto.replace(EMAIL_DE_EXEMPLO, "(e-mail de exemplo)");
+    const limpo = texto.replace(INVISIVEIS, "").replace(EMAIL_DE_EXEMPLO, "(e-mail de exemplo)");
     const achados = problemasDeDadoPessoal(limpo, caminho);
     if (achados.length) problemas.push(...achados);
     else if (CARTAO.test(limpo)) problemas.push({ caminho, motivo: "cartão" });

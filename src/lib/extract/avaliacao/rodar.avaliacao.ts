@@ -29,8 +29,9 @@ it("rodada de verdade da avaliação da extração", async () => {
 
   const real = new Anthropic({ apiKey: chave, maxRetries: 2, timeout: 120_000 });
   const pastaRespostas = join(PASTA_RODADA, "respostas");
-  mkdirSync(pastaRespostas, { recursive: true });
-  for (const a of readdirSync(pastaRespostas)) rmSync(join(pastaRespostas, a));
+  // As respostas só substituem as da rodada anterior no fim, com tudo conferido:
+  // uma rodada interrompida não deixa no branch metade nova e metade velha.
+  const gravacoes: Gravacao[] = [];
 
   const corrigidos: CasoCorrigido[] = [];
   const erros: string[] = [];
@@ -46,11 +47,13 @@ it("rodada de verdade da avaliação da extração", async () => {
       throw new Error(
         `${caso.id}: a resposta gravada tem formato de dado pessoal; nada foi gravado.`,
       );
-    writeFileSync(
-      join(pastaRespostas, `${caso.id}.json`),
-      JSON.stringify(gravacao, null, 2) + "\n",
-    );
+    gravacoes.push(gravacao);
   }
+
+  mkdirSync(pastaRespostas, { recursive: true });
+  for (const a of readdirSync(pastaRespostas)) rmSync(join(pastaRespostas, a));
+  for (const g of gravacoes)
+    writeFileSync(join(pastaRespostas, `${g.caso}.json`), JSON.stringify(g, null, 2) + "\n");
 
   const resumo = resumir(corrigidos);
   const problemas = conferirLimites(resumo, gabarito.limites);

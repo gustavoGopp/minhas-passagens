@@ -31,6 +31,14 @@ describe("problemasDoGabarito", () => {
     expect(problemasDoGabarito(caso(corpo)).length).toBeGreaterThan(0);
   });
 
+  // A Trip.com separa os dígitos com caractere invisível: o número de 16 dígitos
+  // passou pela trava no gabarito e só foi pego quando o modelo o repetiu sem eles.
+  it("recusa cartão com caracteres invisíveis entre os dígitos", () => {
+    const zwnj = "‌";
+    const corpo = `Reserva 1${zwnj}100${zwnj}200${zwnj}300${zwnj}400${zwnj}500`;
+    expect(problemasDoGabarito(caso(corpo)).length).toBeGreaterThan(0);
+  });
+
   it("não devolve o valor encontrado, só onde está", () => {
     const p = problemasDoGabarito(caso("maria.silva@gmail.com"));
     expect(JSON.stringify(p)).not.toContain("maria");

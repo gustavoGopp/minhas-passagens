@@ -9,13 +9,13 @@
             {
               "locator": "HWBYKS",
               "airline_code": "G3",
-              "seller": "GOL (site/e-mail da companhia)",
+              "seller": "GOL Smiles",
               "channel": "airline",
               "total_amount": null,
               "currency": null,
               "miles": null,
               "taxes_amount": null,
-              "purchased_on": null,
+              "purchased_on": "2026-05-26",
               "status": "active",
               "flights": [
                 {
@@ -31,23 +31,24 @@
             }
           ],
           "warnings": [
-            "O ano do voo não aparece no e-mail; foi deduzido como 2026 (voo em 17 de setembro, depois do recebimento em 2026-05-26).",
-            "Data da compra não informada no texto; purchased_on deixado nulo.",
-            "Valor total e moeda não informados no e-mail; deixados nulos."
+            "Ano do voo deduzido como 2026 a partir da data de recebimento do e-mail (2026-05-26); o e-mail mostra apenas 'Qui, 17 Set'.",
+            "Valor total e moeda não aparecem no e-mail.",
+            "Assento não confirmado.",
+            "Data de compra não informada; usada a data de recebimento do e-mail como referência, sem confirmação de emissão."
           ]
         },
         "stop_reason": "end_turn",
         "usage": {
-          "input_tokens": 4766,
+          "input_tokens": 4178,
           "cache_creation_input_tokens": 0,
           "cache_read_input_tokens": 0,
           "cache_creation": {
             "ephemeral_5m_input_tokens": 0,
             "ephemeral_1h_input_tokens": 0
           },
-          "output_tokens": 732,
+          "output_tokens": 340,
           "output_tokens_details": {
-            "thinking_tokens": 415
+            "thinking_tokens": 0
           },
           "service_tier": "standard",
           "inference_geo": "global",

@@ -9,7 +9,7 @@
             {
               "locator": "LUSPHV",
               "airline_code": "G3",
-              "seller": "GOL (site da companhia)",
+              "seller": "Site GOL / Smiles",
               "channel": "airline",
               "total_amount": null,
               "currency": null,
@@ -25,29 +25,30 @@
                   "destination_iata": "CGH",
                   "departure_local": "2026-06-22T06:30",
                   "arrival_local": "2026-06-22T07:35",
-                  "passenger": "FULANO SILVA"
+                  "passenger": "Fulano Silva"
                 }
               ]
             }
           ],
           "warnings": [
-            "Ano do voo deduzido como 2026 pelo dia da semana (segunda, 22 de junho) e pela data de recebimento do e-mail.",
-            "Valor total, moeda e data da compra não aparecem no e-mail; campos deixados nulos.",
-            "Número do bilhete 1279990000108 não é localizador; o localizador da reserva é LUSPHV."
+            "Ano deduzido pelo recebimento do e-mail (2026-05-12): 22 Jun é o próximo 22/06 após o recebimento.",
+            "Valor total, moeda e data da compra não aparecem no texto.",
+            "Assento não confirmado.",
+            "Bilhete informado: 1279990000108 (não incluído no schema)."
           ]
         },
         "stop_reason": "end_turn",
         "usage": {
-          "input_tokens": 4770,
+          "input_tokens": 4181,
           "cache_creation_input_tokens": 0,
           "cache_read_input_tokens": 0,
           "cache_creation": {
             "ephemeral_5m_input_tokens": 0,
             "ephemeral_1h_input_tokens": 0
           },
-          "output_tokens": 791,
+          "output_tokens": 315,
           "output_tokens_details": {
-            "thinking_tokens": 463
+            "thinking_tokens": 0
           },
           "service_tier": "standard",
           "inference_geo": "global",

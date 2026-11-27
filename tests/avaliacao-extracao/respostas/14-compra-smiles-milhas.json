@@ -31,21 +31,21 @@
             }
           ],
           "warnings": [
-            "O localizador PXMRAT aparece como localizador Smiles e como localizador da companhia aérea; usado como PNR.",
-            "Data da compra não aparece no e-mail; purchased_on deixado nulo.",
-            "Valores de milhas e taxas em R$ 0,00 no e-mail; taxes_amount registrado como 0 conforme o texto, confirmar."
+            "Data da compra não aparece no e-mail; usado apenas o recebimento em 2026-11-02 como referência.",
+            "Pagamento com milhas: taxas em dinheiro informadas como R$ 0,00; taxes_amount definido como 0.",
+            "Localizador Smiles e localizador da companhia são iguais (PXMRAT)."
           ]
         },
         "stop_reason": "end_turn",
         "usage": {
-          "input_tokens": 5177,
+          "input_tokens": 4458,
           "cache_creation_input_tokens": 0,
           "cache_read_input_tokens": 0,
           "cache_creation": {
             "ephemeral_5m_input_tokens": 0,
             "ephemeral_1h_input_tokens": 0
           },
-          "output_tokens": 322,
+          "output_tokens": 313,
           "output_tokens_details": {
             "thinking_tokens": 0
           },

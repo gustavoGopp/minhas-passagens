@@ -31,23 +31,25 @@
             }
           ],
           "warnings": [
-            "Data da compra não aparece no e-mail; purchased_on deixado nulo.",
-            "Pagamento misto: 15.360 pontos mais R$ 102,04 em dinheiro (taxas). total_amount deixado nulo.",
-            "Layout do e-mail deixou a ordem dos aeroportos confusa; trecho interpretado como CGH para SDU pelo cabeçalho 'Voo para Rio de Janeiro, Santos Dumont'."
+            "Data da compra não aparece no texto; purchased_on deixado nulo.",
+            "O e-mail não deixa claro se 09:30 é o horário de chegada em SDU; foi interpretado como chegada local.",
+            "Valor da emissão: 15.360 pontos TudoAzul mais R$ 102,04 em taxas; total_amount deixado nulo.",
+            "Moeda BRL assumida pelo símbolo R$ das taxas.",
+            "Ano 2027 consta explicitamente na data do voo."
           ]
         },
         "stop_reason": "end_turn",
         "usage": {
-          "input_tokens": 5165,
+          "input_tokens": 4547,
           "cache_creation_input_tokens": 0,
           "cache_read_input_tokens": 0,
           "cache_creation": {
             "ephemeral_5m_input_tokens": 0,
             "ephemeral_1h_input_tokens": 0
           },
-          "output_tokens": 1110,
+          "output_tokens": 979,
           "output_tokens_details": {
-            "thinking_tokens": 755
+            "thinking_tokens": 612
           },
           "service_tier": "standard",
           "inference_geo": "global",

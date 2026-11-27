@@ -9,7 +9,7 @@
             {
               "locator": "DFNTQA",
               "airline_code": "G3",
-              "seller": "Site GOL / Smiles",
+              "seller": "GOL Smiles",
               "channel": "airline",
               "total_amount": null,
               "currency": null,
@@ -31,22 +31,21 @@
             }
           ],
           "warnings": [
-            "Ano do voo deduzido como 2026 a partir da data de recebimento do e-mail (2026-05-12), pois o texto informa apenas 'Seg, 27 Jul'.",
-            "Valor total não informado no e-mail.",
-            "Data da compra não informada no e-mail.",
-            "Número do bilhete informado no e-mail: 1279990000110 (não utilizado como localizador)."
+            "Ano do voo deduzido como 2026 a partir da data de recebimento do e-mail (2026-05-12); o e-mail informa apenas 'Seg, 27 Jul'.",
+            "Valor total, moeda e data da compra não aparecem no e-mail.",
+            "Assento não confirmado."
           ]
         },
         "stop_reason": "end_turn",
         "usage": {
-          "input_tokens": 4770,
+          "input_tokens": 4181,
           "cache_creation_input_tokens": 0,
           "cache_read_input_tokens": 0,
           "cache_creation": {
             "ephemeral_5m_input_tokens": 0,
             "ephemeral_1h_input_tokens": 0
           },
-          "output_tokens": 333,
+          "output_tokens": 301,
           "output_tokens_details": {
             "thinking_tokens": 0
           },

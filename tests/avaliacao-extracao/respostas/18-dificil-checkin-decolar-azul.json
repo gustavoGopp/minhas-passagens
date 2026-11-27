@@ -1,0 +1,59 @@
+{
+  "caso": "18-dificil-checkin-decolar-azul",
+  "chamadas": [
+    {
+      "modelo": "claude-haiku-5-5",
+      "resposta": {
+        "parsed_output": {
+          "bookings": [
+            {
+              "locator": "TN3LXE",
+              "airline_code": "AD",
+              "seller": "Decolar",
+              "channel": "agency",
+              "total_amount": null,
+              "currency": null,
+              "miles": null,
+              "taxes_amount": null,
+              "purchased_on": null,
+              "status": "active",
+              "flights": [
+                {
+                  "airline_code": "AD",
+                  "flight_number": null,
+                  "origin_iata": "SDU",
+                  "destination_iata": "CGH",
+                  "departure_local": "2026-11-09T07:10",
+                  "arrival_local": "2026-11-09T08:20",
+                  "passenger": "Silva, Fulano"
+                }
+              ]
+            }
+          ],
+          "warnings": [
+            "Número do voo não encontrado no e-mail.",
+            "Valor total e moeda não informados no e-mail.",
+            "Data da compra não informada no e-mail; apenas a data de recebimento (2026-11-08) está disponível."
+          ]
+        },
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 3591,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 269,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "service_tier": "standard",
+          "inference_geo": "global",
+          "speed": "standard"
+        }
+      }
+    }
+  ]
+}

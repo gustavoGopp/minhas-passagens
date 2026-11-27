@@ -1,0 +1,33 @@
+{
+  "caso": "17-dificil-decolar-hospedagem",
+  "chamadas": [
+    {
+      "modelo": "claude-haiku-5-5",
+      "resposta": {
+        "parsed_output": {
+          "bookings": [],
+          "warnings": [
+            "O e-mail trata de uma reserva de hospedagem (Búzios Beach Resort), não de passagem aérea; nenhum voo foi encontrado, por isso bookings está vazio."
+          ]
+        },
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 4423,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 82,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "service_tier": "standard",
+          "inference_geo": "global",
+          "speed": "standard"
+        }
+      }
+    }
+  ]
+}
