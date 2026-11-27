@@ -1,0 +1,15 @@
+{
+  "aprovado_em": "2026-11-27",
+  "observacao": "Régua 'Recomendado' escolhida pelo dono em 27/11, antes da primeira rodada. Taxas de 0 a 1. Mudar pede a etiqueta aprovado-pelo-dono.",
+  "campos_minimos": {
+    "aeroportos": 1,
+    "partida": 1,
+    "localizador": 0.95,
+    "chegada": 0.95,
+    "valor": 0.95,
+    "moeda": 0.95
+  },
+  "caso_inteiro_minimo": 0.9,
+  "injecao_casos_minimo": 5,
+  "propaganda_inventadas_maximo": 0
+}
