@@ -12,6 +12,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { avaliar as avaliarComando } from "../.claude/hooks/bloquear-comando.mjs";
 import { avaliar as workflow } from "../.claude/hooks/bloquear-workflow.mjs";
+import { avaliar as etiqueta } from "../.claude/hooks/etiqueta-do-dono.mjs";
 import { comandosSimples } from "../.claude/hooks/lib.mjs";
 import {
   analisar,
@@ -505,6 +506,46 @@ describe("trava 6: arquivos de segredo", () => {
   });
 });
 
+describe("trava 7: a etiqueta de aprovação só o dono põe", () => {
+  const E = "aprovado-pelo-dono";
+
+  it.each([
+    ["mcp__github__issue_write", { method: "update", issue_number: 1, labels: [E] }],
+    ["mcp__github__issue_write", { method: "create", title: "x", labels: ["bug", E] }],
+    ["mcp__github__update_pull_request", { pullNumber: 1, labels: [E] }],
+    ["mcp__github__add_labels_to_issue", { issue_number: 1, labels: [E] }],
+    ["mcp__github__label_write", { method: "create", name: E }],
+    ["Bash", { command: `gh pr edit 52 --add-label ${E}` }],
+    ["Bash", { command: `gh api -X POST repos/o/r/issues/52/labels -f "labels[]=${E}"` }],
+    [
+      "Bash",
+      {
+        command: `curl -X POST https://api.github.com/repos/o/r/issues/52/labels -d '{"labels":["${E}"]}'`,
+      },
+    ],
+  ])("bloqueia %s pondo a etiqueta", (ferramenta, entrada) => {
+    expect(etiqueta(ferramenta, entrada)).toContain("só o dono");
+  });
+
+  it.each([
+    ["mcp__github__issue_write", { method: "update", issue_number: 1, labels: ["bug"] }],
+    ["mcp__github__create_pull_request", { title: "x", body: `Pede a etiqueta ${E} ao dono.` }],
+    ["mcp__github__add_issue_comment", { issue_number: 1, body: `Falta a etiqueta ${E}.` }],
+    ["Bash", { command: `grep -rn ${E} scripts` }],
+    ["Bash", { command: "gh pr edit 52 --add-label bug" }],
+  ])("deixa passar %s sem pôr a etiqueta", (ferramenta, entrada) => {
+    expect(etiqueta(ferramenta, entrada)).toBeNull();
+  });
+
+  it("de ponta a ponta com a entrada da ferramenta do GitHub", () => {
+    const r = rodar("etiqueta-do-dono.mjs", {
+      tool_name: "mcp__github__issue_write",
+      tool_input: { method: "update", owner: "o", repo: "r", issue_number: 1, labels: [E] },
+    });
+    expect(decisao(r).permissionDecision).toBe("deny");
+  });
+});
+
 describe("permissões negadas ao agente", () => {
   const settings = JSON.parse(readFileSync(path.join(raiz, ".claude/settings.json"), "utf8"));
 
@@ -526,10 +567,11 @@ describe("permissões negadas ao agente", () => {
       ]),
     );
     expect(ligacoes).toEqual({
-      Bash: ["bloquear-comando.mjs", "pacote-novo.mjs"],
+      Bash: ["bloquear-comando.mjs", "pacote-novo.mjs", "etiqueta-do-dono.mjs"],
       "Read|Edit|Write": ["proteger-segredos.mjs"],
       "Edit|Write": ["proteger-migracoes.mjs"],
       mcp__github__actions_run_trigger: ["bloquear-workflow.mjs"],
+      "mcp__github__.*": ["etiqueta-do-dono.mjs"],
     });
   });
 });

@@ -17,7 +17,7 @@ App pessoal, em português, para organizar passagens aéreas, monitorar preços 
 npm run verify
 ```
 
-Roda lint, formatação, tipos, testes e build. É o mesmo comando da CI. `npm run verify:rapido` pula o build; um hook roda essa versão antes de cada fim de turno e devolve a falha.
+Roda lint, formatação, tipos, testes e build. É o mesmo comando da CI. Banco e navegador ficam em `npm run test:banco` e `npm run test:e2e`, contra o Supabase local (`scripts/banco-teste/instalar-supabase-cli.sh`, `dockerd`, `supabase start` e as variáveis de `supabase status -o env`); a CI roda os dois. `npm run verify:rapido` pula o build; um hook roda essa versão antes de cada fim de turno e devolve a falha.
 
 ## Sempre
 
@@ -29,7 +29,7 @@ Roda lint, formatação, tipos, testes e build. É o mesmo comando da CI. `npm r
 ## Peça aprovação antes de
 
 - **Instalar pacote novo.** Modelos inventam nomes de pacote e ataques rodam na instalação. Trava: hook `pacote-novo` e `.npmrc`.
-- **Mudar cenários de aceitação, gabaritos ou tabelas de exemplos aprovadas.** São o que julga o seu trabalho.
+- **Mudar cenários de aceitação, gabaritos ou tabelas de exemplos aprovadas** (`tests/aceitacao/`, `docs/regras-de-acesso.md` e, na etapa 3, os gabaritos). São o que julga o seu trabalho. Trava: checagem "Aprovação do dono" e hook `etiqueta-do-dono` (a etiqueta `aprovado-pelo-dono` só o dono põe).
 - **Gastar dinheiro** (API paga, plano pago) ou chamar um serviço externo com dado real do dono.
 - **Mudar workflows que tocam produção** ou a configuração de login.
 
