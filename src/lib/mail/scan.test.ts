@@ -3,7 +3,10 @@ import { FakeDb } from "@/test/fake-supabase";
 
 vi.mock("server-only", () => ({}));
 const extract = vi.fn();
-vi.mock("@/lib/extract/extract", () => ({ extractBookings: (...a: unknown[]) => extract(...a) }));
+vi.mock("@/lib/extract/extract", async (original) => ({
+  ...(await original<typeof import("@/lib/extract/extract")>()),
+  extractBookings: (...a: unknown[]) => extract(...a),
+}));
 vi.mock("@/lib/integrations/repo", () => ({
   getDecryptedKeyWith: async (_c: unknown, _u: string, p: string) =>
     p === "gmail" ? "rt" : "sk-ant",

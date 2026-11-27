@@ -2,7 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { exigir } from "@/lib/supabase/exigir";
 import { registrarFalha } from "@/lib/falhas";
-import { extractBookings } from "@/lib/extract/extract";
+import { entradaDoEmail, extractBookings } from "@/lib/extract/extract";
 import { getDecryptedKeyWith } from "@/lib/integrations/repo";
 import { draftFromExtraction } from "@/lib/trips/draft";
 import { googleClient } from "./accounts";
@@ -61,8 +61,6 @@ const SCAN_COLS =
   "id, user_id, kind, status, query_index, page_token, last_error, created_at, confirmed_at, finished_at";
 /** Mensagens "processing" paradas há mais que isto voltam para a fila (queda no meio). */
 const STALE_PROCESSING_MS = 10 * 60_000;
-/** Texto máximo enviado à IA por e-mail (~5 mil tokens). */
-const MAX_CHARS = 20_000;
 
 export async function latestScan(admin: SupabaseClient, userId: string): Promise<ScanRow | null> {
   const { data, error } = await admin
@@ -287,10 +285,7 @@ async function processMessage(
     const receivedOn = (meta.receivedAt || m.received_at || "").slice(0, 10) || undefined;
     const r = await extractBookings(
       apiKey,
-      {
-        kind: "text",
-        text: `Assunto: ${meta.subject}\nDe: ${meta.from}\n\n${text}`.slice(0, MAX_CHARS),
-      },
+      entradaDoEmail({ assunto: meta.subject, remetente: meta.from, corpo: text }),
       { allowEmpty: true, receivedOn },
     );
     if (!r.ok) {

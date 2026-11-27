@@ -127,6 +127,39 @@ describe("workflows do GitHub", () => {
     expect(w.yaml.permissions).toEqual({ contents: "read", "pull-requests": "write" });
   });
 
+  // P24: a avaliação de verdade gasta a chave da Anthropic do dono.
+  it("a chave da Anthropic só aparece no ambiente avaliacao-ia, que espera o dono", () => {
+    const fora = [];
+    for (const w of workflows) {
+      for (const [nome, job] of Object.entries(w.yaml.jobs)) {
+        if (/secrets\.ANTHROPIC/.test(JSON.stringify(job)) && job.environment !== "avaliacao-ia")
+          fora.push(`${w.arquivo}: ${nome}`);
+      }
+      // Fora de um job (env do workflow inteiro), o segredo chegaria a todos os jobs.
+      const { jobs: _jobs, ...resto } = w.yaml;
+      if (/secrets\.ANTHROPIC/.test(JSON.stringify(resto))) fora.push(`${w.arquivo}: (topo)`);
+    }
+    expect(fora).toEqual([]);
+  });
+
+  it("a avaliação da extração roda só pela etiqueta, num PR deste repositório", () => {
+    const w = workflows.find((x) => x.arquivo === "avaliacao-extracao.yml");
+    expect(w, "falta .github/workflows/avaliacao-extracao.yml").toBeTruthy();
+    expect(w.yaml.on).toEqual({ pull_request: { types: ["labeled"] } });
+    expect(w.yaml.permissions).toEqual({});
+    const jobs = Object.values(w.yaml.jobs);
+    expect(jobs).toHaveLength(1);
+    const [job] = jobs;
+    expect(job.environment).toBe("avaliacao-ia");
+    expect(job.if).toContain("github.event.label.name == 'avaliar-extracao'");
+    expect(job.if).toContain("github.event.pull_request.head.repo.full_name == github.repository");
+    expect(job.permissions).toEqual({ contents: "write", "pull-requests": "write" });
+    // Entradas vindas do PR só por variável de ambiente, nunca coladas no comando.
+    for (const passo of job.steps) {
+      expect(String(passo.run ?? "")).not.toMatch(/\$\{\{/);
+    }
+  });
+
   it("a CI tem um job final 'gate' que sempre roda e depende de todos os outros", () => {
     const ci = workflows.find((x) => x.arquivo === "ci.yml").yaml;
     const outros = Object.keys(ci.jobs).filter((j) => j !== "gate");

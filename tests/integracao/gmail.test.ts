@@ -41,7 +41,10 @@ const { extrair } = vi.hoisted(() => ({
     return { ok: true as const, data, model: "modelo-falso" };
   }),
 }));
-vi.mock("@/lib/extract/extract", () => ({ extractBookings: extrair }));
+vi.mock("@/lib/extract/extract", async (original) => ({
+  ...(await original<typeof import("@/lib/extract/extract")>()),
+  extractBookings: extrair,
+}));
 
 const { saveGmailConnection } = await import("@/lib/mail/accounts");
 const { saveIntegration } = await import("@/lib/integrations/repo");

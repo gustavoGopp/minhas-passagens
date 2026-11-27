@@ -16,8 +16,29 @@ export type ExtractInput =
     }
   | { kind: "pdf"; base64: string };
 
-export type ExtractResult =
-  { ok: true; data: Extraction; model: string } | { ok: false; error: string };
+/** Uma chamada à API, com o consumo que ela informou (P25). */
+export interface Chamada {
+  modelo: string;
+  reforco: boolean;
+  resultado: "ok" | "vazio" | "invalido" | "erro";
+  motivoParada: string | null;
+  tokensEntrada: number;
+  tokensSaida: number;
+  tokensCacheLeitura: number;
+  tokensCacheEscrita: number;
+}
+
+export type ExtractResult = (
+  { ok: true; data: Extraction; model: string } | { ok: false; error: string }
+) & { chamadas: Chamada[] };
+
+/** Cliente da API (trocado nos testes e na avaliação por respostas gravadas). */
+export type ClienteDaExtracao = Pick<Anthropic, "messages">;
+
+export interface ExtractDeps {
+  cliente?: ClienteDaExtracao;
+  modelos?: { padrao: string; reforco: string };
+}
 
 const SYSTEM = `Você extrai dados de passagens aéreas de confirmações de compra (e-mails de companhias, agências, programas de milhas, prints e PDFs).
 Regras:
@@ -30,6 +51,26 @@ Regras:
 - Se o ano não aparecer, deduza pelo contexto: o voo acontece DEPOIS da data da compra (ou do recebimento do e-mail) e o mais perto possível dela. Ex.: e-mail de 20/12/2025 sobre um voo em "05/01" é de 05/01/2026. Registre dúvidas em warnings, em português.
 - purchased_on só quando a data da compra ou emissão aparecer no texto; senão, null.
 - Ignore propaganda e texto sem relação com a viagem.`;
+
+/** Texto máximo enviado à IA por e-mail (~5 mil tokens). */
+export const MAX_CHARS_EMAIL = 20_000;
+
+export interface EmailRecebido {
+  assunto: string;
+  remetente: string;
+  corpo: string;
+}
+
+/**
+ * Entrada da extração para um e-mail. Usada pela leitura do Gmail e pela
+ * avaliação (tests/gabaritos/extracao): o que é medido é o que roda no app.
+ */
+export function entradaDoEmail(e: EmailRecebido): ExtractInput {
+  return {
+    kind: "text",
+    text: `Assunto: ${e.assunto}\nDe: ${e.remetente}\n\n${e.corpo}`.slice(0, MAX_CHARS_EMAIL),
+  };
+}
 
 export interface ExtractOptions {
   /** E-mail sem passagem é resposta válida (sem reforço com o modelo maior). */
@@ -68,56 +109,118 @@ function content(input: ExtractInput, opts: ExtractOptions = {}): Anthropic.Cont
   }
 }
 
-async function run(
-  client: Anthropic,
-  model: string,
-  input: ExtractInput,
-  opts: ExtractOptions = {},
-): Promise<Extraction> {
-  const response = await client.messages.parse({
+/** O pedido enviado à API. Exportado para a impressão digital da avaliação (config.ts). */
+export function montarPedido(model: string, input: ExtractInput, opts: ExtractOptions = {}) {
+  return {
     model,
     max_tokens: 8000,
     system: SYSTEM,
-    messages: [{ role: "user", content: content(input, opts) }],
-    output_config: { format: zodOutputFormat(extractionSchema), effort: "low" },
-  });
-  if (response.stop_reason === "refusal") throw new Error("O modelo recusou o conteúdo enviado.");
-  if (!response.parsed_output) throw new Error("A resposta não veio no formato esperado.");
-  return response.parsed_output;
+    messages: [{ role: "user" as const, content: content(input, opts) }],
+    output_config: { format: zodOutputFormat(extractionSchema), effort: "low" as const },
+  };
+}
+
+/** Falha que já tem a chamada registrada (a API respondeu e cobrou). */
+class FalhaComChamada extends Error {
+  constructor(
+    message: string,
+    readonly chamada: Chamada,
+  ) {
+    super(message);
+  }
+}
+
+async function run(
+  client: ClienteDaExtracao,
+  model: string,
+  reforco: boolean,
+  input: ExtractInput,
+  opts: ExtractOptions,
+): Promise<{ data: Extraction; chamada: Chamada }> {
+  const response = await client.messages.parse(montarPedido(model, input, opts));
+  const u = response.usage;
+  const chamada: Chamada = {
+    modelo: model,
+    reforco,
+    resultado: "ok",
+    motivoParada: response.stop_reason ?? null,
+    tokensEntrada: u?.input_tokens ?? 0,
+    tokensSaida: u?.output_tokens ?? 0,
+    tokensCacheLeitura: u?.cache_read_input_tokens ?? 0,
+    tokensCacheEscrita: u?.cache_creation_input_tokens ?? 0,
+  };
+  if (response.stop_reason === "refusal")
+    throw new FalhaComChamada("O modelo recusou o conteúdo enviado.", {
+      ...chamada,
+      resultado: "erro",
+    });
+  if (!response.parsed_output)
+    throw new FalhaComChamada("A resposta não veio no formato esperado.", {
+      ...chamada,
+      resultado: "erro",
+    });
+  return { data: response.parsed_output, chamada };
+}
+
+function mensagemDeErro(error: unknown): string {
+  if (error instanceof Anthropic.AuthenticationError)
+    return "Sua chave da Anthropic foi recusada. Atualize em Integrações.";
+  if (error instanceof Anthropic.RateLimitError)
+    return "Limite de uso da API atingido. Tente em instantes.";
+  if (error instanceof Anthropic.BadRequestError && /credit|balance/i.test(error.message))
+    return "Sem créditos na sua conta da Anthropic.";
+  if (error instanceof Anthropic.APIError)
+    return `A API da Anthropic respondeu com erro ${error.status}.`;
+  return error instanceof Error ? error.message : "Falha na extração.";
 }
 
 /**
  * Extrai com o modelo padrão (barato) e, se a validação falhar, tenta com o
- * modelo de reforço. Usa a chave de API do próprio usuário.
+ * modelo de reforço. Usa a chave de API do próprio usuário. Devolve sempre as
+ * chamadas feitas, com o consumo, para o registro de gasto real.
  */
 export async function extractBookings(
   apiKey: string,
   input: ExtractInput,
   opts: ExtractOptions = {},
+  deps: ExtractDeps = {},
 ): Promise<ExtractResult> {
-  const env = serverEnv();
-  const client = new Anthropic({ apiKey, maxRetries: 1, timeout: 90_000 });
+  const modelos = deps.modelos ?? {
+    padrao: serverEnv().EXTRACTION_MODEL_DEFAULT,
+    reforco: serverEnv().EXTRACTION_MODEL_RETRY,
+  };
+  const client = deps.cliente ?? new Anthropic({ apiKey, maxRetries: 1, timeout: 90_000 });
+  const chamadas: Chamada[] = [];
+  let modeloAtual = modelos.padrao;
   try {
-    const first = await run(client, env.EXTRACTION_MODEL_DEFAULT, input, opts);
-    if (opts.allowEmpty && first.bookings.length === 0)
-      return { ok: true, data: first, model: env.EXTRACTION_MODEL_DEFAULT };
-    if (validationProblems(first).length === 0)
-      return { ok: true, data: first, model: env.EXTRACTION_MODEL_DEFAULT };
-    const second = await run(client, env.EXTRACTION_MODEL_RETRY, input, opts);
-    return { ok: true, data: second, model: env.EXTRACTION_MODEL_RETRY };
+    const first = await run(client, modelos.padrao, false, input, opts);
+    chamadas.push(first.chamada);
+    if (opts.allowEmpty && first.data.bookings.length === 0) {
+      first.chamada.resultado = "vazio";
+      return { ok: true, data: first.data, model: modelos.padrao, chamadas };
+    }
+    if (validationProblems(first.data).length === 0)
+      return { ok: true, data: first.data, model: modelos.padrao, chamadas };
+    first.chamada.resultado = "invalido";
+    modeloAtual = modelos.reforco;
+    const second = await run(client, modelos.reforco, true, input, opts);
+    chamadas.push(second.chamada);
+    return { ok: true, data: second.data, model: modelos.reforco, chamadas };
   } catch (error) {
-    if (error instanceof Anthropic.AuthenticationError) {
-      return { ok: false, error: "Sua chave da Anthropic foi recusada. Atualize em Integrações." };
-    }
-    if (error instanceof Anthropic.RateLimitError) {
-      return { ok: false, error: "Limite de uso da API atingido. Tente em instantes." };
-    }
-    if (error instanceof Anthropic.BadRequestError && /credit|balance/i.test(error.message)) {
-      return { ok: false, error: "Sem créditos na sua conta da Anthropic." };
-    }
-    if (error instanceof Anthropic.APIError) {
-      return { ok: false, error: `A API da Anthropic respondeu com erro ${error.status}.` };
-    }
-    return { ok: false, error: error instanceof Error ? error.message : "Falha na extração." };
+    chamadas.push(
+      error instanceof FalhaComChamada
+        ? error.chamada
+        : {
+            modelo: modeloAtual,
+            reforco: modeloAtual !== modelos.padrao,
+            resultado: "erro",
+            motivoParada: null,
+            tokensEntrada: 0,
+            tokensSaida: 0,
+            tokensCacheLeitura: 0,
+            tokensCacheEscrita: 0,
+          },
+    );
+    return { ok: false, error: mensagemDeErro(error), chamadas };
   }
 }

@@ -21,6 +21,32 @@ export function estimateUsd(emails: number): number {
   return emails * (haiku + RETRY_SHARE * sonnet);
 }
 
+/** Tokens de uma chamada, como a API informa (P25). */
+export interface ConsumoDaChamada {
+  modelo: string;
+  tokensEntrada: number;
+  tokensSaida: number;
+  tokensCacheLeitura: number;
+  tokensCacheEscrita: number;
+}
+
+/**
+ * Custo real (US$) de uma chamada. Modelo que não é Haiku usa o preço do Sonnet,
+ * o mais caro dos dois: o gasto mostrado nunca fica abaixo do real por engano.
+ */
+export function custoDaChamada(c: ConsumoDaChamada): number {
+  const haiku = /haiku/i.test(c.modelo);
+  const entrada = haiku ? HAIKU_IN_PER_MTOK : SONNET_IN_PER_MTOK;
+  const saida = haiku ? HAIKU_OUT_PER_MTOK : SONNET_OUT_PER_MTOK;
+  return (
+    (c.tokensEntrada * entrada +
+      c.tokensCacheLeitura * entrada * 0.1 +
+      c.tokensCacheEscrita * entrada * 1.25 +
+      c.tokensSaida * saida) /
+    1_000_000
+  );
+}
+
 export function formatUsd(v: number): string {
   return v < 0.01 ? "menos de US$ 0,01" : `US$ ${v.toFixed(2).replace(".", ",")}`;
 }
