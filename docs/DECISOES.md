@@ -25,6 +25,9 @@ Uma linha por decisão, com data e motivo. Só se acrescenta; decisão trocada g
 | 26/11 | Voo internacional: 73 aeroportos com fuso; fora das listas vale horário de Brasília com "Conferi os horários"; moeda original fora da soma em reais  | Suporte completo fica para depois                                    |
 | 26/11 | Cadastro de contas novas fechado até o pacote "antes de abrir para outras pessoas" (issue 41)                                                        | Havia uma segunda conta não identificada                             |
 | 27/11 | Toda tabela nova de `public` nasce com a proteção por linha ligada, por um gatilho no banco                                                          | Tabela criada sem proteção ficaria aberta a qualquer usuário logado  |
+| 27/11 | Falhas do servidor ficam só no banco (`registro_falhas`, 30 dias), com resumo no e-mail do vigia diário; sem Sentry por enquanto                     | Decisão do dono; custo zero e nenhum fornecedor novo                 |
+| 27/11 | Sem segundo projeto Supabase por enquanto; a prévia antes da produção (P22) fica de fora e as capturas da CI bastam                                  | Decisão do dono; prévias já pararam a produção em 02/11              |
+| 27/11 | Histórico de preço só o servidor grava; a chave de API cifrada nunca é lida pelo navegador, nem pelo dono                                            | Regras aprovadas pelo dono; impede forjar preço e alerta             |
 
 ## Como trabalhamos
 
@@ -42,6 +45,9 @@ Uma linha por decisão, com data e motivo. Só se acrescenta; decisão trocada g
 | 27/11 | Testes de banco, de fluxo e de ponta a ponta rodam num Supabase local (Docker) na CI, só com dados fictícios; a ferramenta entra por versão fixa conferida pelo hash | O banco falso aceitava tudo; a ação oficial instala pelo npm com passos extras |
 | 27/11 | Cenários de aceitação, gabaritos e regras de acesso aprovadas só mudam com a etiqueta `aprovado-pelo-dono`, conferida por checagem que roda a versão da main         | Agentes passam nos testes que veem; quem é julgado não pode mudar o que julga  |
 | 27/11 | Travas do agente dizem o que pode (lista curta), não o que não pode; são proteção contra descuido, e a barreira é a regra da main e os ambientes                     | A revisão achou 11 formas de contornar as listas do que não pode               |
+| 27/11 | Ordem de produção: CI verde na main → clique do dono se houver migração → migração e registro numa transação → app publicado pelo gancho da Vercel                   | Migração e publicação saíam em paralelo, sem aprovação                         |
+| 27/11 | Chave de serviço só nos arquivos de uma lista curta (`scripts/chave-de-servico.mjs`), conferida por lint e teste                                                     | Eram 21 usos com o filtro por pessoa feito à mão                               |
+| 27/11 | Gravação no banco com o erro ignorado é recusada pelo lint; falha vai para o registro                                                                                | 27 gravações ignoravam erro                                                    |
 
 ## Incidentes e a trava que ficou
 

@@ -16,6 +16,10 @@
 
 <!-- Migração, dado apagado, configuração de produção, custo. Se não, escreva "Não". -->
 
+## Revisão em sessão limpa
+
+<!-- Obrigatória se o PR toca zona sensível (.claude/skills/revisao-limpa/SKILL.md). Quantos achados, o que foi corrigido e por que o resto foi descartado. Se não se aplica, escreva "Não se aplica". -->
+
 ## O que ficou de fora
 
 <!-- Inclua aqui testes que foram alterados ou removidos, e por quê. -->
