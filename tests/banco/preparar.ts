@@ -91,7 +91,7 @@ async function prepararBanco(project: TestProject) {
   const B = await semear(await criarPessoa(emailB, senha), emailB);
   const globais: Record<string, string> = {};
   for (const t of TABELAS.filter((t) => t.global)) {
-    await db.query(`delete from public.${t.nome} where ${t.pk} = $1`, ["teste_semente"]);
+    await db.query(`delete from public.${t.nome} where ${t.pk}::text = $1`, ["teste_semente"]);
     const [sql, vals] = insert(t, t.linha(A.ctx, "semente"));
     globais[t.nome] = (await db.query<{ pk: string }>(sql, vals)).rows[0].pk;
   }

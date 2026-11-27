@@ -1,5 +1,6 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { registrarFalha } from "@/lib/falhas";
 import { MAX_ATTEMPTS, type AttemptState } from "@/lib/notify/delivery";
 import type { NotifyEvent } from "@/lib/notify/events";
 import type { Profile } from "@/lib/profiles/repo";
@@ -64,8 +65,9 @@ export async function runDueMonitors(
       const r = await performCheck(admin, m, byId.get(m.user_id) ?? null, now);
       if (r.ok) checked++;
       else failed++;
-    } catch {
+    } catch (e) {
       failed++;
+      await registrarFalha("agendador:checagem-de-preco", e);
     }
   }
   return { checked, failed, skipped };

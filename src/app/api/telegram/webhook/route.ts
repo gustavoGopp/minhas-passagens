@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { sendTelegram } from "@/lib/notify/channels";
 import { getConfig, safeEqual } from "@/lib/notify/config";
+import { registrarFalha } from "@/lib/falhas";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 /** Recebe mensagens do bot. "/start <token>" vincula o chat à conta; "/parar" desvincula. */
@@ -37,7 +38,7 @@ export async function POST(request: NextRequest) {
       );
       return NextResponse.json({ ok: true });
     }
-    await admin
+    const vinculo = await admin
       .from("telegram_links")
       .update({
         chat_id: chatId,
@@ -47,6 +48,15 @@ export async function POST(request: NextRequest) {
         updated_at: new Date().toISOString(),
       })
       .eq("user_id", data.user_id);
+    if (vinculo.error) {
+      await registrarFalha("telegram:vincular", vinculo.error);
+      await sendTelegram(
+        token,
+        chatId,
+        "Não consegui conectar agora. Tente de novo daqui a pouco.",
+      );
+      return NextResponse.json({ ok: true });
+    }
     await sendTelegram(
       token,
       chatId,
@@ -55,10 +65,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true });
   }
   if (text === "/parar") {
-    await admin
+    const parar = await admin
       .from("telegram_links")
       .update({ chat_id: null, linked_at: null })
       .eq("chat_id", chatId);
+    if (parar.error) {
+      await registrarFalha("telegram:parar", parar.error);
+      await sendTelegram(
+        token,
+        chatId,
+        "Não consegui desligar agora. Tente de novo daqui a pouco.",
+      );
+      return NextResponse.json({ ok: true });
+    }
     await sendTelegram(token, chatId, "Avisos desligados neste chat.");
     return NextResponse.json({ ok: true });
   }

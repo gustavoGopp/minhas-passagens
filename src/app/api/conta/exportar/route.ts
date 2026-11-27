@@ -1,3 +1,4 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { EXTRA_EXPORT_COLUMNS } from "@/lib/account/export-tables";
 import { getOptionalUser } from "@/lib/auth/current-user";
@@ -13,7 +14,9 @@ export async function GET() {
   const user = await getOptionalUser();
   if (!user) return NextResponse.json({ error: "não autenticado" }, { status: 401 });
 
-  const supabase = await createSupabaseServerClient();
+  // As tabelas extras variam no laço abaixo; o cliente sem tipos por tabela aceita
+  // o nome dinâmico. As colunas vêm de uma lista fixa (export-tables.ts).
+  const supabase = (await createSupabaseServerClient()) as unknown as SupabaseClient;
   const [profile, integrations, holidayOverrides, trips, credits, ...extra] = await Promise.all([
     getProfile(user.id),
     listIntegrationsPublic(user.id),

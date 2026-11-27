@@ -1,4 +1,5 @@
 import "server-only";
+import { registrarFalha } from "@/lib/falhas";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { sendEmailDetailed, sendPush, sendTelegram, type PushSub } from "./channels";
 import { getConfig } from "./config";
@@ -91,7 +92,11 @@ export async function deliver(
             ...(e.buyUrl ? { buyUrl: e.buyUrl, buyLabel: BUY_LABEL } : {}),
           });
           if (res === "ok") any = true;
-          if (res === "gone") await admin.from("push_subscriptions").delete().eq("id", sub.id);
+          if (res === "gone") {
+            // Aparelho que desinstalou o app: a inscrição sai.
+            const fora = await admin.from("push_subscriptions").delete().eq("id", sub.id);
+            if (fora.error) await registrarFalha("avisos:push", fora.error);
+          }
         }
         if (any) result.ok.push("push");
         else result.errors.push("push: falhou");

@@ -65,7 +65,7 @@ O projeto roda inteiro em planos gratuitos. Cada passo abaixo leva poucos minuto
 
 1. Crie um projeto em https://supabase.com (plano Free; região `South America (São Paulo)`).
 2. Em **Project Settings → API**, copie a URL do projeto, a chave pública (`anon` / `publishable`) e a chave secreta (`service_role` / `secret`).
-3. Aplique as migrações pelo workflow **Supabase — migrações** do seu fork (ele roda sozinho a cada merge que mexe em `supabase/migrations/`; na primeira vez, dispare à mão em **Actions → Supabase — migrações → Run workflow**). Antes, crie os ambientes e as credenciais descritos em [`supabase/README.md`](supabase/README.md).
+3. Aplique as migrações pelo workflow **Supabase — migrações e publicação** do seu fork (ele roda depois de cada CI verde na main e espera a sua aprovação quando há migração; na primeira vez, dispare à mão em **Actions → Supabase — migrações e publicação → Run workflow**). Antes, crie os ambientes e as credenciais descritos em [`supabase/README.md`](supabase/README.md).
 
 ### 2. Google (botão "Entrar com Google")
 
@@ -94,7 +94,8 @@ O projeto roda inteiro em planos gratuitos. Cada passo abaixo leva poucos minuto
 openssl rand -base64 32
 ```
 
-3. Faça um redeploy. Abra a URL, clique em **Entrar com Google** e, em **Mais → Integrações**, cole sua chave da Anthropic.
+3. A main não é publicada sozinha (`vercel.json`): quem publica é o workflow de migrações, depois de aplicar o banco. Em **Settings → Git → Deploy Hooks**, crie um gancho para o branch `main` e guarde o endereço como segredo `PROD_VERCEL_DEPLOY_HOOK` no ambiente `producao-rotina` do GitHub. Na primeira vez, faça um deploy à mão.
+4. Abra a URL, clique em **Entrar com Google** e, em **Mais → Integrações**, cole sua chave da Anthropic.
 
 Guarde a `BYOK_MASTER_KEY` com cuidado: ela cifra as chaves de API de todos os usuários. Se mudar, as chaves salvas deixam de ser legíveis e cada pessoa precisa colar a sua de novo.
 

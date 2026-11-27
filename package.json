@@ -15,7 +15,8 @@
     "verify": "bash scripts/verificar.sh",
     "verify:rapido": "bash scripts/verificar.sh rapido",
     "test:banco": "vitest run --config vitest.banco.config.mts",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "tipos:banco": "bash scripts/gerar-tipos.sh"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.11.0",

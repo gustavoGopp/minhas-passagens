@@ -2,17 +2,25 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth/current-user";
-import { decideCandidates, type Candidate } from "@/lib/mail/dedupe";
-import { advanceScan, latestScan, RUNNING_STATUSES, scanCounts, startScan } from "@/lib/mail/scan";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { draftFromRows, draftSchema, rowsFromDraft, type BookingDraft } from "@/lib/trips/draft";
+import { decideCandidates } from "@/lib/mail/dedupe";
+import {
+  avancarBusca,
+  cancelarBusca,
+  candidatosPendentes,
+  confirmarBusca,
+  descartarPendentes,
+  iniciarBusca,
+  marcarCandidato,
+  type Progresso,
+} from "@/lib/mail/importacao";
+import { draftFromRows, draftSchema, rowsFromDraft } from "@/lib/trips/draft";
 import { createTrip, getTrip, listTrips, setTripStatus, updateTrip } from "@/lib/trips/repo";
 
 const PATH = "/app/passagens/importar";
 
 export async function startScanAction() {
   const user = await getCurrentUser();
-  await startScan(createSupabaseAdminClient(), user.id);
+  await iniciarBusca(user.id);
   revalidatePath(PATH);
 }
 
@@ -25,61 +33,25 @@ function importMessage(message: string): string {
   return `${message.split(". ")[0]}. Cadastre esta passagem pelo formulário (Passagens → Nova) para conferir os horários e a moeda.`;
 }
 
-export interface ProgressState {
-  status: string;
-  total: number;
-  done: number;
-  error?: string;
-}
+export type ProgressState = Progresso;
 
 /** Avança a varredura por até ~40 s (a tela chama em sequência enquanto estiver aberta). */
 export async function advanceScanAction(): Promise<ProgressState> {
   const user = await getCurrentUser();
-  const admin = createSupabaseAdminClient();
-  const scan = await latestScan(admin, user.id);
-  if (!scan) return { status: "none", total: 0, done: 0 };
-  let status = scan.status;
-  let error: string | undefined;
-  if (RUNNING_STATUSES.includes(status)) {
-    try {
-      status = await advanceScan(admin, scan, Date.now() + 40_000);
-    } catch (e) {
-      error = (e as Error).message;
-    }
-  }
-  const c = await scanCounts(admin, scan.id);
-  const done =
-    status === "processing"
-      ? (c.extracted ?? 0) + (c.not_booking ?? 0) + (c.error ?? 0)
-      : c.total - (c.listed ?? 0);
-  const total = status === "processing" ? done + (c.candidate ?? 0) + (c.processing ?? 0) : c.total;
-  return { status, total, done, error };
+  return avancarBusca(user.id, Date.now() + 40_000);
 }
 
 /** O dono confirmou o custo: começa a leitura com IA (chave dele). */
 export async function confirmScanAction(formData: FormData) {
   const user = await getCurrentUser();
-  const admin = createSupabaseAdminClient();
   // Na mesma confirmação, o dono decide se os e-mails novos serão lidos sozinhos.
-  await admin
-    .from("mail_accounts")
-    .update({ auto_sync: formData.get("auto_sync") === "on" })
-    .eq("user_id", user.id);
-  await admin
-    .from("mail_scans")
-    .update({ status: "processing", confirmed_at: new Date().toISOString() })
-    .eq("user_id", user.id)
-    .eq("status", "awaiting_confirmation");
+  await confirmarBusca(user.id, formData.get("auto_sync") === "on");
   revalidatePath(PATH);
 }
 
 export async function cancelScanAction() {
   const user = await getCurrentUser();
-  await createSupabaseAdminClient()
-    .from("mail_scans")
-    .update({ status: "cancelled", finished_at: new Date().toISOString() })
-    .eq("user_id", user.id)
-    .in("status", ["listing", "filtering", "awaiting_confirmation", "processing"]);
+  await cancelarBusca(user.id);
   revalidatePath(PATH);
 }
 
@@ -99,19 +71,13 @@ export async function importCandidatesAction(
   formData: FormData,
 ): Promise<ImportState> {
   const user = await getCurrentUser();
-  const admin = createSupabaseAdminClient();
   const selected = new Set(idsSchema.parse(formData.getAll("candidate")));
-  const { data, error } = await admin
-    .from("import_candidates")
-    .select("id, received_at, draft")
-    .eq("user_id", user.id)
-    .eq("status", "pending");
-  if (error) return { errors: [error.message] };
-  const candidates: Candidate[] = (data ?? []).map((c) => ({
-    id: c.id as string,
-    receivedAt: (c.received_at as string) ?? "",
-    draft: c.draft as BookingDraft,
-  }));
+  let candidates;
+  try {
+    candidates = await candidatosPendentes(user.id);
+  } catch (e) {
+    return { errors: [(e as Error).message] };
+  }
   const trips = await listTrips(user.id);
   const decisions = decideCandidates({ candidates, ...trips });
   const out: Required<ImportState> = {
@@ -127,11 +93,7 @@ export async function importCandidatesAction(
     if (!selected.has(d.id)) continue;
     const c = candidates.find((x) => x.id === d.id)!;
     const mark = (status: "imported" | "dismissed", bookingId: string | null) =>
-      admin
-        .from("import_candidates")
-        .update({ status, booking_id: bookingId, decided_at: now })
-        .eq("id", d.id)
-        .eq("user_id", user.id);
+      marcarCandidato(user.id, d.id, status, bookingId, now);
     try {
       if (d.kind === "duplicate") {
         await mark(
@@ -191,10 +153,6 @@ export async function importCandidatesAction(
 /** Descarta os candidatos que sobraram (não importa nada). */
 export async function dismissPendingAction() {
   const user = await getCurrentUser();
-  await createSupabaseAdminClient()
-    .from("import_candidates")
-    .update({ status: "dismissed", decided_at: new Date().toISOString() })
-    .eq("user_id", user.id)
-    .eq("status", "pending");
+  await descartarPendentes(user.id);
   revalidatePath(PATH);
 }

@@ -206,6 +206,14 @@ export const TABELAS: Tabela[] = [
     dono: soLer,
   },
   {
+    nome: "registro_falhas",
+    pk: "id",
+    linha: () => ({ origem: "teste", mensagem: "Falha fictícia" }),
+    alterar: { coluna: "mensagem", valor: "alterada" },
+    dono: nada,
+    global: true,
+  },
+  {
     nome: "app_migrations",
     pk: "name",
     linha: (_c, n) => ({ name: `teste_${n}` }),
@@ -228,7 +236,7 @@ export function insert(t: Tabela, linha: Record<string, unknown>): [string, unkn
   return [sql, vals];
 }
 
-/** Mesma DDL de scripts/supabase-migrate.mjs, que cria esta tabela em produção. */
+/** Mesma DDL de scripts/migracoes-lib.mjs, que cria esta tabela em produção. */
 export const DDL_APP_MIGRATIONS = `create table if not exists public.app_migrations (
   name text primary key,
   applied_at timestamptz not null default now()

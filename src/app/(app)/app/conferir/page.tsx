@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { FlightLine } from "@/components/flight-line";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { airlineName } from "@/lib/trips/airlines";
-import type { BookingDraft, BookingRow, FlightRow } from "@/lib/trips/draft";
+import { rascunhoGuardado, type BookingRow, type FlightRow } from "@/lib/trips/draft";
 import { listTrips } from "@/lib/trips/repo";
 import { reviewItems } from "@/lib/trips/review";
 import { formatMoney } from "@/lib/trips/summary";
@@ -206,7 +206,7 @@ async function Deleted() {
       </form>
       <ul className="flex flex-col divide-y divide-zinc-200 rounded-xl border border-zinc-200 bg-white dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-900">
         {data.map((c) => {
-          const d = c.draft as BookingDraft;
+          const d = rascunhoGuardado(c.draft);
           const first = d.legs[0];
           return (
             <li key={c.id as string} className="flex items-center justify-between gap-3 px-4 py-3">

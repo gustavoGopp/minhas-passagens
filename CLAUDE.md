@@ -10,6 +10,7 @@ App pessoal, em português, para organizar passagens aéreas, monitorar preços 
 - Escreva para ele em português simples, com frases curtas. Explique um termo técnico na primeira vez.
 - "Pronto" pede evidência: o comando e a saída, a contagem, a captura. Diga também o que não foi verificado.
 - Ele junta os pull requests. Cada merge na main vira produção em minutos.
+- Toda mensagem termina com **"O que você tem que fazer"**: no máximo 5 itens curtos, na ordem, ou "Nada agora". Pedido do dono em 27/11.
 
 ## Verificar
 
@@ -25,6 +26,7 @@ Roda lint, formatação, tipos, testes e build. É o mesmo comando da CI. Banco 
 - **Migração nova para toda mudança de banco**, com `GRANT` explícito se criar tabela. O Supabase não concede mais acesso automático. Trava: `scripts/migracoes.test.mjs`.
 - **Dado de fora do app é validado na entrada** (formulário, resposta de API, resposta do modelo). Valor ambíguo é recusado com mensagem, nunca gravado como outra coisa.
 - **Descrição do PR no modelo** de `.github/pull_request_template.md`.
+- **Revisão em sessão limpa antes de entregar zona sensível** (migração, regra de acesso, chave de serviço, cifra, extração, avisos, workflow de produção): skill `revisao-limpa`.
 
 ## Peça aprovação antes de
 
@@ -66,6 +68,8 @@ Ler qualquer arquivo, rodar a verificação, criar e alterar código e testes de
 | Procedimentos (migração, diagnóstico…) | `.claude/skills/`                          |
 | Travas do agente e seus testes         | `.claude/hooks/`, `scripts/hooks.test.mjs` |
 | Credenciais dos workflows              | `supabase/README.md`                       |
+| Emergência (app, migração, vazamento)  | `docs/EMERGENCIA.md`                       |
+| Usos da chave de serviço               | `scripts/chave-de-servico.mjs`             |
 | Pendências                             | issues do GitHub                           |
 | Histórico do que mudou                 | Git e pull requests                        |
 

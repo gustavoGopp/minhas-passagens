@@ -41,6 +41,15 @@ export interface BookingDraft {
   legs: LegDraft[];
 }
 
+/**
+ * Rascunho guardado em coluna JSON (import_candidates.draft). Foi gravado pelo
+ * próprio servidor a partir de um BookingDraft; quem vai salvá-lo como passagem
+ * valida antes com draftSchema ou savedDraftSchema. Único ponto de conversão.
+ */
+export function rascunhoGuardado(json: unknown): BookingDraft {
+  return json as BookingDraft;
+}
+
 export const DEFAULT_TZ = "America/Sao_Paulo";
 
 export function emptyLeg(airline = "AD"): LegDraft {

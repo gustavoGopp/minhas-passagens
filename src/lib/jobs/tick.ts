@@ -1,5 +1,6 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { registrarFalha, limparFalhasAntigas } from "@/lib/falhas";
 import { holidaysAround, overridesFromRows } from "@/lib/holidays";
 import { listDecryptedKeys } from "@/lib/integrations/repo";
 import { gmailHealth } from "@/lib/mail/accounts";
@@ -20,6 +21,7 @@ import {
 import type { MonitorRule } from "@/lib/prices/types";
 import { holidayPreferences, type Profile } from "@/lib/profiles/repo";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { exigir } from "@/lib/supabase/exigir";
 import type { BookingRow, FlightRow } from "@/lib/trips/draft";
 import type { CreditRow } from "@/lib/trips/rules";
 import { utcToLocal } from "@/lib/trips/time";
@@ -65,9 +67,9 @@ export async function runTick(
   if (opts.recordTick !== false) await setConfig({ last_tick_at: now });
 
   // Antes de ler os perfis: assim um acesso que acabou de expirar já gera o aviso neste tick.
-  const gmail: TickResult["gmail"] = await gmailHealth(admin, now).catch((e: Error) => ({
-    error: e.message,
-  }));
+  const gmail: TickResult["gmail"] = await gmailHealth(admin, now).catch(
+    falhou("agendador:gmail-acesso"),
+  );
 
   const today = now.slice(0, 10);
   const since = new Date(Date.parse(now) - 2 * 86_400_000).toISOString();
@@ -128,7 +130,7 @@ export async function runTick(
       ...(m as unknown as HolidayMonitor & { user_id: string }),
       origin: String(m.origin).trim(),
       destination: String(m.destination).trim(),
-      rule: m.rule as MonitorRule,
+      rule: m.rule as unknown as MonitorRule,
     })),
   );
   const overridesBy = group(
@@ -217,8 +219,9 @@ export async function runTick(
             now,
           }),
         );
-      } catch {
+      } catch (e) {
         // Feriados nunca derrubam os demais avisos.
+        await registrarFalha("agendador:feriados", e);
       }
       const expiredMail = expiredMailBy.get(userId);
       if (expiredMail) events.push(gmailExpiredEvent(expiredMail, now));
@@ -228,8 +231,9 @@ export async function runTick(
       sent += r.sent;
       deferred += r.deferred;
       failed += r.failed;
-    } catch {
+    } catch (e) {
       userErrors++;
+      await registrarFalha("agendador:avisos", e);
     }
   }
 
@@ -277,25 +281,27 @@ export async function runTick(
           await markPriceAlertsFailed(admin, pe.alertIds, pe.attempt, outcome.error, now, false);
           failed++;
         }
-      } catch {
+      } catch (e) {
         userErrors++;
+        await registrarFalha("agendador:avisos-de-preco", e);
       }
     }
     const run = await runDueMonitors(admin, now, MONITORS_PER_TICK, startedAt + TICK_BUDGET_MS);
     prices = { ...run, sent: priceSent, deferred: priceDeferred };
   } catch (e) {
     prices = { error: (e as Error).message };
+    await registrarFalha("agendador:precos", e);
   }
 
   const mailSync: TickResult["mailSync"] = await syncAccounts(
     admin,
     now,
     startedAt + MAIL_BUDGET_MS,
-  ).catch((e: Error) => ({ error: e.message }));
+  ).catch(falhou("agendador:gmail-sincronizacao"));
   const mailScans: TickResult["mailScans"] = await advanceRunningScans(
     admin,
     startedAt + MAIL_BUDGET_MS,
-  ).catch((e: Error) => ({ error: e.message }));
+  ).catch(falhou("agendador:gmail-busca"));
 
   return {
     ok: true,
@@ -440,19 +446,28 @@ async function dailyRetention(
       .lt("checked_at", cut.price_checks);
     if (checks.error) throw new Error(checks.error.message);
     // Monitores de feriadão já passado ficam pausados (sem datas a checar).
-    await admin
-      .from("price_monitors")
-      .update({ active: false, next_check_at: null })
-      .eq("active", true)
-      .lt("long_weekend", new Date(Date.parse(now) - 10 * 86_400_000).toISOString().slice(0, 10));
+    exigir(
+      await admin
+        .from("price_monitors")
+        .update({ active: false, next_check_at: null })
+        .eq("active", true)
+        .lt("long_weekend", new Date(Date.parse(now) - 10 * 86_400_000).toISOString().slice(0, 10)),
+      "Falha ao pausar monitores de feriadão passado",
+    );
     // Candidatos da importação do Gmail: apagados 30 dias depois da decisão.
-    await admin
-      .from("import_candidates")
-      .delete()
-      .neq("status", "pending")
-      .lt("decided_at", new Date(Date.parse(now) - 30 * 86_400_000).toISOString());
+    exigir(
+      await admin
+        .from("import_candidates")
+        .delete()
+        .neq("status", "pending")
+        .lt("decided_at", new Date(Date.parse(now) - 30 * 86_400_000).toISOString()),
+      "Falha ao apagar passagens encontradas antigas",
+    );
+    // Registro de falhas: 30 dias.
+    await limparFalhasAntigas(now);
     return { observations: obs.count ?? 0, checks: checks.count ?? 0 };
   } catch (e) {
+    await registrarFalha("agendador:limpeza-diaria", e);
     return { error: (e as Error).message };
   }
 }
@@ -484,4 +499,12 @@ async function syncFoundEvents(admin: SupabaseClient, now: string) {
     out.set(userId, [...(out.get(userId) ?? []), syncFoundEvent(sc.id as string, data.length)]);
   }
   return out;
+}
+
+/** Para `.catch(...)`: grava a falha no registro e devolve o `{ error }` do resultado do ciclo. */
+function falhou(origem: string) {
+  return async (e: unknown): Promise<{ error: string }> => {
+    await registrarFalha(origem, e);
+    return { error: e instanceof Error ? e.message : String(e) };
+  };
 }

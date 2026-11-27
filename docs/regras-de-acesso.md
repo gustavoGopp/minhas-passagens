@@ -18,7 +18,7 @@ A e B são duas pessoas com conta. "Visitante" é quem usa só a chave pública,
 - `flights` (trechos). B também não pendura trecho numa passagem de A.
 - `user_integrations` (chaves de API cifradas).
 - `push_subscriptions` (avisos no celular).
-- `price_monitors`, `price_checks`, `price_observations` e `price_alerts` (preços). Hoje A consegue criar e alterar o próprio histórico de preço pelo navegador; fechar isso é a P20 (etapa 2b).
+- `price_monitors`, `price_checks`, `price_observations` e `price_alerts` (preços). Hoje A consegue criar e alterar o próprio histórico de preço pelo navegador. A regra que fecha isso, e a que esconde a chave cifrada do navegador, foram aprovadas em 27/11 e entram num pull request separado, depois que o app novo estiver no ar: a migração roda antes da publicação, e o app antigo ainda precisa desses acessos.
 
 ## Regras parciais
 
@@ -33,4 +33,4 @@ A e B são duas pessoas com conta. "Visitante" é quem usa só a chave pública,
 
 ## Ninguém, nem logado
 
-- `app_config` (segredos do agendador) e `app_migrations`. Só o servidor.
+- `app_config` (segredos do agendador), `app_migrations` e `registro_falhas` (falhas do servidor, regra aprovada em 27/11). Só o servidor.

@@ -2,7 +2,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { disconnectGmail } from "@/lib/mail/accounts";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { apagarUsuario } from "@/lib/account/apagar";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export interface DeleteAccountState {
@@ -27,9 +27,8 @@ export async function deleteAccountAction(
   }
   // Revoga o acesso ao Gmail no Google antes de apagar (o resto sai em cascata).
   await disconnectGmail(user.id).catch(() => undefined);
-  const admin = createSupabaseAdminClient();
-  const { error } = await admin.auth.admin.deleteUser(user.id);
-  if (error) return { error: `Não foi possível apagar a conta: ${error.message}` };
+  const erro = await apagarUsuario(user.id);
+  if (erro) return { error: `Não foi possível apagar a conta: ${erro}` };
   const supabase = await createSupabaseServerClient();
   await supabase.auth.signOut();
   redirect("/?conta=apagada");

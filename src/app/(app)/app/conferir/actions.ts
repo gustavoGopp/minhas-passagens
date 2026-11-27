@@ -4,13 +4,14 @@ import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import {
   draftFromRows,
+  rascunhoGuardado,
   savedDraftSchema,
   rowsFromDraft,
-  type BookingDraft,
 } from "@/lib/trips/draft";
 import { createTrip, deleteTrip, getTrip, updateTrip } from "@/lib/trips/repo";
 import { draftWithYear, restoredDraft } from "@/lib/trips/review";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { importadasApagadas, rascunhoApagado, religarCandidato } from "@/lib/mail/importacao";
+import { exigir } from "@/lib/supabase/exigir";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const refresh = () => {
@@ -51,11 +52,14 @@ export async function keepFlightDateAction(formData: FormData) {
     .regex(/^\d{4}-\d{2}-\d{2}$/)
     .parse(formData.get("day"));
   const supabase = await createSupabaseServerClient();
-  await supabase
-    .from("bookings")
-    .update({ purchased_on: day })
-    .eq("id", booking)
-    .eq("user_id", user.id);
+  exigir(
+    await supabase
+      .from("bookings")
+      .update({ purchased_on: day })
+      .eq("id", booking)
+      .eq("user_id", user.id),
+    "Falha ao corrigir a data da compra",
+  );
   refresh();
 }
 
@@ -68,20 +72,12 @@ export async function deleteRepeatedAction(formData: FormData) {
 
 /** Recria uma passagem importada que foi apagada (a partir do rascunho guardado). */
 async function restoreOne(userId: string, candidateId: string): Promise<boolean> {
-  const admin = createSupabaseAdminClient();
-  const { data: c } = await admin
-    .from("import_candidates")
-    .select("id, draft, received_at, decided_at, booking_id")
-    .eq("id", candidateId)
-    .eq("user_id", userId)
-    .eq("status", "imported")
-    .is("booking_id", null)
-    .maybeSingle();
+  const c = await rascunhoApagado(userId, candidateId);
   if (!c) return false; // já restaurada (clique repetido) ou não é desta conta
   // Já tinha sido importada antes de ser apagada: volta como estava.
   const parsed = savedDraftSchema.safeParse(
     restoredDraft(
-      c.draft as BookingDraft,
+      rascunhoGuardado(c.draft),
       c.received_at as string | null,
       c.decided_at as string | null,
     ),
@@ -89,13 +85,7 @@ async function restoreOne(userId: string, candidateId: string): Promise<boolean>
   if (!parsed.success) return false;
   const bookingId = await createTrip(userId, rowsFromDraft(parsed.data));
   // Só religa se ninguém religou antes (dois cliques ao mesmo tempo): senão desfaz a cópia.
-  const linked = await admin
-    .from("import_candidates")
-    .update({ booking_id: bookingId })
-    .eq("id", candidateId)
-    .is("booking_id", null)
-    .select("id");
-  if (!linked.data?.length) {
+  if (!(await religarCandidato(userId, candidateId, bookingId))) {
     await deleteTrip(userId, bookingId);
     return false;
   }
@@ -110,13 +100,6 @@ export async function restoreDeletedAction(formData: FormData) {
 
 export async function restoreAllDeletedAction() {
   const user = await getCurrentUser();
-  const admin = createSupabaseAdminClient();
-  const { data } = await admin
-    .from("import_candidates")
-    .select("id")
-    .eq("user_id", user.id)
-    .eq("status", "imported")
-    .is("booking_id", null);
-  for (const c of data ?? []) await restoreOne(user.id, c.id as string);
+  for (const id of await importadasApagadas(user.id)) await restoreOne(user.id, id);
   refresh();
 }

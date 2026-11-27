@@ -1,28 +1,108 @@
-name: Supabase — migrações
+name: Supabase — migrações e publicação
 
+# Ordem de produção (P18), depois de cada merge na main:
+#   1. a CI termina verde na main (gatilho workflow_run: a versão deste arquivo
+#      que vale é a da main, e nenhum branch a altera);
+#   2. "pendentes": consulta só de leitura lista as migrações que faltam;
+#   3. "migrar": se houver, espera o clique do dono (ambiente producao-risco) e
+#      aplica cada migração com o seu registro numa transação só;
+#   4. "publicar": só então chama o gancho de publicação da Vercel (Deploy Hook),
+#      e só se este commit ainda for o último da main.
+# A Vercel não publica a main sozinha (vercel.json). O disparo manual é só do dono.
 on:
-  push:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
     branches: [main]
-    paths: ["supabase/migrations/**"]
   workflow_dispatch:
 
-concurrency: supabase-migrate
+concurrency:
+  group: supabase-migrate
+  cancel-in-progress: false
 
 permissions:
   contents: read
 
+env:
+  # Commit que a CI aprovou (no disparo manual, o último da main).
+  COMMIT: ${{ github.event.workflow_run.head_sha || github.sha }}
+
 jobs:
-  migrate:
+  pendentes:
+    # Só a CI de um push na main deste repositório, e só se ela passou.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_branch == 'main' &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
     runs-on: ubuntu-latest
-    # Restrito à main: nenhum outro branch recebe a credencial. A aprovação por
-    # clique e a ordem em relação ao deploy entram com a proposta P18.
     environment: producao-rotina
+    outputs:
+      quantas: ${{ steps.lista.outputs.quantas }}
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.PROD_SUPABASE_ACCESS_TOKEN }}
       SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || 'gbvwzwpuzlaftinfcxkc' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.COMMIT }}
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+      - name: Migrações que faltam (só leitura)
+        id: lista
+        run: node scripts/supabase-migrate.mjs --pendentes
+
+  migrar:
+    needs: pendentes
+    if: ${{ needs.pendentes.outputs.quantas != '0' }}
+    runs-on: ubuntu-latest
+    # Espera o clique do dono: migração não tem desfazer.
+    environment: producao-risco
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.PROD_SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || 'gbvwzwpuzlaftinfcxkc' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.COMMIT }}
+          persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
       - run: node scripts/supabase-migrate.mjs
+
+  publicar:
+    needs: [pendentes, migrar]
+    # Só depois da migração (ou sem migração a aplicar). Migração recusada ou com
+    # erro: o app não é publicado, para não rodar código novo sobre banco velho.
+    if: >-
+      always() && needs.pendentes.result == 'success' &&
+      (needs.migrar.result == 'success' || needs.migrar.result == 'skipped')
+    runs-on: ubuntu-latest
+    environment: producao-rotina
+    env:
+      GANCHO: ${{ secrets.PROD_VERCEL_DEPLOY_HOOK }}
+      REPO: ${{ github.repository }}
+    steps:
+      - name: Só publica se este commit ainda é o último da main
+        id: ultimo
+        run: |
+          ultimo=$(git ls-remote "https://github.com/$REPO.git" refs/heads/main | cut -f1)
+          if [ "$ultimo" != "$COMMIT" ]; then
+            echo "A main já avançou ($ultimo). A execução do commit mais novo publica; esta para aqui."
+            echo "publicar=nao" >> "$GITHUB_OUTPUT"
+          else
+            echo "publicar=sim" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Chamar o gancho de publicação da Vercel
+        if: ${{ steps.ultimo.outputs.publicar == 'sim' }}
+        run: |
+          if [ -z "$GANCHO" ]; then
+            echo "::error::Falta o segredo PROD_VERCEL_DEPLOY_HOOK no ambiente producao-rotina (Settings → Environments). O app não foi publicado; veja docs/EMERGENCIA.md."
+            exit 1
+          fi
+          curl -fsS -X POST "$GANCHO" -o /dev/null
+          echo "Publicação pedida à Vercel para o commit $COMMIT."

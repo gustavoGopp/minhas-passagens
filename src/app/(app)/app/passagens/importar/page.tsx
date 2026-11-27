@@ -9,7 +9,7 @@ import { gmailLink } from "@/lib/mail/gmail";
 import { latestScan, RUNNING_STATUSES, scanCounts } from "@/lib/mail/scan";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { airlineName } from "@/lib/trips/airlines";
-import type { BookingDraft } from "@/lib/trips/draft";
+import { rascunhoGuardado, type BookingDraft } from "@/lib/trips/draft";
 import { listTrips } from "@/lib/trips/repo";
 import {
   cancelScanAction,
@@ -103,7 +103,7 @@ async function ImportState() {
   const candidates = (pending.data ?? []).map((c) => ({
     id: c.id as string,
     receivedAt: (c.received_at as string) ?? "",
-    draft: c.draft as BookingDraft,
+    draft: rascunhoGuardado(c.draft),
     messageId:
       (c.mail_messages as unknown as { provider_message_id: string } | null)?.provider_message_id ??
       null,

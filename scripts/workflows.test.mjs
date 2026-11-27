@@ -21,6 +21,7 @@ const SEGREDOS_DE_PRODUCAO = [
   "PROD_SUPABASE_ACCESS_TOKEN",
   "PROD_BACKUP_PASSPHRASE",
   "PROD_TELEGRAM_BOT_TOKEN",
+  "PROD_VERCEL_DEPLOY_HOOK",
 ];
 const SEGREDOS_GERAIS_ANTIGOS = [
   "SUPABASE_ACCESS_TOKEN",
@@ -102,12 +103,13 @@ describe("workflows do GitHub", () => {
     }
   });
 
-  it("o job do banco reaplica as migrações, prova as regras quebrando-as e sonda com a chave pública", () => {
+  it("o job do banco reaplica as migrações, confere os tipos, prova as regras quebrando-as e sonda com a chave pública", () => {
     const passos = JSON.stringify(workflows.find((x) => x.arquivo === "ci.yml").yaml.jobs.banco);
     for (const script of [
       "reaplicar-migracoes.mjs",
       "quebrar-regras.mjs",
       "sonda-chave-publica.mjs --como-producao",
+      "tipos:banco",
       "test:banco",
     ]) {
       expect(passos).toContain(script);
@@ -131,5 +133,62 @@ describe("workflows do GitHub", () => {
     expect(ci.jobs.gate, "falta o job gate").toBeTruthy();
     expect(String(ci.jobs.gate.if)).toContain("always()");
     expect([ci.jobs.gate.needs].flat().sort()).toEqual(outros.sort());
+  });
+
+  // P18: migração com aprovação e na ordem certa.
+  describe("migração e publicação (P18)", () => {
+    const w = workflows.find((x) => x.arquivo === "supabase-migrate.yml");
+    const jobs = w.yaml.jobs;
+
+    it("só começa depois da CI verde de um push na main; não roda direto no push", () => {
+      expect(Object.keys(w.yaml.on).sort()).toEqual(["workflow_dispatch", "workflow_run"]);
+      expect(w.yaml.on.workflow_run).toMatchObject({
+        workflows: ["CI"],
+        types: ["completed"],
+        branches: ["main"],
+      });
+      for (const trecho of [
+        "workflow_run.conclusion == 'success'",
+        "workflow_run.event == 'push'",
+        "workflow_run.head_branch == 'main'",
+        "head_repository.full_name == github.repository",
+      ]) {
+        expect(String(jobs.pendentes.if)).toContain(trecho);
+      }
+    });
+
+    it("aplicar migração espera o clique do dono, em qualquer workflow", () => {
+      const aplicam = [];
+      for (const x of workflows) {
+        for (const [nome, job] of Object.entries(x.yaml.jobs)) {
+          const passos = JSON.stringify(job.steps ?? []);
+          if (/supabase-migrate\.mjs(?! --pendentes)/.test(passos)) {
+            aplicam.push(`${x.arquivo}: ${nome}: ${job.environment}`);
+          }
+        }
+      }
+      expect(aplicam.length).toBeGreaterThan(0);
+      for (const a of aplicam) expect(a).toMatch(/: producao-risco$/);
+      expect(jobs.migrar.environment).toBe("producao-risco");
+      expect(JSON.stringify(jobs.pendentes.steps)).toContain("supabase-migrate.mjs --pendentes");
+    });
+
+    it("o app só é publicado depois da migração (ou sem migração), e só o último commit da main", () => {
+      expect([jobs.publicar.needs].flat()).toEqual(expect.arrayContaining(["pendentes", "migrar"]));
+      const condicao = String(jobs.publicar.if);
+      expect(condicao).toContain("needs.migrar.result == 'success'");
+      expect(condicao).toContain("needs.migrar.result == 'skipped'");
+      expect(condicao).not.toMatch(/failure|cancelled/);
+      const passos = JSON.stringify(jobs.publicar.steps);
+      expect(passos).toContain("refs/heads/main");
+      expect(passos).toContain("PROD_VERCEL_DEPLOY_HOOK");
+    });
+
+    it("a Vercel não publica a main sozinha: quem publica é este workflow", () => {
+      const vercel = JSON.parse(
+        readFileSync(path.join(import.meta.dirname, "..", "vercel.json"), "utf8"),
+      );
+      expect(vercel.git.deploymentEnabled).toEqual({ main: false, "**": false });
+    });
   });
 });
