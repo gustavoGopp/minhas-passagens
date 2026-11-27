@@ -4,9 +4,9 @@ import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import {
   draftFromRows,
+  rascunhoGuardado,
   savedDraftSchema,
   rowsFromDraft,
-  type BookingDraft,
 } from "@/lib/trips/draft";
 import { createTrip, deleteTrip, getTrip, updateTrip } from "@/lib/trips/repo";
 import { draftWithYear, restoredDraft } from "@/lib/trips/review";
@@ -77,7 +77,7 @@ async function restoreOne(userId: string, candidateId: string): Promise<boolean>
   // Já tinha sido importada antes de ser apagada: volta como estava.
   const parsed = savedDraftSchema.safeParse(
     restoredDraft(
-      c.draft as BookingDraft,
+      rascunhoGuardado(c.draft),
       c.received_at as string | null,
       c.decided_at as string | null,
     ),

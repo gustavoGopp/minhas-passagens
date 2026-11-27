@@ -130,7 +130,7 @@ export async function runTick(
       ...(m as unknown as HolidayMonitor & { user_id: string }),
       origin: String(m.origin).trim(),
       destination: String(m.destination).trim(),
-      rule: m.rule as MonitorRule,
+      rule: m.rule as unknown as MonitorRule,
     })),
   );
   const overridesBy = group(

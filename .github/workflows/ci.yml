@@ -67,6 +67,13 @@ jobs:
         run: supabase start
       - name: Endereços e chaves do Supabase local
         run: supabase status -o env | grep -E '^(DB_URL|API_URL|ANON_KEY|SERVICE_ROLE_KEY)=' | tr -d '"' >> "$GITHUB_ENV"
+      - name: Tipos do banco em dia (src/lib/supabase/database.types.ts)
+        run: |
+          npm run tipos:banco
+          if ! git diff --exit-code -- src/lib/supabase/database.types.ts; then
+            echo "::error::Os tipos do banco mudaram com as migrações. Rode 'npm run tipos:banco' com o Supabase local e faça commit do arquivo."
+            exit 1
+          fi
       - name: Aplicar todas as migrações pela segunda vez
         run: node scripts/banco-teste/reaplicar-migracoes.mjs
       - name: Regras de acesso

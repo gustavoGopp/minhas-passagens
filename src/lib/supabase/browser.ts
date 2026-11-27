@@ -1,9 +1,13 @@
 "use client";
 import { createBrowserClient } from "@supabase/ssr";
+import type { Database } from "./database.types";
 import { publicEnv } from "@/lib/env";
 
 /** Cliente Supabase para componentes cliente (chave pública, RLS). */
 export function createSupabaseBrowserClient() {
   const env = publicEnv();
-  return createBrowserClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+  return createBrowserClient<Database>(
+    env.NEXT_PUBLIC_SUPABASE_URL,
+    env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  );
 }

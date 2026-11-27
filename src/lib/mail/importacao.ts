@@ -3,7 +3,7 @@ import type { Candidate } from "@/lib/mail/dedupe";
 import { advanceScan, latestScan, RUNNING_STATUSES, scanCounts, startScan } from "@/lib/mail/scan";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { exigir } from "@/lib/supabase/exigir";
-import type { BookingDraft } from "@/lib/trips/draft";
+import { rascunhoGuardado } from "@/lib/trips/draft";
 
 // Importação do Gmail, do lado do servidor. As tabelas da busca e dos candidatos
 // só são gravadas pelo servidor (docs/regras-de-acesso.md), por isso usam a chave
@@ -83,7 +83,7 @@ export async function candidatosPendentes(userId: string): Promise<Candidate[]> 
   return (data ?? []).map((c) => ({
     id: c.id as string,
     receivedAt: (c.received_at as string) ?? "",
-    draft: c.draft as BookingDraft,
+    draft: rascunhoGuardado(c.draft),
   }));
 }
 

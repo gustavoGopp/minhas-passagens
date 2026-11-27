@@ -103,12 +103,13 @@ describe("workflows do GitHub", () => {
     }
   });
 
-  it("o job do banco reaplica as migrações, prova as regras quebrando-as e sonda com a chave pública", () => {
+  it("o job do banco reaplica as migrações, confere os tipos, prova as regras quebrando-as e sonda com a chave pública", () => {
     const passos = JSON.stringify(workflows.find((x) => x.arquivo === "ci.yml").yaml.jobs.banco);
     for (const script of [
       "reaplicar-migracoes.mjs",
       "quebrar-regras.mjs",
       "sonda-chave-publica.mjs --como-producao",
+      "tipos:banco",
       "test:banco",
     ]) {
       expect(passos).toContain(script);

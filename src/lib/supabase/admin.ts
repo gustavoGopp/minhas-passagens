@@ -1,4 +1,5 @@
 import "server-only";
+import type { Database } from "./database.types";
 import { createClient } from "@supabase/supabase-js";
 import { publicEnv, serverEnv } from "@/lib/env";
 
@@ -7,7 +8,11 @@ import { publicEnv, serverEnv } from "@/lib/env";
  * administrativas pontuais (ex.: apagar a conta do próprio usuário).
  */
 export function createSupabaseAdminClient() {
-  return createClient(publicEnv().NEXT_PUBLIC_SUPABASE_URL, serverEnv().SUPABASE_SERVICE_ROLE_KEY, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
+  return createClient<Database>(
+    publicEnv().NEXT_PUBLIC_SUPABASE_URL,
+    serverEnv().SUPABASE_SERVICE_ROLE_KEY,
+    {
+      auth: { autoRefreshToken: false, persistSession: false },
+    },
+  );
 }

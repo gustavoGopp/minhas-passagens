@@ -16,8 +16,12 @@ create table if not exists public.registro_falhas (
 
 alter table public.registro_falhas enable row level security;
 
-revoke all on public.registro_falhas from anon, authenticated;
+-- Concessões escritas por inteiro: o padrão do Supabase e a migração
+-- 20261127010000 (se rodar de novo) concedem mais do que isto. Assim o resultado
+-- é o mesmo na primeira e na segunda aplicação.
+revoke all on public.registro_falhas from public, anon, authenticated, service_role;
 grant select, insert, delete on public.registro_falhas to service_role;
+revoke all on sequence public.registro_falhas_id_seq from public, anon, authenticated, service_role;
 grant usage, select on sequence public.registro_falhas_id_seq to service_role;
 
 create index if not exists registro_falhas_criado_em_idx on public.registro_falhas (criado_em);
