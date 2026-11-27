@@ -1,0 +1,39 @@
+{
+  "id": "19-dificil-checkin-azul",
+  "tipo": "dificil",
+  "descricao": "Lembrete de check-in da Azul, data sem ano (03/11) e texto puro cheio de links.",
+  "trocas": [
+    "primeiro nome → FULANO",
+    "localizador → VC6JMA",
+    "primeiro nome → Fulano",
+    "links de rastreio → https://link.example.com/",
+    "e-mail do remetente → domínio example.com (exigido pela trava)"
+  ],
+  "entrada": {
+    "assunto": "FULANO, faça o check-in do seu voo para Sao Paulo",
+    "remetente": "Azul <noreply@voeazul-news.example.com>",
+    "recebido_em": "2026-11-02",
+    "corpo": "Azul\nhttps://link.example.com/\nhttps://link.example.com/\nVer na web\n|\nhttps://link.example.com/\nDescadastre-se\nhttps://link.example.com/\nhttps://link.example.com/\nhttps://link.example.com/\nFulano, sua viagem\npara\ncomeça agora\nhttps://link.example.com/\nFaça o seu check-in e marque o seu assento,\nusando o código de reserva:\nhttps://link.example.com/\nVC6JMA\nhttps://link.example.com/\nFazer check-in\nVoo para\nSDU\nRio de Janeiro\n03/11 - 10:20\nhttps://link.example.com/\nVoo 4003\nCGH\nSao Paulo\n03/11 - 11:30\nhttps://link.example.com/\nGerenciar reserva\nAgora que está tudo pronto para a\nsua viagem, confira informações\nimportantes:\nhttps://link.example.com/\nhttps://link.example.com/\nhttps://link.example.com/\nhttps://link.example.com/\nhttps://link.example.com/\nhttps://link.example.com/\nhttps://link.example.com/\nTem alguma dúvida?\nhttps://link.example.com/\nEnvie uma mensagem para Céu, Assistente\nVirtual da Azul.\nBaixe o app e tenha uma boa viagem.\nhttps://link.example.com/\nhttps://link.example.com/\nhttps://link.example.com/\nEmbarque em nossas redes sociais.\nhttps://link.example.com/\nhttps://link.example.com/\nhttps://link.example.com/\nPara mais informações sobre Passagens Aéreas, acesse o site:\nhttps://link.example.com/\nhttps://link.example.com/\nPara mais informações sobre Pacotes completos, acesse o site:\nhttps://link.example.com/\nhttps://link.example.com/\nPara mais informações sobre Viagens, acesse o site:\nhttps://link.example.com/\nhttps://link.example.com/\nEsse email é enviado por: AZUL LINHAS AÉREAS BRASILEIRAS S.A.\nAvenida Marcos Penteado de Ulhôa Rodrigues, 939, 9º Andar, Torre Jatobá, Condomínio Castelo Branco O Barueri, São Paulo, 06460-040, BR"
+  },
+  "esperado": {
+    "reservas": [
+      {
+        "localizador": "VC6JMA",
+        "companhia": "AD",
+        "status": "active",
+        "valor": null,
+        "moeda": null,
+        "milhas": null,
+        "trechos": [
+          {
+            "origem": "SDU",
+            "destino": "CGH",
+            "partida": "2026-11-03T10:20",
+            "chegada": "2026-11-03T11:30",
+            "voo": "AD 4003"
+          }
+        ]
+      }
+    ]
+  }
+}

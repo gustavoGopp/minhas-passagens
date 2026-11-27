@@ -1,0 +1,69 @@
+name: Avaliação da extração (gasta a chave da avaliação)
+
+# P24: roda o gabarito da extração (tests/gabaritos/extracao) contra o modelo de
+# verdade, com a chave da avaliação do dono, e grava as respostas e as notas no
+# próprio branch do PR (commit do github-actions, não do agente).
+#
+# Como disparar: pôr a etiqueta "avaliar-extracao" no PR. O job espera a
+# aprovação do dono no ambiente "avaliacao-ia" (revisor obrigatório), onde fica o
+# segredo ANTHROPIC_API_KEY_AVALIACAO. Custo de uma rodada: centavos de dólar.
+# Só PR deste repositório: PR de fork nunca recebe o segredo.
+on:
+  pull_request:
+    types: [labeled]
+
+permissions: {}
+
+concurrency:
+  group: avaliacao-extracao-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  avaliar:
+    if: github.event.label.name == 'avaliar-extracao' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: avaliacao-ia
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: npm que entende o .npmrc
+        run: npm install -g npm@11.21.2
+      # Scripts de instalação desligados pelo .npmrc.
+      - run: npm ci
+      - name: Rodada de verdade
+        env:
+          ANTHROPIC_API_KEY_AVALIACAO: ${{ secrets.ANTHROPIC_API_KEY_AVALIACAO }}
+          EXECUCAO: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: npm run avaliacao:extracao
+      - name: Gravar respostas e notas no branch do PR
+        if: ${{ always() }}
+        env:
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+          EXECUCAO_ID: ${{ github.run_id }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tests/avaliacao-extracao
+          if git diff --cached --quiet; then
+            echo "Nada novo para gravar."
+            exit 0
+          fi
+          git commit -m "Avaliação da extração: rodada $EXECUCAO_ID"
+          git push origin "HEAD:$BRANCH"
+      # Tira a etiqueta para que a próxima rodada possa ser pedida do mesmo jeito.
+      - name: Tirar a etiqueta
+        if: ${{ always() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        run: gh api -X DELETE "repos/$REPO/issues/$PR/labels/avaliar-extracao" || true

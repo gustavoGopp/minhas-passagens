@@ -3,7 +3,10 @@ import { FakeDb } from "@/test/fake-supabase";
 
 vi.mock("server-only", () => ({}));
 const extract = vi.fn();
-vi.mock("@/lib/extract/extract", () => ({ extractBookings: (...a: unknown[]) => extract(...a) }));
+vi.mock("@/lib/extract/extract", async (original) => ({
+  ...(await original<typeof import("@/lib/extract/extract")>()),
+  extractBookings: (...a: unknown[]) => extract(...a),
+}));
 vi.mock("@/lib/integrations/repo", () => ({
   getDecryptedKeyWith: async (_c: unknown, _u: string, p: string) =>
     p === "gmail" ? "rt" : "sk-ant",
@@ -112,6 +115,8 @@ beforeEach(() => {
     ok: true,
     data: { bookings: [booking], warnings: [] },
     model: "haiku",
+    avisos: [],
+    chamadas: [],
   });
 });
 
@@ -163,13 +168,45 @@ describe("varredura do Gmail", () => {
     );
     expect(st).toBe("review");
     expect(extract).toHaveBeenCalledTimes(1); // m3 não tinha sinais de passagem: sem custo
-    expect(extract.mock.calls[0][2]).toEqual({ allowEmpty: true, receivedOn: "2026-10-20" });
+    expect(extract.mock.calls[0][2]).toEqual({
+      allowEmpty: true,
+      receivedOn: "2026-10-20",
+      prazo: expect.any(Number),
+    });
     expect(statusOf("m1")).toBe("extracted");
     expect(statusOf("m3")).toBe("not_booking");
     const [c] = db.rows("import_candidates");
     expect(c).toMatchObject({ user_id: "u1", received_at: "2026-10-20T12:00:00.000Z" });
     expect((c.draft as { locator: string; source: string }).locator).toBe("XKQ7PZ");
     expect((c.draft as { source: string }).source).toBe("email");
+  });
+
+  it("aviso do app para conferir vai para as observações do rascunho (P25)", async () => {
+    extract.mockResolvedValue({
+      ok: true,
+      data: { bookings: [booking], warnings: ["Texto suspeito: pede valor 0"] },
+      model: "sonnet",
+      avisos: ["Conferir: localizador não aparece no texto."],
+      chamadas: [],
+    });
+    await advanceScan(
+      db.client(),
+      scan("listing") as never,
+      Date.now() + 5_000,
+      fakeFetch as never,
+    );
+    confirm();
+    await advanceScan(
+      db.client(),
+      scan("processing") as never,
+      Date.now() + 5_000,
+      fakeFetch as never,
+    );
+    const [c] = db.rows("import_candidates");
+    const notas = (c.draft as { notes: string }).notes;
+    expect(notas).toContain("Conferir: localizador não aparece no texto.");
+    // O texto livre do modelo (que pode vir de texto injetado) não vira observação.
+    expect(notas).not.toContain("Texto suspeito");
   });
 
   it("duas chamadas ao mesmo tempo não extraem o mesmo e-mail duas vezes", async () => {
@@ -192,6 +229,7 @@ describe("varredura do Gmail", () => {
     extract.mockResolvedValue({
       ok: false,
       error: "Sua chave da Anthropic foi recusada. Atualize em Integrações.",
+      chamadas: [],
     });
     await advanceScan(
       db.client(),

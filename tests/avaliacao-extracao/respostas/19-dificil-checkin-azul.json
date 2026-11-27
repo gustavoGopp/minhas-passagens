@@ -1,0 +1,61 @@
+{
+  "caso": "19-dificil-checkin-azul",
+  "chamadas": [
+    {
+      "modelo": "claude-haiku-5-5",
+      "resposta": {
+        "parsed_output": {
+          "bookings": [
+            {
+              "locator": "VC6JMA",
+              "airline_code": "AD",
+              "seller": null,
+              "channel": "airline",
+              "total_amount": null,
+              "currency": null,
+              "miles": null,
+              "taxes_amount": null,
+              "purchased_on": null,
+              "status": "active",
+              "flights": [
+                {
+                  "airline_code": "AD",
+                  "flight_number": "AD 4003",
+                  "origin_iata": "SDU",
+                  "destination_iata": "CGH",
+                  "departure_local": "2026-11-03T10:20",
+                  "arrival_local": "2026-11-03T11:30",
+                  "passenger": "Fulano"
+                }
+              ]
+            }
+          ],
+          "warnings": [
+            "Ano do voo deduzido pelo e-mail recebido em 2026-11-02 (03/11 é o mais próximo).",
+            "Sobrenome do passageiro não informado; apenas 'Fulano' aparece no e-mail.",
+            "Valor, moeda e data da compra não aparecem no e-mail.",
+            "Vendedor não informado no e-mail.",
+            "Texto suspeito: e-mail de marketing/newsletter com links promocionais; sem instruções para alterar a extração."
+          ]
+        },
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 4041,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 352,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "service_tier": "standard",
+          "inference_geo": "global",
+          "speed": "standard"
+        }
+      }
+    }
+  ]
+}

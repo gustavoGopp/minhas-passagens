@@ -86,6 +86,52 @@ export type Database = {
         };
         Relationships: [];
       };
+      extracoes: {
+        Row: {
+          criado_em: string;
+          id: number;
+          modelo: string;
+          motivo_parada: string | null;
+          origem: string;
+          reforco: boolean;
+          resultado: string;
+          tokens_cache_escrita: number;
+          tokens_cache_leitura: number;
+          tokens_entrada: number;
+          tokens_saida: number;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          criado_em?: string;
+          id?: never;
+          modelo: string;
+          motivo_parada?: string | null;
+          origem: string;
+          reforco?: boolean;
+          resultado: string;
+          tokens_cache_escrita?: number;
+          tokens_cache_leitura?: number;
+          tokens_entrada?: number;
+          tokens_saida?: number;
+          user_id: string;
+        };
+        Update: {
+          criado_em?: string;
+          id?: never;
+          modelo?: string;
+          motivo_parada?: string | null;
+          origem?: string;
+          reforco?: boolean;
+          resultado?: string;
+          tokens_cache_escrita?: number;
+          tokens_cache_leitura?: number;
+          tokens_entrada?: number;
+          tokens_saida?: number;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       flights: {
         Row: {
           airline: string;
@@ -280,6 +326,7 @@ export type Database = {
       };
       mail_messages: {
         Row: {
+          attempts: number;
           class: string | null;
           created_at: string;
           error: string | null;
@@ -294,6 +341,7 @@ export type Database = {
         };
         ComputedFields: never;
         Insert: {
+          attempts?: number;
           class?: string | null;
           created_at?: string;
           error?: string | null;
@@ -307,6 +355,7 @@ export type Database = {
           user_id: string;
         };
         Update: {
+          attempts?: number;
           class?: string | null;
           created_at?: string;
           error?: string | null;

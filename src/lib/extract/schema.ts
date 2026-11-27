@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { airportTimeZone } from "@/lib/airports";
+import { airportTimeZone, isKnownAirport } from "@/lib/airports";
 import { currencyCode } from "@/lib/trips/money";
 import { isRealDate, localDateTimeProblem, localToUtc } from "@/lib/trips/time";
 
@@ -22,7 +22,12 @@ export const extractedFlightSchema = z.object({
 });
 
 export const extractedBookingSchema = z.object({
-  locator: z.string().nullable().describe("Localizador/código da reserva (PNR)"),
+  locator: z
+    .string()
+    .nullable()
+    .describe(
+      "Código de reserva da companhia aérea (PNR); nulo se só houver número de pedido da agência",
+    ),
   airline_code: z.enum(["AD", "G3", "LA", "OTHER"]),
   seller: z
     .string()
@@ -86,4 +91,37 @@ export function validationProblems(x: Extraction): string[] {
     if (currencyCode(b.currency) === "") problems.push("moeda não reconhecida");
   }
   return problems;
+}
+
+const semEspacos = (s: string) => s.replace(/\s+/g, "").toUpperCase();
+
+/**
+ * Coerência com o texto de origem (P25): a saída estruturada garante o formato,
+ * não a verdade. Localizador ou número de voo que não aparecem no texto foram
+ * inventados ou vieram de texto injetado: são `problemas` e levam ao reforço.
+ * Aeroporto fora das listas do app vira `aviso` para o dono conferir (o reforço
+ * não ajudaria). Sem texto (print, PDF), só os avisos.
+ */
+export function coerencia(
+  x: Extraction,
+  texto: string | undefined,
+): { problemas: string[]; avisos: string[] } {
+  const problemas = new Set<string>();
+  const avisos = new Set<string>();
+  const base = texto ? semEspacos(texto) : null;
+  for (const b of x.bookings) {
+    if (base && b.locator && semEspacos(b.locator) && !base.includes(semEspacos(b.locator)))
+      problemas.add("localizador não aparece no texto");
+    for (const f of b.flights) {
+      const numero = /\d{1,5}/.exec(f.flight_number ?? "")?.[0];
+      if (texto && numero && !new RegExp(`(?<!\\d)0*${Number(numero)}(?!\\d)`).test(texto))
+        problemas.add("número do voo não aparece no texto");
+      for (const iata of [f.origin_iata, f.destination_iata])
+        if (IATA.test(iata) && !isKnownAirport(iata))
+          avisos.add(
+            `Conferir: aeroporto ${iata} fora das listas do app (horário tratado como de Brasília).`,
+          );
+    }
+  }
+  return { problemas: [...problemas], avisos: [...avisos] };
 }

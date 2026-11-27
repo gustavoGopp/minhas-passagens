@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth/current-user";
+import { cabeNoTeto, MENSAGEM_DO_TETO, registrarChamadas } from "@/lib/extract/consumo";
 import { extractBookings, type ExtractInput } from "@/lib/extract/extract";
 import { getDecryptedKey } from "@/lib/integrations/repo";
 import {
@@ -63,14 +64,18 @@ export async function extractAction(
     return { error: "Cole o texto da confirmação ou escolha um print/PDF." };
   }
 
-  const result = await extractBookings(apiKey, input);
+  // Teto diário da leitura com IA (P25): envio e leitura automática somam 30 por dia.
+  if (!(await cabeNoTeto(user.id, "envio"))) return { error: MENSAGEM_DO_TETO };
+  // Conteúdo sem passagem é resposta válida: não paga o modelo de reforço à toa.
+  const result = await extractBookings(apiKey, input, { allowEmpty: true });
+  await registrarChamadas(user.id, "envio", result.chamadas);
   if (!result.ok) return { error: result.error };
   if (result.data.bookings.length === 0) {
     return { error: "Não encontrei passagens nesse conteúdo.", warnings: result.data.warnings };
   }
   return {
     drafts: result.data.bookings.map((b) => draftFromExtraction(b, source)),
-    warnings: result.data.warnings,
+    warnings: [...result.avisos, ...result.data.warnings],
     model: result.model,
   };
 }

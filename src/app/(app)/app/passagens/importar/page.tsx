@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import { GastoDaIA } from "@/components/gasto-da-ia";
 import { getCurrentUser } from "@/lib/auth/current-user";
+import { MENSAGEM_DO_TETO } from "@/lib/extract/consumo";
 import { listIntegrationsPublic } from "@/lib/integrations/repo";
 import { getMailAccount, googleClient } from "@/lib/mail/accounts";
 import { estimateUsd, formatUsd } from "@/lib/mail/cost";
@@ -48,6 +50,9 @@ export default function ImportarPage() {
       </header>
       <Suspense fallback={<p className="text-sm text-zinc-600 dark:text-zinc-400">Carregando…</p>}>
         <ImportState />
+      </Suspense>
+      <Suspense fallback={null}>
+        <GastoDaIA />
       </Suspense>
     </main>
   );
@@ -143,6 +148,11 @@ async function ImportState() {
       {running ? (
         <section className={card}>
           <ScanRunner initial={scan.status} />
+          {scan.last_error === MENSAGEM_DO_TETO ? (
+            <p role="status" className="text-sm text-amber-800 dark:text-amber-200">
+              {MENSAGEM_DO_TETO} Os e-mails que faltam ficam na fila.
+            </p>
+          ) : null}
           <form action={cancelScanAction}>
             <button type="submit" className="text-sm underline underline-offset-4">
               Cancelar a varredura

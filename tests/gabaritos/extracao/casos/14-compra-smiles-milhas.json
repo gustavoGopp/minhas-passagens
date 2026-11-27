@@ -1,0 +1,41 @@
+{
+  "id": "14-compra-smiles-milhas",
+  "tipo": "compra",
+  "descricao": "Emissão com milhas Smiles, voo da Gol, R$ 0,00 em dinheiro.",
+  "trocas": [
+    "localizador → PXMRAT",
+    "saldo de milhas → 2,340",
+    "nome do passageiro → Fulano Silva",
+    "primeiro nome → Fulano",
+    "número de fidelidade (Smiles) → 900123456",
+    "e-mail do remetente → domínio example.com (exigido pela trava)"
+  ],
+  "entrada": {
+    "assunto": "Confira os detalhes do seu bilhete Smiles.",
+    "remetente": "Smiles <transacional@comunicado.smiles.example.com>",
+    "recebido_em": "2026-11-02",
+    "corpo": "Desejamos um &oacute;timo voo e esperamos que aproveite ao m&aacute;ximo o seu destino.\r\nOl&aacute;, \r\nFulano\r\n;)\r\nSeu n&uacute;mero Smiles:\r\n900123456\r\nCategoria:\r\nOuro \r\nSaldo em 02/11\r\n:\r\n2,340\r\nmilhas \r\nAcesse a\r\nsua conta \r\n&Eacute; &oacute;timo saber que vamos\r\nviajar juntos,\r\nFulano.\r\nEstamos muito contentes porque voc&ecirc; escolheu uma das nossas companhias a&eacute;reas parceiras. Desejamos um &oacute;timo voo e conte com a gente para deixar a sua viagem mais completa.\nNa Smiles, voc&ecirc; pode antecipar o seu check-in, garantir o seu assento, comprar uma franquia de bagagem e tamb&eacute;m reservar um quarto de hotel, alugar um carro e at&eacute; resgatar v&aacute;rios tipos de passeios para aproveitar cada momento da sua aventura.\r\nAqui est&aacute; a confirma&ccedil;&atilde;o da sua passagem a&eacute;rea:\r\nVoo de\r\nida\r\nLocalizador Smiles:\r\nPXMRAT\r\nLocalizador cia a&eacute;rea:\r\nPXMRAT\r\nPartida:\r\nRio de Janeiro (SDU)\n21/02/2027 21:00\r\nDestino:\r\nSão Paulo (CGH)\n21/02/2027 22:00\r\nTarifa:\r\nTarifa reembolsável\r\nDura&ccedil;&atilde;o de voo:\r\n1h\r\nDIRETO\r\nCia a&eacute;rea:\r\nGol Linhas A&eacute;reas\r\nParada 1\r\nCia a&eacute;rea:\r\nGol Linhas A&eacute;reas\r\nN&uacute;mero de voo:\r\nG3 - 1047\r\nPartida:\r\nRio de Janeiro (SDU) 21/02/2027 21:00\r\nDestino:\r\nSão Paulo (CGH) 21/02/2027 22:00\r\nCabine:\r\nCabine Econômica\r\nAssentos\r\nPassageiro(s)\r\nTrecho\r\nAssento\nreservado\r\nBenef&iacute;cios\nda categoria\r\nFulano Silva\r\nEscolher assento \r\n50% off em GOL + Conforto\r\nBagagens\r\nPassageiro(s)\r\nBagagem extra\r\nBenef&iacute;cios da categoria\r\nFulano Silva\r\nComprar bagagens \r\n1ª e 2ª gratuitas\r\nInforme sempre o CPF ou número Smiles dos passageiros para verificar os benefícios das categorias Smiles, como direito a bagagem despachada gratuita e assento GOL+ Conforto.\r\nConsulte as suas informa&ccedil;&otilde;es de pagamento:\r\nTotal de passageiros\r\n1\r\nBilhete Ida\r\n13.100 milhas\r\nR$ 0,00\r\nTaxa de embarque Ida\r\n4.500 milhas\r\nR$ 0,00\r\nTaxa companhia aéreas\r\n0 milhas\r\nR$ 0,00\r\nValor por pessoa\r\n16.290 milhas\r\nR$ 0,00\r\nTotal pago\r\n16.290 milhas\r\nR$ 0,00\r\nAntes de viajar confira algumas dicas importantes:\n​​​​ 👩‍👦 Quer incluir crianças menores de 2 anos no seu bilhete?\nPara inclusão de crianças menores de 2 anos em bilhetes Smiles, verifique com antecedência diretamente com a companhia aérea operadora do voo os procedimentos e taxas.\n✈ Vai viajar com mais de uma companhia aérea?\nEm casos de voos com trechos operados por diferentes companhias aéreas, você deverá procurar o check-in da primeira companhia a operar o voo.\n📄 Vai viajar para um destino internacional?\nEm casos de voos internacionais, toda a documentação, vacinas e vistos necessários para realização do desembarque no país de escala/destino é de responsabilidade exclusiva do passageiro e devem ser verificados e levantados antes da realização do embarque, de acordo com as políticas, restrições e determinações de cada país (tanto de origem quanto de destino e nos países de escala).\n​​\r\n​​\r\n​​\r\n​​\r\nQue tal se planejar com mais tranquilidade?\r\n​​\r\nFa&ccedil;a o login da sua conta Smiles, acesse &ldquo;Minhas Viagens&rdquo; e crie um\nroteiro personalizado para viver intensamente o seu pr&oacute;ximo destino.\r\n​​\r\n​​\r\n​​\r\n​​\r\nEsta mensagem ajudou você? \r\nCompartilhe a sua opinião.\r\nAcesse o App Smiles e navegue pela mais completa plataforma de viagens do Brasil.\r\nSomos feitos de viagens.\nsmiles.com.br\r\nAlameda Rio Negro, 585, Bloco B, 2º andar, Alphaville, CEP 06454-000 – Barueri, SP"
+  },
+  "esperado": {
+    "reservas": [
+      {
+        "localizador": "PXMRAT",
+        "companhia": "G3",
+        "status": "active",
+        "valor": null,
+        "moeda": null,
+        "milhas": 16290,
+        "taxas": 0,
+        "trechos": [
+          {
+            "origem": "SDU",
+            "destino": "CGH",
+            "partida": "2027-02-21T21:00",
+            "chegada": "2027-02-21T22:00",
+            "voo": "G3 1047"
+          }
+        ]
+      }
+    ]
+  }
+}

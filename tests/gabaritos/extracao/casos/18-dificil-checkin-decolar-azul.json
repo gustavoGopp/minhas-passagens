@@ -1,0 +1,38 @@
+{
+  "id": "18-dificil-checkin-decolar-azul",
+  "tipo": "dificil",
+  "descricao": "Lembrete de check-in da Decolar (voo da Azul). Não é compra, mas é a única mensagem com esta reserva.",
+  "trocas": [
+    "número da reserva da Decolar → 900000334400",
+    "localizador → TN3LXE",
+    "nome do titular → Silva, Fulano",
+    "e-mail do remetente → domínio example.com (exigido pela trava)"
+  ],
+  "entrada": {
+    "assunto": "Você já pode fazer o web check-in na Azul!",
+    "remetente": "Decolar <noreply@decolar.example.com>",
+    "recebido_em": "2026-11-08",
+    "corpo": "Acesso o site ou app da companhia aérea usando o código da reserva: \r\nReserva 900000334400 \r\nOlá! \r\nVocê já pode fazer o web check-in na Azul. \r\nCódigo de reserva da companhia aérea \r\nTN3LXE \r\nAlgumas companhias aéreas chamam de \"número de reserva\" ou \"localizador\".\nNome do titular \r\nSilva, Fulano\r\nAs companhias aéreas costumam pedir apenas o sobrenome no web check-in.\nOrigem \r\nSDU 07:10\nRio de Janeiro\n9 de nov. de 2026\nDestino \r\nCGH 08:20\r\nSão Paulo\n9 de nov. de 2026\nIr ao site da companhia aérea \r\nOutras gestões \r\nBagagem\nVerifique a bagagem permitida no seu voo e como comprar malas extras.\nVer bagagem \r\nAssentos\nSe você ainda não selecionou o seus assentos, poderá fazer isso junto com o web check-in.\nSelecionar assentos \r\nÉ importante saber\nInformação adicional sobre o web check-in \r\nO web check-in não é obrigatório. Você pode fazer o check-in no balcão da companhia aérea no aeroporto antes do voo.\nAlgumas companhias aéreas não permitem fazer o web check-in se você viajar com menores de idade. Neste caso, é necessário fazer o check-in diretamente no aeroporto.\nDicas para o web check-in \r\nSe você tem 2 sobrenomes ou mais, tente usar somente o último.\nSe o seu sobrenome tiver acento, talvez seja necessário tirá-lo.\nVoucher \r\nAnexamos o seu voucher a este e-mail para que você possa revisar toda a informação do seu voo. Lembre-se de que é possível baixar todos os seus vouchers na seção Minhas Viagens.\nNúmero de reserva da Decolar \r\nSe você precisar entrar em contato com a Decolar para gerenciar o seu voo, tenha em mãos o seu número de reserva: Decolar\nSua viagem num só lugar\nTenha seus vouchers à mão sem precisar imprimir e obtenha descontos exclusivos para completar a sua viagem. Baixe o app!\nEquipe Decolar\r\nDECOLAR.COM LTDA. Alameda Grajaú, 219, 2º andar, Alphaville Centro Industrial e Empresarial, Barueri, São Paulo, CEP 06454-050"
+  },
+  "esperado": {
+    "reservas": [
+      {
+        "localizador": "TN3LXE",
+        "companhia": "AD",
+        "status": "active",
+        "valor": null,
+        "moeda": null,
+        "milhas": null,
+        "trechos": [
+          {
+            "origem": "SDU",
+            "destino": "CGH",
+            "partida": "2026-11-09T07:10",
+            "chegada": "2026-11-09T08:20",
+            "voo": null
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,6 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { registrarFalha, limparFalhasAntigas } from "@/lib/falhas";
+import { limparConsumoAntigo } from "@/lib/extract/consumo";
 import { holidaysAround, overridesFromRows } from "@/lib/holidays";
 import { listDecryptedKeys } from "@/lib/integrations/repo";
 import { gmailHealth } from "@/lib/mail/accounts";
@@ -465,6 +466,8 @@ async function dailyRetention(
     );
     // Registro de falhas: 30 dias.
     await limparFalhasAntigas(now);
+    // Consumo da leitura com IA: 400 dias.
+    await limparConsumoAntigo(now, admin);
     return { observations: obs.count ?? 0, checks: checks.count ?? 0 };
   } catch (e) {
     await registrarFalha("agendador:limpeza-diaria", e);

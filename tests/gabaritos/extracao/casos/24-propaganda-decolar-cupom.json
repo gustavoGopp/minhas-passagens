@@ -1,0 +1,18 @@
+{
+  "id": "24-propaganda-decolar-cupom",
+  "tipo": "propaganda",
+  "descricao": "Cupom de hospedagem depois de uma compra; cita São Paulo e datas, sem passagem.",
+  "trocas": [
+    "cupom → CUPOMZ10EF",
+    "e-mail do remetente → domínio example.com (exigido pela trava)"
+  ],
+  "entrada": {
+    "assunto": "Sua compra ativou um desconto para essa viagem 🛩🏠",
+    "remetente": "Decolar <alertas+d@mkt.decolar.example.com>",
+    "recebido_em": "2026-11-02",
+    "corpo": "96 \r\nAproveite seu desconto em São Paulo \r\nVocê tem um cupom de 10 % OFF para hospedagens!\nVocê tem um cupom de  10% OFF para hospedagens!\nCUPOMZ10EF\nExpira em 2027-03-11T02:59:59Z.\nDescubra opções incríveis para: São Paulo\nHOSPEDAGEM\r\nRamada Encore Centro (Tiradentes)\r\nVer ofertas \r\nHOSPEDAGEM\r\nEsuites Congonhas by Atlantica\r\nVer ofertas \r\nHOSPEDAGEM\r\nH4 La Residence Paulista\r\nVer ofertas \r\nALUGUEL POR TEMPORADA\r\nYume On Paulista\r\nVer ofertas \r\nALUGUEL POR TEMPORADA\r\nApê Pátio Paulista\r\nVer ofertas \r\nTRANSFER\r\nTraslado Aeroporto de Congonhas - Wyndham São Paulo Ibirapuera Convention Hotel\r\nVer ofertas \r\nEquipe Decolar\nCancelar assinatura | Você deseja parar de receber nossas promoções\nDECOLAR.COM LTDA. Alameda Grajaú, 219, 2º andar, Alphaville Centro Industrial e Empresarial, Barueri, São Paulo, CEP 06454-050\nEsta campanha promocional é válida exclusivamente para a compra de hospedagens. Será concedido 1 (um) cupom de desconto de até 10%, para ser utilizado exclusivamente na compra de hospedagens, mediante aplicação do código promocional CUPOMZ10EF enviado por e-mail ao passageiro.\nVálido para compras realizadas e pagas no site e no aplicativo da Decolar, com validade até 11-03-2027. Após esse período, o cupom perderá sua validade.\nVálido para apenas 1 (uma) reserva de hospedagem por compra. Não cumulativo com outras promoções, códigos ou cupons de desconto. O cupom não é transferível a terceiros. O desconto não é resgatável em dinheiro.\nO cupom concedido está sujeito às mesmas condições da compra original, portanto, em caso de cancelamento da reserva original, a Decolar se reserva o direito de cancelar a reserva gerada com o cupom concedido. No caso de cancelamento da reserva por parte do cliente e solicitação de reembolso, o cliente terá direito apenas ao valor efetivamente pago pelo produto adquirido, sendo excluído do reembolso o valor do desconto do cupom. Se o cliente cancelar sua reserva e optar por receber um voucher de crédito da Decolar para uma compra futura, perderá o direito ao desconto do cupom.\nPara mais informações sobre as condições, formas de pagamento e termos adicionais, consulte o site www.decolar.com ou nossa central de atendimento. Imagens e datas do buscador são meramente ilustrativas.\nEsta campanha poderá ser modificada ou cancelada a qualquer momento sem aviso prévio, sendo garantidas apenas as compras realizadas até a data de cancelamento da promoção.\nCopyright 1999-2025, Decolar.com , Inc.Todos os direitos reservados."
+  },
+  "esperado": {
+    "reservas": []
+  }
+}

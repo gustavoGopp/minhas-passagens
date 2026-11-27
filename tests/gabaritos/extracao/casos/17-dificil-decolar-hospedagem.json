@@ -1,0 +1,20 @@
+{
+  "id": "17-dificil-decolar-hospedagem",
+  "tipo": "dificil",
+  "descricao": "Confirmação da Decolar com o mesmo assunto das compras de voo, mas é hospedagem: nenhuma passagem.",
+  "trocas": [
+    "número da reserva da Decolar → 900000223300",
+    "cupom → CUPOMY30CD",
+    "e-mail do passageiro → fulano.exemplo@example.com",
+    "e-mail do remetente → domínio example.com (exigido pela trava)"
+  ],
+  "entrada": {
+    "assunto": "Eba! Sua viagem está confirmada",
+    "remetente": "Decolar <noreply@decolar.example.com>",
+    "recebido_em": "2026-06-05",
+    "corpo": "Reserva 900000223300 \r\nEsse e seu voucher. Est&aacute; na hora de comemorar!\r\n&zwnj; &zwnj; &zwnj; &zwnj; &zwnj; &zwnj; &zwnj; &zwnj; &zwnj; &zwnj; &zwnj; &zwnj; &zwnj; \r\nTudo certo com a sua compra!\r\nSeu voucher está anexo. Leve-o sempre com você!\r\nHospedagem Búzios Beach Resort by WAM Experience\r\nAten&ccedil;&atilde;o!\nO voucher anexo cont&eacute;m informa&ccedil;&otilde;es importantes para sua estadia. Leia com aten&ccedil;&atilde;o!\r\nVocê ganhou um cupom! Aplique agora\nVocê tem um desconto de até 30% em produtos selecionados por já ter comprado com a gente.\nCUPOMY30CD \r\nAplicar cupom \r\nAplicar cupom \r\nAtra&ccedil;&otilde;es\r\nArraial do Cabo de Barco com Almoço \r\nPreço por adulto a partir de\r\nR$378\r\nR$ 299\n- 21%\r\nAtra&ccedil;&otilde;es\r\nPasseio de barco em Búzios \r\nPreço por adulto a partir de\r\nR$115\r\nR$ 98\n- 15%\r\nAtra&ccedil;&otilde;es\r\nDia inteiro no Rio de Janeiro com almoço \r\nPreço por adulto a partir de\r\nR$520\r\nR$ 494\n- 5%\r\nAssistência\r\nSeguro Viagem - Brasil \r\nPreço por pessoa de\r\nR$ 48\nO valor total do desconto dependerá da duração da sua estadia. \r\nVer termos e condições. \r\nConfira a sua reserva na seção Minhas Viagens\r\nVerifique todos os detalhes\nConsulte as datas e horários da sua viagem, informação sobre check-in, assentos e bagagem incluída.\r\nModifique a sua viagem\nSe precisar modificar a viagem, você pode simular uma alteração ou cancelamento e confirmar apenas se estiver de acordo.\r\nConhe&ccedil;a o estado da sua reserva e caso encontre algum erro, há opções disponíveis para que possamos resolver o inconveniente. Você tem até as 14h (hora Brasília) do dia 01/07/2026.\r\nAcesse com o seu e-mail\r\nfulano.exemplo@example.com \r\nIr a Minhas Viagens \r\nIr a Minhas Viagens \r\nCadastre-se agora e acumule pontos por esta compra no Passaporte Decolar para sua próxima viagem.\r\nQuero me cadastrar \r\nQuero me cadastrar \r\nCom esta compra você acumulou\r\n298 pontos \r\nDisponíveis a partir de 06/07/2026\r\nSaiba mais em\r\nMeu Passaporte \r\nDetalhe do pagamento\nVocê usou 5.405 pontos\r\nNubank\nTotal R$ 756,00\nHospedagem para 2 pessoas\r\nR$ 1.412,41\r\nImpostos e taxas\r\nR$ 31,69\r\nEncargos\r\nR$ 10,56\r\nAcréscimos\r\nR$ 0,03\r\nDesconto\r\n- R$ 567,32\r\nUso de 5.405 pontos\r\n- R$ 131,37\r\nTOTAL\r\nR$ 756,00\r\nVoc&ecirc; poder&aacute; encontrar a nota fiscal do Decolar.com acessando a Minhas Viagens \r\nBaixe nosso app!\nTenha suas reservas sempre à mão.\nSobre sua hospedagem\r\nBúzios Beach Resort by WAM Experience\r\nAvenida dos Tucuns, S/Nº - Praia de Tucuns, Búzios, Brasil \r\n552226336700 \r\nEntrada: Sex. 3/7 14:00 hs\r\nSa&iacute;da: Dom. 5/7 11:00 hs\r\nCondições da hospedagem\nTodos os quartos ficam no piso térreo ou o acesso ao primeiro andar é feito por escadas.\r\nO estabelecimento não aceita reservas feitas com o cartão de crédito de terceiros. O titular do cartão de crédito deve ser o mesmo da reserva.\r\nPol&iacute;ticas de altera&ccedil;&otilde;es e cancelamento\nVoc&ecirc; pode consultar as pol&iacute;ticas de altera&ccedil;&otilde;es e cancelamento da sua compra no voucher anexo e tamb&eacute;m em\r\nMinhas Viagens .\r\nAlguma coisa não saiu como você esperava?\r\nEntre em contato \r\ne te ajudamos.\r\nEquipe Decolar\r\nDECOLAR.COM LTDA. Alameda Grajaú, 219, 2º andar, Alphaville Centro Industrial e Empresarial, Barueri, São Paulo, CEP 06454-050"
+  },
+  "esperado": {
+    "reservas": []
+  }
+}

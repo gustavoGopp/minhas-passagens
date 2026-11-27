@@ -1,0 +1,59 @@
+{
+  "caso": "18-dificil-checkin-decolar-azul",
+  "chamadas": [
+    {
+      "modelo": "claude-haiku-5-5",
+      "resposta": {
+        "parsed_output": {
+          "bookings": [
+            {
+              "locator": "TN3LXE",
+              "airline_code": "AD",
+              "seller": "Decolar",
+              "channel": "agency",
+              "total_amount": null,
+              "currency": null,
+              "miles": null,
+              "taxes_amount": null,
+              "purchased_on": null,
+              "status": "active",
+              "flights": [
+                {
+                  "airline_code": "AD",
+                  "flight_number": null,
+                  "origin_iata": "SDU",
+                  "destination_iata": "CGH",
+                  "departure_local": "2026-11-09T07:10",
+                  "arrival_local": "2026-11-09T08:20",
+                  "passenger": "Silva, Fulano"
+                }
+              ]
+            }
+          ],
+          "warnings": [
+            "Número de voo não informado no e-mail.",
+            "Valor pago, moeda e data da compra não aparecem no e-mail.",
+            "O código TN3LXE é o localizador da companhia Azul; o número de reserva 900000334400 é da Decolar e não foi usado como localizador."
+          ]
+        },
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 4099,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 493,
+          "output_tokens_details": {
+            "thinking_tokens": 205
+          },
+          "service_tier": "standard",
+          "inference_geo": "global",
+          "speed": "standard"
+        }
+      }
+    }
+  ]
+}

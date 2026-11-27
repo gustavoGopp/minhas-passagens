@@ -1,6 +1,6 @@
 # Cenários de aceitação
 
-Aprovados pelo dono em 27/11/2026. Cada cenário tem um teste com o código no título (C1 a C7 em `tests/e2e/`, C8 em `tests/integracao/agendador.test.ts`); `scripts/cenarios.test.mjs` confere a ligação. Mudar este arquivo pede a etiqueta `aprovado-pelo-dono` no pull request.
+Aprovados pelo dono em 27/11/2026. Cada cenário tem um teste com o código no título (C1 a C7 em `tests/e2e/`, C8 em `tests/integracao/agendador.test.ts`, C9 e C10 em `tests/integracao/extracao-limites.test.ts`); `scripts/cenarios.test.mjs` confere a ligação. Mudar este arquivo pede a etiqueta `aprovado-pelo-dono` no pull request.
 
 ## C1 — Entrar só pelo Google
 
@@ -52,3 +52,19 @@ Aprovados pelo dono em 27/11/2026. Cada cenário tem um teste com o código no t
 - **Quando** o agendador roda várias vezes
 - **Então** o aviso chega uma única vez
 - **E**, se o envio falhar, chega na tentativa seguinte, também uma única vez
+
+## C9 — E-mail com problema não é pago para sempre
+
+- **Dado** que a leitura com IA de um e-mail do Gmail é interrompida no meio
+- **Quando** o app tenta de novo nas rodadas seguintes
+- **Então** a IA é chamada no máximo 3 vezes para esse e-mail
+- **E** depois ele fica marcado como erro e não é cobrado de novo
+
+## C10 — Teto diário da leitura com IA
+
+- **Dado** que a leitura automática do Gmail está ligada
+- **Quando** já houve 30 leituras com IA no dia
+- **Então** os e-mails novos esperam, e a busca mostra que o teto do dia foi atingido
+- **E** no dia seguinte a leitura continua, sem perder nenhum e-mail
+- **E** enviar print, PDF ou texto também respeita o teto
+- **E** a busca completa que eu confirmo vendo o custo não entra no teto

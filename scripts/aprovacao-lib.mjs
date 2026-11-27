@@ -19,6 +19,9 @@ const PROTEGIDOS = [
   /^scripts\/cenarios\.test\.mjs$/,
   /^\.github\/workflows\/aprovacao\.yml$/,
   /^\.claude\/hooks\/etiqueta-do-dono\.mjs$/,
+  // Etapa 3: teto diário e tentativas da leitura com IA; notas da última rodada de verdade.
+  /^src\/lib\/extract\/limites\.ts$/,
+  /^tests\/avaliacao-extracao\/resultado\.json$/,
 ];
 
 /** Arquivo de teste: dentro de uma pasta tests/ ou com nome *.test.* / *.spec.*. */

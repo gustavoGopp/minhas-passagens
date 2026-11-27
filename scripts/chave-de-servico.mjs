@@ -18,6 +18,7 @@ export const USOS_DA_CHAVE_DE_SERVICO = {
   "src/lib/mail/importacao.ts": "busca e importação do Gmail",
   "src/lib/notify/acoes.ts": "vínculo do Telegram e aviso de teste",
   "src/lib/prices/verificar-agora.ts": "histórico de preço pelo botão Verificar agora",
+  "src/lib/extract/consumo.ts": "consumo e teto da leitura com IA (inclusive no envio de print)",
   // A chave cifrada só é lida pelo servidor.
   "src/lib/integrations/repo.ts": "leitura da chave de API cifrada",
   // A API de Auth só aceita a chave de serviço.

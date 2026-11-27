@@ -1,0 +1,21 @@
+{
+  "id": "22-dificil-nf-123milhas-3",
+  "tipo": "dificil",
+  "descricao": "Nota fiscal de um pedido da 123milhas: fala de pedido e valor, mas não tem voo.",
+  "trocas": [
+    "primeiro nome → Fulano",
+    "número do pedido → ZXC-3VB-N-26",
+    "chave de acesso da NFS-e → número falso",
+    "e-mail do remetente → domínio example.com (exigido pela trava)",
+    "corpo refeito a partir do texto visível do e-mail (mesmo texto; espaços podem diferir)"
+  ],
+  "entrada": {
+    "assunto": "Sua nota fiscal do pedido ZXC-3VB-N-26 esta disponível!",
+    "remetente": "123Milhas <contato@123milhas.example.com>",
+    "recebido_em": "2026-05-29",
+    "corpo": "Olá, Fulano!\nA(s) nota(s) fiscal(is) e a nota de débito do pedido ZXC-3VB-N-26 já estão disponíveis.\nA nota de débito segue em anexo , e a nota fiscal pode ser consultada no Portal Nacional da NFSe . Confira abaixo o passo a passo para consulta.\nAcesse:\nhttps://www.nfse.gov.br/consultapublica\nInforme os dados:\nIntermediação de serviços turísticos\n1 - Chave de acesso da NFS-e: 31062002226669170000157000000050000326050000000003\nImportante\nA nota de débito refere-se à diferença entre o valor total pago pelo cliente e o valor da nota fiscal emitida. Ressaltamos que a nota fiscal é emitida exclusivamente sobre a remuneração pelos serviços de intermediação prestados. Esse procedimento está em conformidade com o §2º do art. 27 da Lei Federal nº 11.771/2008, que regulamenta a atuação das agências de viagem como intermediadoras.\nUm abraço!\nEquipe 123Milhas\n123 VIAGENS E TURISMO LTDA.\n26.669.170/0001-57\nRua Matias Cardoso,\n169 - 10° andar\nCEP 30.170-050,\nBelo Horizonte/MG\nPrecisando de ajuda?\nAcesse a nossa Central de Ajuda"
+  },
+  "esperado": {
+    "reservas": []
+  }
+}

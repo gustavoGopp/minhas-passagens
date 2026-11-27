@@ -1,0 +1,42 @@
+{
+  "id": "11-compra-gol-cgh-sdu-set",
+  "tipo": "compra",
+  "descricao": "Confirmação de compra da Gol, um trecho CGH-SDU, sem valor no e-mail.",
+  "trocas": [
+    "localizador → HWBYKS",
+    "número do bilhete → 1279990000111",
+    "nome do passageiro → Fulano Silva",
+    "primeiro nome → FULANO",
+    "sobrenome → SILVA",
+    "número de fidelidade (Smiles) → 900123456",
+    "e-mail da companhia → domínio example.com (exigido pela trava)",
+    "e-mail do remetente → domínio example.com (exigido pela trava)"
+  ],
+  "entrada": {
+    "assunto": "Reserva GOL HWBYKS: Compra de passagem confirmada com sucesso!",
+    "remetente": "GOL Linhas Aéreas <noreply@voegol.example.com>",
+    "recebido_em": "2026-05-26",
+    "corpo": "AS Dynamic Notification \r\n--> \r\n96 \r\nVerifique as informa&ccedil;&otilde;es. Ser&aacute; um prazer voar com voc&ecirc;!\r\nVerifique as informa&ccedil;&otilde;es. Ser&aacute; um prazer voar com voc&ecirc;! \r\nCaso n&atilde;o consiga visualizar este e-mail, clique aqui .\nOFERTAS SITE GOL SMILES\nSua compra\nfoi confirmada! \r\nOl&aacute;, FULANO . \r\nEst&aacute; tudo certo com a sua compra!\nObrigada por escolher a GOL! \r\nA seguir, voc&ecirc; encontra os detalhes do seu voo.\nDesejamos uma boa viagem. \r\nDetalhe da Reserva \r\nCódigo da reserva\r\nHWBYKS\r\nCGH \r\nCONGONHAS, BRASIL \r\n- \r\nSDU \r\nSANTOS DUMONT RIO, BRASIL \r\nQui, 17 Set \r\n⋅ 1h 5min \r\n⋅ Vôo direto \r\nGOL LINHAS AEREAS,\r\nG3 \r\n1044 \r\nVerifique os hor&aacute;rios dos v&ocirc;os antes da partida \r\nCGH \r\nCONGONHAS, BRASIL\nSDU \r\nSANTOS DUMONT RIO, BRASIL\n19:40 , 17 Set \r\n20:45 , 17 Set \r\nFamília de tarifas:\r\nLIGHT \r\nCabine:\r\nEconômica \r\n⋅ \r\nClasse:\r\nB \r\nAeronave:\r\nBOEING 737-800 JET \r\nFULANO \r\nSILVA \r\nAssento:\r\nNão confirmado \r\nPrograma Viajante Frequente:\r\n900123456 GOL LINHAS AEREAS \r\nCalendário \r\nImprimir o itinerário \r\nTeu(s) bilhete(s):\nFulano Silva: \r\n1279990000111\nSua viagem na palma da m&atilde;o.\nBaixe o app da GOL e aproveite para: \r\n&bull; Administrar e gerenciar sua reserva; &bull; Reservar seu assento e adquirir bagagem; &bull; Realizar seu check-in e acessar o cart&atilde;o de embarque; &bull; Acompanhar as informa&ccedil;&otilde;es sobre o seu voo; E muito mais! \r\nLembre-se que: \r\n&bull; \r\nVerifique os documentos, vistos e formul&aacute;rios necess&aacute;rios para levar em cada tipo de viagem. Acesse aqui todos os requisitos. \r\n&bull; \r\nNo dia do voo, recomendamos chegar ao aeroporto com 3h de anteced&ecirc;ncia . O check-in se encerra 1h antes do voo . \r\nComplemente sua viagem com as nossas parcerias: \r\nReservas de hotel \r\nAluguel de carros \r\nIngressos para passeios \r\nEstacionamento no aeroporto \r\nE muito mais! \r\nVer tudo \r\nTudo pronto para decolar?\nEmbarque rumo a novas viv&ecirc;ncias autorizado.\nGOL. Novos tempos no ar, sempre. \r\nNossos parceiros: \r\nBaixe o app: \r\nAdicione o nosso e-mail aos seus contatos: voegol@news.voegol.example.com. \r\nGOL Linhas A&eacute;reas Inteligentes: Pra&ccedil;a Senador Salgado Filho, s/n&ordm;, Aeroporto Santos Dumont, T&eacute;rreo, &Aacute;rea P&uacute;blica, entre os eixos 46-48/O-P, Sala de Ger&ecirc;ncia &ndash; Back Office, CEP 20021-340, cidade e estado do Rio de Janeiro, inscrita no CNPJ/MF sob o n.&ordm; 07.575.651/0001-59. \r\nTermos e condi&ccedil;&otilde;es \r\nPol&iacute;tica de privacidade \r\nDescadastre-se \r\n-->"
+  },
+  "esperado": {
+    "reservas": [
+      {
+        "localizador": "HWBYKS",
+        "companhia": "G3",
+        "status": "active",
+        "valor": null,
+        "moeda": null,
+        "milhas": null,
+        "trechos": [
+          {
+            "origem": "CGH",
+            "destino": "SDU",
+            "partida": "2026-09-17T19:40",
+            "chegada": "2026-09-17T20:45",
+            "voo": "G3 1044"
+          }
+        ]
+      }
+    ]
+  }
+}

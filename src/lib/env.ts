@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { MODELOS_PADRAO } from "@/lib/extract/modelos";
 
 /**
  * Variáveis públicas (prefixo NEXT_PUBLIC_) são embutidas no bundle do cliente
@@ -20,8 +21,8 @@ const serverSchema = z.object({
       (v) => Buffer.from(v, "base64").length === 32,
       "BYOK_MASTER_KEY deve ter 32 bytes em base64",
     ),
-  EXTRACTION_MODEL_DEFAULT: z.string().default("claude-haiku-5-5"),
-  EXTRACTION_MODEL_RETRY: z.string().default("claude-sonnet-5-5"),
+  EXTRACTION_MODEL_DEFAULT: z.string().default(MODELOS_PADRAO.padrao),
+  EXTRACTION_MODEL_RETRY: z.string().default(MODELOS_PADRAO.reforco),
 });
 
 export type PublicEnv = z.infer<typeof publicSchema>;
