@@ -206,10 +206,21 @@ test("C7 — Cada um vê o seu", async ({ page, context, baseURL }, info) => {
     destino: "CGH",
     partidaUtc: emDias(5, 9),
   });
+  await semearVoo(bruno, {
+    localizador: "TESTE8",
+    origem: "CGH",
+    destino: "SDU",
+    partidaUtc: emDias(6, 18),
+  });
   await entrar(context, bruno, baseURL!);
-  await page.goto("/app/passagens");
+  // A lista de Bruno (no início) mostra a passagem dele e nada da Ana.
+  await page.goto("/app");
+  await expect(page.getByLabel("Próximo voo: CGH para SDU")).toBeVisible();
+  await expect(page.getByText("TESTE8").first()).toBeVisible();
   await expect(page.getByText("TESTE7")).toHaveCount(0);
+  // O endereço da passagem da Ana dá "não encontrada", sem nenhum dado dela.
   await page.goto(`/app/passagens/${idDaAna}`);
+  await expect(page.getByText(/pode ter sido apagado/)).toBeVisible();
   await expect(page.getByText("TESTE7")).toHaveCount(0);
   await conferirTela(page, info, "c7-passagem-de-outra-pessoa");
 });

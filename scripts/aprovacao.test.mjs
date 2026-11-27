@@ -20,6 +20,12 @@ describe("aprovação do dono", () => {
     "tests/aceitacao/cenarios.md",
     "tests/gabaritos/gmail/1.json",
     "docs/regras-de-acesso.md",
+    "tests/banco/tabelas.ts",
+    "scripts/aprovacao-lib.mjs",
+    "scripts/aprovacao.mjs",
+    "scripts/cenarios.test.mjs",
+    ".github/workflows/aprovacao.yml",
+    ".claude/hooks/etiqueta-do-dono.mjs",
   ])("mexer em %s sem a etiqueta reprova", (f) => {
     const r = decidir({ arquivos: [arq(f)], etiquetas: [], evento: "opened" });
     expect(r.ok).toBe(false);

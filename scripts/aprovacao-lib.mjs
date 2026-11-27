@@ -5,8 +5,21 @@
 /** Etiqueta que só o dono põe no PR (o agente é barrado por um hook). */
 export const ETIQUETA = "aprovado-pelo-dono";
 
-/** O que julga o trabalho: cenários aprovados, gabaritos e regras de acesso. */
-const PROTEGIDOS = [/^tests\/aceitacao\//, /^tests\/gabaritos\//, /^docs\/regras-de-acesso\.md$/];
+/**
+ * O que julga o trabalho: cenários aprovados, gabaritos, regras de acesso (o texto
+ * e a tabela que os testes conferem) e a própria checagem com a sua trava. Sem os
+ * últimos, um PR poderia afrouxar a regra ou esvaziar esta lista sem a etiqueta.
+ */
+const PROTEGIDOS = [
+  /^tests\/aceitacao\//,
+  /^tests\/gabaritos\//,
+  /^docs\/regras-de-acesso\.md$/,
+  /^tests\/banco\/tabelas\.ts$/,
+  /^scripts\/aprovacao(-lib)?\.mjs$/,
+  /^scripts\/cenarios\.test\.mjs$/,
+  /^\.github\/workflows\/aprovacao\.yml$/,
+  /^\.claude\/hooks\/etiqueta-do-dono\.mjs$/,
+];
 
 /** Arquivo de teste: dentro de uma pasta tests/ ou com nome *.test.* / *.spec.*. */
 const NA_PASTA_TESTS = /(?:^|\/)tests\//;

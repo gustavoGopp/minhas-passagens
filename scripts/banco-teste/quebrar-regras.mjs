@@ -90,28 +90,30 @@ try {
   for (const { nome } of tabelas) {
     const filtro = `^tabela ${escapar(nome)} `;
     const nomeDaTabela = (n) => n.startsWith(`tabela ${nome} `);
+    // Concessões como estavam antes de qualquer quebra: cada desfazer volta a elas.
+    const { rows: concessoes } = await db.query(
+      `select grantee, privilege_type from information_schema.role_table_grants
+       where table_schema = 'public' and table_name = $1 and grantee in ('anon', 'authenticated')`,
+      [nome],
+    );
+    const devolver =
+      `revoke all on public.${nome} from anon, authenticated;` +
+      concessoes
+        .map((c) => `grant ${c.privilege_type} on public.${nome} to ${c.grantee};`)
+        .join("");
     await provar({
       titulo: `${nome}, regra aberta`,
       quebrar: `create policy quebra_aberta on public.${nome} for all to public using (true) with check (true);
                 grant select, insert, update, delete on public.${nome} to anon, authenticated;`,
-      desfazer: `drop policy if exists quebra_aberta on public.${nome};
-                 revoke all on public.${nome} from anon;`,
+      desfazer: `drop policy if exists quebra_aberta on public.${nome}; ${devolver}`,
       filtro,
       devemFalhar: (n) => nomeDaTabela(n) && / nega: /.test(n),
     });
 
-    const { rows: concessoes } = await db.query(
-      `select privilege_type from information_schema.role_table_grants
-       where table_schema = 'public' and table_name = $1 and grantee = 'authenticated'`,
-      [nome],
-    );
-    const devolver = concessoes.length
-      ? `grant ${concessoes.map((c) => c.privilege_type).join(", ")} on public.${nome} to authenticated;`
-      : "select 1;";
     await provar({
       titulo: `${nome}, acesso do usuário logado retirado`,
       quebrar: `revoke all on public.${nome} from authenticated;`,
-      desfazer: `revoke all on public.${nome} from authenticated; ${devolver}`,
+      desfazer: devolver,
       filtro,
       devemFalhar: (n) => nomeDaTabela(n) && / permite: /.test(n),
       semAlvoOk: true,

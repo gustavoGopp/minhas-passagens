@@ -37,12 +37,21 @@ async function recusado(resp) {
 }
 
 let problemas = 0;
+let devolver = "";
 try {
   const { rows } = await db.query(
     `select c.relname as nome from pg_class c
      where c.relnamespace = 'public'::regnamespace and c.relkind in ('r', 'p', 'v', 'm') order by 1`,
   );
   const tabelas = rows.map((r) => r.nome);
+  // Concessões do visitante antes da sonda: no fim, voltam exatamente a elas.
+  const { rows: antes } = await db.query(
+    `select table_name, privilege_type from information_schema.role_table_grants
+     where table_schema = 'public' and grantee = 'anon'`,
+  );
+  devolver = `revoke all on all tables in schema public from anon;${antes
+    .map((c) => `grant ${c.privilege_type} on public.${c.table_name} to anon;`)
+    .join("")}`;
   if (comoProducao) {
     await db.query("grant select, insert, update, delete on all tables in schema public to anon");
   }
@@ -86,9 +95,7 @@ try {
     `\n${tabelas.length} tabelas sondadas com a chave pública${comoProducao ? " (concessões como em produção)" : ""}; ${problemas} abertas.`,
   );
 } finally {
-  if (comoProducao) {
-    await db.query("revoke all on all tables in schema public from anon");
-  }
+  if (comoProducao && devolver) await db.query(devolver);
   await db.end();
 }
 process.exit(problemas ? 1 : 0);

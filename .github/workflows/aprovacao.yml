@@ -8,7 +8,7 @@ name: Aprovação do dono
 # Para valer como barreira, o check "aprovacao" precisa estar na regra da main.
 on:
   pull_request_target:
-    types: [opened, synchronize, reopened, labeled, unlabeled]
+    types: [opened, edited, synchronize, reopened, labeled, unlabeled]
 
 permissions:
   contents: read
