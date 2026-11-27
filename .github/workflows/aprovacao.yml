@@ -1,0 +1,32 @@
+name: Aprovação do dono
+
+# Cenários de aceitação, gabaritos e regras de acesso aprovadas só mudam com a
+# etiqueta "aprovado-pelo-dono" (P16). O evento pull_request_target roda a versão
+# deste arquivo e de scripts/aprovacao*.mjs que está na main: o branch do PR não
+# consegue alterar a checagem para se aprovar. Por isso este job nunca baixa nem
+# executa o código do PR; só lê pela API a lista de arquivos e as etiquetas.
+# Para valer como barreira, o check "aprovacao" precisa estar na regra da main.
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  aprovacao:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # Versão da main (padrão do pull_request_target), sem credencial guardada.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Conferir arquivos protegidos e a etiqueta do dono
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          EVENTO: ${{ github.event.action }}
+        run: node scripts/aprovacao.mjs

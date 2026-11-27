@@ -161,3 +161,6 @@ test-results/
 # Supabase local (testes)
 supabase/.branches/
 supabase/.temp/
+
+# Capturas dos testes de ponta a ponta (geradas a cada execução)
+capturas/

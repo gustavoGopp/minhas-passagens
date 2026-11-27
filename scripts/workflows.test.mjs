@@ -114,6 +114,17 @@ describe("workflows do GitHub", () => {
     }
   });
 
+  it("a aprovação do dono roda a versão da main e nunca executa o código do PR", () => {
+    const w = workflows.find((x) => x.arquivo === "aprovacao.yml");
+    expect(w, "falta .github/workflows/aprovacao.yml").toBeTruthy();
+    expect(Object.keys(w.yaml.on)).toEqual(["pull_request_target"]);
+    expect(w.texto).not.toMatch(/github\.event\.pull_request\.head/);
+    expect(w.texto).not.toMatch(/\bref:/);
+    expect(w.texto).not.toMatch(/secrets\./);
+    expect(w.texto).not.toMatch(/npm (ci|install)/);
+    expect(w.yaml.permissions).toEqual({ contents: "read", "pull-requests": "write" });
+  });
+
   it("a CI tem um job final 'gate' que sempre roda e depende de todos os outros", () => {
     const ci = workflows.find((x) => x.arquivo === "ci.yml").yaml;
     const outros = Object.keys(ci.jobs).filter((j) => j !== "gate");

@@ -78,11 +78,53 @@ jobs:
       - name: Fluxos do servidor
         run: npm run test:banco -- tests/integracao
 
+  # O app de verdade no navegador (Playwright) sobre o Supabase local, nos cenários
+  # aprovados (tests/aceitacao/cenarios.md): celular e computador, claro e escuro,
+  # com capturas e checagem de acessibilidade. Só pessoas e passagens fictícias.
+  ponta-a-ponta:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: npm que entende o .npmrc
+        run: npm install -g npm@11.21.2
+      - run: npm ci
+      - name: Ferramenta do Supabase (versão fixa, conferida pelo hash)
+        run: bash scripts/banco-teste/instalar-supabase-cli.sh
+      - name: Subir o Supabase local
+        run: supabase start
+      - name: Endereços e chaves do Supabase local; chave mestra só deste teste
+        run: |
+          supabase status -o env | grep -E '^(API_URL|ANON_KEY|SERVICE_ROLE_KEY)=' | tr -d '"' >> "$GITHUB_ENV"
+          echo "BYOK_MASTER_KEY=$(openssl rand -base64 32)" >> "$GITHUB_ENV"
+      - name: Montar o app apontando para o Supabase local
+        run: |
+          NEXT_PUBLIC_SUPABASE_URL="$API_URL" NEXT_PUBLIC_SUPABASE_ANON_KEY="$ANON_KEY" \
+          NEXT_PUBLIC_APP_URL="http://127.0.0.1:3000" npm run build
+      - name: Navegador do Playwright
+        run: npx playwright install --with-deps chromium
+      - name: Cenários no navegador
+        run: npm run test:e2e
+      - name: Guardar relatório e capturas (14 dias)
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ponta-a-ponta
+          path: |
+            playwright-report/
+            capturas/
+          retention-days: 14
+          if-no-files-found: warn
+
   # Único check exigido na proteção da main. Sempre roda e só passa se todos
   # os outros jobs passaram: um job pulado não conta como aprovado.
   gate:
     if: ${{ always() }}
-    needs: [verify, banco]
+    needs: [verify, banco, ponta-a-ponta]
     runs-on: ubuntu-latest
     steps:
       - name: Conferir os outros jobs
