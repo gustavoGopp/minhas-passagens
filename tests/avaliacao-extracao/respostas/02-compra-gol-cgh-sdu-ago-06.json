@@ -1,0 +1,59 @@
+{
+  "caso": "02-compra-gol-cgh-sdu-ago-06",
+  "chamadas": [
+    {
+      "modelo": "claude-haiku-5-5",
+      "resposta": {
+        "parsed_output": {
+          "bookings": [
+            {
+              "locator": "RZLPCA",
+              "airline_code": "G3",
+              "seller": "GOL (site da companhia)",
+              "channel": "airline",
+              "total_amount": null,
+              "currency": null,
+              "miles": null,
+              "taxes_amount": null,
+              "purchased_on": null,
+              "status": "active",
+              "flights": [
+                {
+                  "airline_code": "G3",
+                  "flight_number": "G3 1040",
+                  "origin_iata": "CGH",
+                  "destination_iata": "SDU",
+                  "departure_local": "2026-08-06T18:45",
+                  "arrival_local": "2026-08-06T19:50",
+                  "passenger": "FULANO SILVA"
+                }
+              ]
+            }
+          ],
+          "warnings": [
+            "Ano do voo deduzido como 2026 a partir da data de recebimento do e-mail (2026-05-10) e do dia da semana (quinta-feira, 6 de agosto).",
+            "Valor total, moeda e data da compra não aparecem no e-mail; campos deixados nulos.",
+            "Assento não confirmado no e-mail."
+          ]
+        },
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 4181,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 694,
+          "output_tokens_details": {
+            "thinking_tokens": 377
+          },
+          "service_tier": "standard",
+          "inference_geo": "global",
+          "speed": "standard"
+        }
+      }
+    }
+  ]
+}

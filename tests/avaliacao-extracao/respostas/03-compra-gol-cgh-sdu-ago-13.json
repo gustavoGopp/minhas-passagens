@@ -1,0 +1,59 @@
+{
+  "caso": "03-compra-gol-cgh-sdu-ago-13",
+  "chamadas": [
+    {
+      "modelo": "claude-haiku-5-5",
+      "resposta": {
+        "parsed_output": {
+          "bookings": [
+            {
+              "locator": "MVDHUK",
+              "airline_code": "G3",
+              "seller": "Site da GOL",
+              "channel": "airline",
+              "total_amount": null,
+              "currency": null,
+              "miles": null,
+              "taxes_amount": null,
+              "purchased_on": null,
+              "status": "active",
+              "flights": [
+                {
+                  "airline_code": "G3",
+                  "flight_number": "G3 1044",
+                  "origin_iata": "CGH",
+                  "destination_iata": "SDU",
+                  "departure_local": "2026-08-13T19:35",
+                  "arrival_local": "2026-08-13T20:40",
+                  "passenger": "Fulano Silva"
+                }
+              ]
+            }
+          ],
+          "warnings": [
+            "O ano do voo não aparece no e-mail; foi deduzido como 2026 pela data de recebimento (2026-05-10) e pela proximidade do voo em 13 de agosto.",
+            "Valor total, moeda e data da compra não foram encontrados no texto.",
+            "O assento está como não confirmado."
+          ]
+        },
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 4181,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 601,
+          "output_tokens_details": {
+            "thinking_tokens": 300
+          },
+          "service_tier": "standard",
+          "inference_geo": "global",
+          "speed": "standard"
+        }
+      }
+    }
+  ]
+}

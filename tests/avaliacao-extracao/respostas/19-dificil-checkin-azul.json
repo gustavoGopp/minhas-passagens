@@ -1,0 +1,60 @@
+{
+  "caso": "19-dificil-checkin-azul",
+  "chamadas": [
+    {
+      "modelo": "claude-haiku-5-5",
+      "resposta": {
+        "parsed_output": {
+          "bookings": [
+            {
+              "locator": "VC6JMA",
+              "airline_code": "AD",
+              "seller": "Azul",
+              "channel": "airline",
+              "total_amount": null,
+              "currency": null,
+              "miles": null,
+              "taxes_amount": null,
+              "purchased_on": null,
+              "status": "active",
+              "flights": [
+                {
+                  "airline_code": "AD",
+                  "flight_number": "AD 4003",
+                  "origin_iata": "SDU",
+                  "destination_iata": "CGH",
+                  "departure_local": "2026-11-03T10:20",
+                  "arrival_local": "2026-11-03T11:30",
+                  "passenger": "Fulano"
+                }
+              ]
+            }
+          ],
+          "warnings": [
+            "O e-mail não informa a data da compra, valores pagos nem moeda; campos financeiros ficaram nulos.",
+            "O ano não aparece no voo; foi deduzido como 2026 pela data de recebimento do e-mail (2026-11-02).",
+            "O nome do passageiro aparece apenas como 'Fulano', sem sobrenome.",
+            "O horário de chegada é o mesmo dia da partida, presumido pelo horário de 11:30 informado."
+          ]
+        },
+        "stop_reason": "end_turn",
+        "usage": {
+          "input_tokens": 3477,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 618,
+          "output_tokens_details": {
+            "thinking_tokens": 271
+          },
+          "service_tier": "standard",
+          "inference_geo": "global",
+          "speed": "standard"
+        }
+      }
+    }
+  ]
+}
