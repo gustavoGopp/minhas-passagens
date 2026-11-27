@@ -9,7 +9,7 @@
             {
               "locator": "RZLPCA",
               "airline_code": "G3",
-              "seller": "GOL (site da companhia)",
+              "seller": "GOL (site/e-mail da companhia)",
               "channel": "airline",
               "total_amount": null,
               "currency": null,
@@ -31,23 +31,23 @@
             }
           ],
           "warnings": [
-            "Ano do voo deduzido como 2026 a partir da data de recebimento do e-mail (2026-05-10) e do dia da semana (quinta-feira, 6 de agosto).",
-            "Valor total, moeda e data da compra não aparecem no e-mail; campos deixados nulos.",
-            "Assento não confirmado no e-mail."
+            "O ano do voo não aparece no e-mail; foi deduzido como 2026 pela data de recebimento (2026-05-10).",
+            "Valor total, moeda e data da compra não aparecem no e-mail.",
+            "Assento não confirmado no momento da compra."
           ]
         },
         "stop_reason": "end_turn",
         "usage": {
-          "input_tokens": 4181,
+          "input_tokens": 4769,
           "cache_creation_input_tokens": 0,
           "cache_read_input_tokens": 0,
           "cache_creation": {
             "ephemeral_5m_input_tokens": 0,
             "ephemeral_1h_input_tokens": 0
           },
-          "output_tokens": 694,
+          "output_tokens": 625,
           "output_tokens_details": {
-            "thinking_tokens": 377
+            "thinking_tokens": 329
           },
           "service_tier": "standard",
           "inference_geo": "global",

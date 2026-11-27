@@ -7,7 +7,7 @@
         "parsed_output": {
           "bookings": [
             {
-              "locator": "900000112200",
+              "locator": null,
               "airline_code": "AD",
               "seller": "Decolar",
               "channel": "agency",
@@ -31,25 +31,24 @@
             }
           ],
           "warnings": [
-            "O ano do voo não aparece no e-mail; deduzido como 2026 pela data de recebimento (2026-07-15).",
-            "Número do voo não informado.",
-            "Data da compra não informada no texto.",
-            "Nome do passageiro não informado.",
-            "Valor total de R$ 343,32 inclui a taxa de embarque de R$ 62,14 (voo R$ 281,18)."
+            "Código de localizador da companhia aérea não encontrado; o número 900000112200 é da reserva da Decolar, não é PNR.",
+            "Ano do voo deduzido como 2026 pelo contexto (e-mail recebido em 2026-07-15 e voo em 11 de setembro).",
+            "Número do voo e nome do passageiro não aparecem no texto.",
+            "Data da compra não aparece no texto."
           ]
         },
         "stop_reason": "end_turn",
         "usage": {
-          "input_tokens": 4275,
+          "input_tokens": 4893,
           "cache_creation_input_tokens": 0,
           "cache_read_input_tokens": 0,
           "cache_creation": {
             "ephemeral_5m_input_tokens": 0,
             "ephemeral_1h_input_tokens": 0
           },
-          "output_tokens": 585,
+          "output_tokens": 645,
           "output_tokens_details": {
-            "thinking_tokens": 272
+            "thinking_tokens": 326
           },
           "service_tier": "standard",
           "inference_geo": "global",

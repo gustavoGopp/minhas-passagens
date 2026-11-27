@@ -9,7 +9,7 @@
             {
               "locator": "MVDHUK",
               "airline_code": "G3",
-              "seller": "Site da GOL",
+              "seller": "Site GOL (OFERTAS SITE GOL SMILES)",
               "channel": "airline",
               "total_amount": null,
               "currency": null,
@@ -25,29 +25,29 @@
                   "destination_iata": "SDU",
                   "departure_local": "2026-08-13T19:35",
                   "arrival_local": "2026-08-13T20:40",
-                  "passenger": "Fulano Silva"
+                  "passenger": "FULANO SILVA"
                 }
               ]
             }
           ],
           "warnings": [
-            "O ano do voo não aparece no e-mail; foi deduzido como 2026 pela data de recebimento (2026-05-10) e pela proximidade do voo em 13 de agosto.",
-            "Valor total, moeda e data da compra não foram encontrados no texto.",
-            "O assento está como não confirmado."
+            "Ano não aparece no e-mail; 2026 deduzido pela data de recebimento (2026-05-10) e pelo dia da semana (quinta-feira, 13 de agosto).",
+            "Valor total, moeda e data da compra não aparecem no e-mail.",
+            "Assento não confirmado no momento da mensagem."
           ]
         },
         "stop_reason": "end_turn",
         "usage": {
-          "input_tokens": 4181,
+          "input_tokens": 4769,
           "cache_creation_input_tokens": 0,
           "cache_read_input_tokens": 0,
           "cache_creation": {
             "ephemeral_5m_input_tokens": 0,
             "ephemeral_1h_input_tokens": 0
           },
-          "output_tokens": 601,
+          "output_tokens": 746,
           "output_tokens_details": {
-            "thinking_tokens": 300
+            "thinking_tokens": 421
           },
           "service_tier": "standard",
           "inference_geo": "global",
